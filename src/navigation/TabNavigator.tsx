@@ -5,25 +5,41 @@ import HomeScreen from "../screens/HomeScreen";
 import ProductsScreen from "../screens/ProductsScreen";
 import OrdersScreen from "../screens/OrdersScreen";
 import ReportsScreen from "../screens/ReportsScreen";
-// import SettingsScreen from "../screens/SettingsScreen";
-import { Alert, Text } from "react-native";
+import { Alert, Text, View, TouchableOpacity, Platform, StatusBar } from "react-native";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const getEmojiIcon = (route: keyof RootTabParamList) => {
   switch (route) {
     case "Home":
-      return "🏠"; // Home
+      return "🏠";
     case "Products":
-      return "🛍️"; // Shopping bags
+      return "🛍️";
     case "Orders":
-      return "📑"; // Invoice / Orders
+      return "📑";
     case "Reports":
-      return "📊"; // Chart / Reports
+      return "📊";
     case "Settings":
-      return "⚙️"; // Settings
+      return "⚙️";
     default:
       return "❓";
+  }
+};
+
+const getHeaderTitle = (route: keyof RootTabParamList) => {
+  switch (route) {
+    case "Home":
+      return "📊 Dashboard";
+    case "Products":
+      return "🛍️ Products";
+    case "Orders":
+      return "📑 Orders";
+    case "Reports":
+      return "📊 Reports";
+    case "Settings":
+      return "⚙️ Settings";
+    default:
+      return "❓ Screen";
   }
 };
 
@@ -31,16 +47,34 @@ const TabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerTitle: getHeaderTitle(route.name),
+        headerTitleStyle: {
+          fontSize: 24,
+          fontWeight: "700",
+        },
+        headerStyle: {
+          backgroundColor: "#fff",
+          height: 110, // overall header height
+          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 25, // space from top
+          paddingBottom: 15, // ✅ extra bottom space
+          paddingHorizontal: 20, // ✅ space on sides
+        },
         headerRight: () => (
-          <Text
-            style={{ fontSize: 28, marginRight: 15 }}
-            onPress={() => Alert.alert("Profile screen will open here")}
-          >
-            👤
-          </Text>
+          <View style={{ flexDirection: "row", marginRight: 10 }}>
+            <TouchableOpacity
+              onPress={() => Alert.alert("Notifications will open")}
+            >
+              <Text style={{ fontSize: 30, marginRight: 18 }}>🔔</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => Alert.alert("Profile screen will open")}
+            >
+              <Text style={{ fontSize: 32 }}>👤</Text>
+            </TouchableOpacity>
+          </View>
         ),
         tabBarIcon: () => (
-          <Text style={{ fontSize: 20 }}>{getEmojiIcon(route.name)}</Text>
+          <Text style={{ fontSize: 22 }}>{getEmojiIcon(route.name)}</Text>
         ),
         tabBarActiveTintColor: "#007AFF",
         tabBarInactiveTintColor: "#8e8e93",
@@ -48,22 +82,18 @@ const TabNavigator = () => {
           backgroundColor: "#ffffff",
           borderTopWidth: 0,
           elevation: 8,
-          height: 60,
+          height: 65,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: "600",
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} 
-        options={{ headerShown: false }} // hides default navigation header
-
-      />
+      <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Products" component={ProductsScreen} />
       <Tab.Screen name="Orders" component={OrdersScreen} />
       <Tab.Screen name="Reports" component={ReportsScreen} />
-      {/* <Tab.Screen name="Settings" component={SettingsScreen} /> */}
     </Tab.Navigator>
   );
 };

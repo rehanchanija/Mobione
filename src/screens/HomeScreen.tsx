@@ -10,18 +10,6 @@ import {
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>📊 Dashboard</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity>
-            <Text style={styles.emoji}>🔄</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={{ marginLeft: 15 }}>
-            <Text style={styles.emoji}>👤</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Overview */}
@@ -111,7 +99,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F7F9FC",
     paddingHorizontal: 20,
-    paddingTop: 50, // 🔹 More top spacing
+    paddingTop: 30, // 🔹 More top spacing
   },
   scrollContent: {
     paddingBottom: 30, // 🔹 Extra bottom space so last item isn’t cramped
@@ -132,7 +120,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sectionTitle: {
-    fontSize: 18, // 🔹 Bigger font
+    fontSize: 24, // 🔹 Bigger font
     fontWeight: "600",
     color: "#333",
     marginVertical: 15, // 🔹 Extra vertical spacing
@@ -170,7 +158,7 @@ const styles = StyleSheet.create({
   quickCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 22,
+    padding: 12,
     width: "48%",
     alignItems: "center",
     elevation: 3,
@@ -180,18 +168,18 @@ const styles = StyleSheet.create({
   },
   quickText: {
     marginTop: 10,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     color: "#4A90E2",
   },
   quickTextPrimary: {
     marginTop: 10,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     color: "#fff",
   },
   quickEmoji: {
-    fontSize: 32, // 🔹 Bigger quick action emoji
+    fontSize: 26, // 🔹 Bigger quick action emoji
   },
   emoji: {
     fontSize: 22, // 🔹 Slightly bigger emojis
