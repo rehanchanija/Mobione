@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import CreateProduct from "./CreateProductScreen";
 
 const products = [
   {
@@ -50,8 +49,8 @@ const products = [
 ];
 
 export default function ProductsScreen() {
-  const [filter, setFilter] = useState("All");
   const navigation = useNavigation();
+  const [filter, setFilter] = useState("All");
 
   const filteredProducts =
     filter === "All"
@@ -119,7 +118,7 @@ export default function ProductsScreen() {
       {/* Floating Add Product Button */}
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => navigation.navigate("CreateProductScreen")} // <-- make sure you have CreateProduct screen in your navigator
+        onPress={() => navigation.navigate("CreateProduct" as never)} // <-- make sure you have CreateProduct screen in your navigator
       >
         <Text style={styles.addButtonText}>➕</Text>
       </TouchableOpacity>

@@ -2,10 +2,11 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootTabParamList } from "./types";
 import HomeScreen from "../screens/HomeScreen";
-import ProductsScreen from "../screens/ProductsScreen";
-import OrdersScreen from "../screens/OrdersScreen";
 import ReportsScreen from "../screens/ReportsScreen";
 import { Alert, Text, View, TouchableOpacity, Platform, StatusBar } from "react-native";
+import ProductsStack from "./ProductsStack";
+import BillingScreen from "../screens/BillingScreen";
+import BillingStack from "./BillingStack";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -15,8 +16,8 @@ const getEmojiIcon = (route: keyof RootTabParamList) => {
       return "🏠";
     case "Products":
       return "🛍️";
-    case "Orders":
-      return "📑";
+    case "Billing":
+      return "🧾";
     case "Reports":
       return "📊";
     case "Settings":
@@ -32,10 +33,10 @@ const getHeaderTitle = (route: keyof RootTabParamList) => {
       return "📊 Dashboard";
     case "Products":
       return "🛍️ Products";
-    case "Orders":
-      return "📑 Orders";
+    case "Billing":
+      return "🧾  Create Bill";
     case "Reports":
-      return "📊 Reports";
+      return "📑 Reports";
     case "Settings":
       return "⚙️ Settings";
     default:
@@ -91,8 +92,8 @@ const TabNavigator = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Products" component={ProductsScreen} />
-      <Tab.Screen name="Orders" component={OrdersScreen} />
+      <Tab.Screen name="Products" component={ProductsStack} />
+      <Tab.Screen name="Billing" component={BillingStack} />
       <Tab.Screen name="Reports" component={ReportsScreen} />
     </Tab.Navigator>
   );
