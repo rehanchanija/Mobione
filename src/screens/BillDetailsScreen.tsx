@@ -7,14 +7,20 @@ import {
   TouchableOpacity,
   Switch,
   ScrollView,
+  TextInput,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/types"; 
+import { RootStackParamList } from "../navigation/types";
 
 type BillDetailsProps = NativeStackScreenProps<RootStackParamList, "BillDetailsScreen">;
 
 export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
   const [discountEnabled, setDiscountEnabled] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState("0");
+
+  const subtotal = 44.0;
+  const discount = parseFloat(discountAmount) || 0;
+  const total = subtotal - discount;
 
   return (
     <ScrollView style={styles.container}>
@@ -32,20 +38,33 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
       </View>
 
       {/* Discount */}
-    <View style={styles.card}>
+      <View style={styles.card}>
         <View style={styles.row}>
           <Text style={styles.title}>💲 Apply Discount</Text>
-          <Switch value={discountEnabled} onValueChange={setDiscountEnabled} />
+          <Switch
+            value={discountEnabled}
+            onValueChange={setDiscountEnabled}
+          />
         </View>
+
         {discountEnabled && (
-          <Text style={[styles.item, { color: "green", marginTop: 6 }]}>
-            Discount applied!
-          </Text>
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter discount amount"
+              keyboardType="numeric"
+              value={discountAmount}
+              onChangeText={setDiscountAmount}
+            />
+            <Text style={[styles.item, { color: "green", marginTop: 6 }]}>
+              Discount applied: ${discount.toFixed(2)}
+            </Text>
+          </>
         )}
       </View>
 
       {/* Customer Details */}
-     <View style={styles.card}>
+      <View style={styles.card}>
         <View style={styles.row}>
           <Text style={styles.title}>👤 Customer Details</Text>
           <TouchableOpacity
@@ -64,19 +83,21 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
       <View style={styles.card}>
         <Text style={styles.title}>🧮 Total Calculation</Text>
         <View style={styles.line} />
-        <Text style={styles.item}>Subtotal: $44.00</Text>
-        <Text style={[styles.item, { color: "red" }]}>Discount: -$0.00</Text>
-        <Text style={styles.total}>Total Amount: $44.00</Text>
+        <Text style={styles.item}>Subtotal: ${subtotal.toFixed(2)}</Text>
+        <Text style={[styles.item, { color: "red" }]}>
+          Discount: -${discount.toFixed(2)}
+        </Text>
+        <Text style={styles.total}>Total Amount: ${total.toFixed(2)}</Text>
       </View>
 
       {/* Buttons */}
       <View style={styles.footer}>
-       <TouchableOpacity
-  style={styles.backBtn}
-  onPress={() => navigation.goBack()}
->
-  <Text style={styles.backText}>⬅️ Back</Text>
-</TouchableOpacity>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backText}>⬅️ Back</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.payBtn}
           // onPress={() => navigation.navigate("PaymentScreen")}
@@ -90,7 +111,7 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9f9f9", padding: 16 },
-  header: { fontSize: 24, fontWeight: "bold",  marginBottom: 20 },
+  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   card: {
     backgroundColor: "#fff",
     padding: 14,
@@ -106,9 +127,16 @@ const styles = StyleSheet.create({
   total: { fontSize: 18, fontWeight: "bold", color: "#007BFF", marginTop: 8 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   edit: { fontSize: 20 },
-    line: { height: 1, backgroundColor: "#eee", marginVertical: 6 },
-
-  footer: { flexDirection: "row", justifyContent: "space-between", marginTop: 16,marginBottom:30 },
+  line: { height: 1, backgroundColor: "#eee", marginVertical: 6 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 8,
+    fontSize: 16,
+  },
+  footer: { flexDirection: "row", justifyContent: "space-between", marginTop: 16, marginBottom: 30 },
   backBtn: {
     flex: 1,
     marginRight: 6,
@@ -118,7 +146,7 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     alignItems: "center",
   },
-  backText: { fontSize: 20,fontWeight: "bold", color: "#333" },
+  backText: { fontSize: 20, fontWeight: "bold", color: "#333" },
   payBtn: {
     flex: 1,
     marginLeft: 6,
@@ -127,5 +155,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-  payText: { fontSize: 20, fontWeight: "bold", color: "#fff" ,textAlign:"center" },
+  payText: { fontSize: 20, fontWeight: "bold", color: "#fff", textAlign: "center" },
 });
