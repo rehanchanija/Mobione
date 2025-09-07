@@ -2,11 +2,10 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootTabParamList } from "./types";
 import HomeScreen from "../screens/HomeScreen";
-import ReportsScreen from "../screens/ReportsScreen";
 import { Alert, Text, View, TouchableOpacity, Platform, StatusBar } from "react-native";
 import ProductsStack from "./ProductsStack";
-import BillingScreen from "../screens/BillingScreen";
 import BillingStack from "./BillingStack";
+import ReportsScreen from "../screens/ReportsScreen";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
