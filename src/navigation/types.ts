@@ -3,8 +3,10 @@
       MainTabs: undefined;
       CreateProduct: undefined;
       Products: undefined;
-  CustomerDetailsScreen: undefined; // <-- correct
+      CustomerDetailsScreen: undefined;
       BillDetailsScreen: undefined;
+      PaymentScreen:undefined
+    
     };
 
     export type RootTabParamList = {

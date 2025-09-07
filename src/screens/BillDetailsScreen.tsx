@@ -10,7 +10,6 @@ import {
   TextInput,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/types";
 import { BillingStackParamList } from "../navigation/BillingStack";
 
 type BillDetailsProps = NativeStackScreenProps<BillingStackParamList, "BillDetails">;
@@ -103,7 +102,7 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.payBtn}
-          // onPress={() => navigation.navigate("PaymentScreen")}
+          onPress={() => navigation.navigate("PaymentScreen")}
         >
           <Text style={styles.payText}>Next 💳</Text>
         </TouchableOpacity>
