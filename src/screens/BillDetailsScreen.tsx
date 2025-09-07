@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
+import { BillingStackParamList } from "../navigation/BillingStack";
 
-type BillDetailsProps = NativeStackScreenProps<RootStackParamList, "BillDetailsScreen">;
+type BillDetailsProps = NativeStackScreenProps<BillingStackParamList, "BillDetails">;
 
 export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
   const [discountEnabled, setDiscountEnabled] = useState(false);
@@ -67,11 +68,13 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
       <View style={styles.card}>
         <View style={styles.row}>
           <Text style={styles.title}>👤 Customer Details</Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("CustomerDetailsScreen" as never)}
-          >
-            <Text style={styles.edit}>✏️</Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+  onPress={() => navigation.navigate("CustomerDetails" as never)}
+>
+  <Text style={styles.edit}>✏️</Text>
+</TouchableOpacity>
+
+
         </View>
         <View style={styles.line} />
         <Text style={styles.item}>Jane Doe</Text>

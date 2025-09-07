@@ -3,7 +3,7 @@
       MainTabs: undefined;
       CreateProduct: undefined;
       Products: undefined;
-      CustomerDetailsScreen: undefined;
+  CustomerDetailsScreen: undefined; // <-- correct
       BillDetailsScreen: undefined;
     };
 

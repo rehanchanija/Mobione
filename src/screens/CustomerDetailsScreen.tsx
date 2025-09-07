@@ -7,18 +7,18 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { BillingStackParamList } from "../navigation/BillingStack";
 
-export default function CustomerDetailsScreen() {
+type CustomerDetailsProps  = NativeStackScreenProps<BillingStackParamList, "CustomerDetails">;
+
+export default function CustomerDetailsScreen({navigation}: CustomerDetailsProps ) {
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const navigation = useNavigation();
 
-  const handleSave = () => {
-    // Save details (can integrate AsyncStorage or API here)
-    navigation.goBack();
-  };
+  
 
   return (
     <View style={styles.container}>
@@ -45,7 +45,9 @@ export default function CustomerDetailsScreen() {
         multiline
       />
 
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+      <TouchableOpacity style={styles.saveBtn} 
+          onPress={() => navigation.goBack()}
+      >
         <Text style={styles.saveText}>💾 Save & Go Back</Text>
       </TouchableOpacity>
     </View>
