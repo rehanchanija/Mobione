@@ -1,3 +1,5 @@
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from "react";
 import {
   View,
@@ -10,112 +12,282 @@ import {
   Image,
   Modal,
   Button,
+  StatusBar,
+  Platform,
+  Alert,
 } from "react-native";
 import * as ImagePicker from "react-native-image-picker";
-
-const FlowPayProfileScreen = () => {
+const ProfileScreen = ({ navigation }: { navigation: NativeStackNavigationProp<any> }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
   const [shopName, setShopName] = useState("My Mobile Store");
   const [shopAddress, setShopAddress] = useState("45 Gandhi Road, Ahmedabad");
   const [ownerName, setOwnerName] = useState("Mohammed Rehan");
   const [shopImage, setShopImage] = useState<string | null>(null);
 
+  // Temporary state for preview
+  const [tempShopName, setTempShopName] = useState(shopName);
+  const [tempShopAddress, setTempShopAddress] = useState(shopAddress);
+  const [tempOwnerName, setTempOwnerName] = useState(ownerName);
+  const [tempShopImage, setTempShopImage] = useState<string | null>(shopImage);
+
+  const handleBack = () => {
+    if (navigation && navigation.goBack) {
+      navigation.goBack();
+    } else {
+      Alert.alert("Back", "Navigation back functionality");
+    }
+  };
+
   const pickImage = () => {
-   ImagePicker.launchImageLibrary(
-    { mediaType: "photo", quality: 0.7 },
-    (response) => {
-      if (!response.didCancel && !response.errorCode && response.assets && response.assets.length > 0) {
-        setShopImage(response.assets[0].uri || null);
-      }}
+    ImagePicker.launchImageLibrary(
+      { mediaType: "photo", quality: 0.7 },
+      (response) => {
+        if (!response.didCancel && !response.errorCode && response.assets && response.assets.length > 0) {
+          setTempShopImage(response.assets[0].uri || null);
+        }
+      }
     );
+  };
+
+  const handlePreview = () => {
+    setPreviewVisible(true);
+  };
+
+  const handleSave = () => {
+    setShopName(tempShopName);
+    setShopAddress(tempShopAddress);
+    setOwnerName(tempOwnerName);
+    setShopImage(tempShopImage);
+    setModalVisible(false);
+    Alert.alert("Success", "Shop details updated successfully!");
+  };
+
+  const handleModalClose = () => {
+    // Reset temp values when closing without saving
+    setTempShopName(shopName);
+    setTempShopAddress(shopAddress);
+    setTempOwnerName(ownerName);
+    setTempShopImage(shopImage);
+    setModalVisible(false);
+  };
+
+  const openModal = () => {
+    // Set temp values to current values when opening modal
+    setTempShopName(shopName);
+    setTempShopAddress(shopAddress);
+    setTempOwnerName(ownerName);
+    setTempShopImage(shopImage);
+    setModalVisible(true);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 30 }}>
-        {/* Header */}
-        <View style={styles.header}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      
+      {/* Custom Header with Back Button */}
+      <View style={styles.customHeader}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Profile & Settings</Text>
-          <Text style={styles.headerIcon}>🔔</Text>
         </View>
+        <TouchableOpacity style={styles.notificationButton}>
+          <Text style={styles.headerIcon}>🔔</Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* Shop Info */}
-        <TouchableOpacity style={styles.card} onPress={() => setModalVisible(true)}>
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 30 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Shop Info Card */}
+        <TouchableOpacity style={styles.card} onPress={openModal}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.editIcon}>✏️</Text>
+            <Text style={styles.editText}>Tap to edit</Text>
+          </View>
+          
+          {shopImage && (
+            <Image source={{ uri: shopImage }} style={styles.shopImagePreview} />
+          )}
+          
           <Text style={styles.companyEmoji}>🏪</Text>
           <Text style={styles.companyName}>{shopName}</Text>
           <Text style={styles.companyAddress}>{shopAddress}</Text>
-          <Text style={styles.ownerBadge}>👑 Owner: {ownerName}</Text>
+          <View style={styles.ownerContainer}>
+            <Text style={styles.ownerBadge}>👑 Owner: {ownerName}</Text>
+          </View>
         </TouchableOpacity>
 
         {/* Navigation Items */}
-        {["Staff Management", "Sales Reports", "Inventory Management", "App Settings", "Help & Support"].map((item, i) => (
-          <TouchableOpacity style={styles.navItem} key={i}>
+        {[
+          "Staff Management", 
+          "Sales Reports", 
+          "Transaction History",
+          "Inventory Management", 
+          "App Settings", 
+          "Help & Support"
+        ].map((item, i) => (
+          <TouchableOpacity 
+            style={styles.navItem} 
+            key={i}
+            onPress={() => Alert.alert(item, `Navigate to ${item}`)}
+          >
             <View style={styles.emojiBox}>
-              <Text style={styles.emoji}>{["👥", "📊", "📦", "⚙️", "💬"][i]}</Text>
+              <Text style={styles.emoji}>
+                {["👥", "📊", "💳", "📦", "⚙️", "💬"][i]}
+              </Text>
             </View>
             <View style={styles.navTextContainer}>
               <Text style={styles.navTitle}>{item}</Text>
               <Text style={styles.navDescription}>
                 {[
-                  "Manage roles and accounts",
-                  "Detailed sales analytics",
-                  "Track your products",
-                  "Preferences & notifications",
-                  "Contact support or view FAQs",
+                  "Manage roles, permissions and staff accounts",
+                  "View detailed sales analytics and reports",
+                  "View all transaction records and details",
+                  "Track and manage your product inventory",
+                  "Configure app preferences & notifications",
+                  "Get help, contact support or view FAQs",
                 ][i]}
               </Text>
             </View>
+            <Text style={styles.navChevron}>›</Text>
           </TouchableOpacity>
         ))}
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={() => Alert.alert("Logout", "Are you sure you want to logout?")}
+        >
           <Text style={styles.logoutText}>🚪 Logout</Text>
         </TouchableOpacity>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Version 2.1.0 • © 2024 FlowPay</Text>
+          <Text style={styles.footerText}>Made with ❤️ by FlowPay Team</Text>
+          <Text style={styles.footerVersion}>Version 2.1.0 • © 2024 FlowPay Solutions</Text>
         </View>
 
-        {/* Modal */}
+        {/* Edit Shop Details Modal */}
         <Modal animationType="slide" transparent={true} visible={modalVisible}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>Shop & Owner Details</Text>
-
-              <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
-                {shopImage ? (
-                  <Image source={{ uri: shopImage }} style={styles.shopImage} />
-                ) : (
-                  <Text style={styles.imagePlaceholder}>Upload Image</Text>
-                )}
-              </TouchableOpacity>
-
-              <TextInput
-                style={styles.input}
-                value={shopName}
-                onChangeText={setShopName}
-                placeholder="Shop Name"
-              />
-              <TextInput
-                style={styles.input}
-                value={shopAddress}
-                onChangeText={setShopAddress}
-                placeholder="Shop Address"
-              />
-              <TextInput
-                style={styles.input}
-                value={ownerName}
-                onChangeText={setOwnerName}
-                placeholder="Owner Name"
-              />
-
-              <View style={{ flexDirection: "row", marginTop: 15 }}>
-                <Button title="Close" color="#EF4444" onPress={() => setModalVisible(false)} />
-                <View style={{ width: 10 }} />
-                <Button title="Save" onPress={() => setModalVisible(false)} />
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Shop & Owner Details</Text>
+                <TouchableOpacity 
+                  onPress={handleModalClose}
+                  style={styles.modalCloseButton}
+                >
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </TouchableOpacity>
               </View>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+                  {tempShopImage ? (
+                    <Image source={{ uri: tempShopImage }} style={styles.shopImage} />
+                  ) : (
+                    <View style={styles.imagePlaceholderContainer}>
+                      <Text style={styles.imagePlaceholderEmoji}>📷</Text>
+                      <Text style={styles.imagePlaceholder}>Upload Shop Image</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>🏪 Shop Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={tempShopName}
+                    onChangeText={setTempShopName}
+                    placeholder="Enter shop name"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>📍 Shop Address</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    value={tempShopAddress}
+                    onChangeText={setTempShopAddress}
+                    placeholder="Enter shop address"
+                    placeholderTextColor="#9CA3AF"
+                    multiline={true}
+                    numberOfLines={2}
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>👤 Owner Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={tempOwnerName}
+                    onChangeText={setTempOwnerName}
+                    placeholder="Enter owner name"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity 
+                    style={styles.previewButton} 
+                    onPress={handlePreview}
+                  >
+                    <Text style={styles.previewButtonText}>👁️ Preview</Text>
+                  </TouchableOpacity>
+                  
+                  <View style={styles.buttonRow}>
+                    <TouchableOpacity 
+                      style={styles.cancelButton} 
+                      onPress={handleModalClose}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={styles.saveButton} 
+                      onPress={handleSave}
+                    >
+                      <Text style={styles.saveButtonText}>💾 Save Changes</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Preview Modal */}
+        <Modal animationType="fade" transparent={true} visible={previewVisible}>
+          <View style={styles.previewOverlay}>
+            <View style={styles.previewContainer}>
+              <View style={styles.previewHeader}>
+                <Text style={styles.previewTitle}>Preview</Text>
+                <TouchableOpacity onPress={() => setPreviewVisible(false)}>
+                  <Text style={styles.previewClose}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.previewCard}>
+                {tempShopImage && (
+                  <Image source={{ uri: tempShopImage }} style={styles.previewImage} />
+                )}
+                <Text style={styles.previewEmoji}>🏪</Text>
+                <Text style={styles.previewName}>{tempShopName}</Text>
+                <Text style={styles.previewAddress}>{tempShopAddress}</Text>
+                <Text style={styles.previewOwner}>👑 Owner: {tempOwnerName}</Text>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.previewCloseButton}
+                onPress={() => setPreviewVisible(false)}
+              >
+                <Text style={styles.previewCloseButtonText}>Close Preview</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -124,34 +296,431 @@ const FlowPayProfileScreen = () => {
   );
 };
 
-export default FlowPayProfileScreen;
+export default ProfileScreen;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F9FAFB" },
-  container: { flex: 1, paddingHorizontal: 20, marginTop: 12 },
-  header: { flexDirection: "row", justifyContent: "space-between", padding: 20, backgroundColor: "#fff", alignItems: "center", borderRadius: 16, marginBottom: 20, elevation: 2 },
-  headerTitle: { fontSize: 22, fontWeight: "700", color: "#111827" },
-  headerIcon: { fontSize: 26 },
-  card: { backgroundColor: "#fff", marginBottom: 20, borderRadius: 18, padding: 24, alignItems: "center", elevation: 3 },
-  companyEmoji: { fontSize: 42, marginBottom: 10 },
-  companyName: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  companyAddress: { fontSize: 15, color: "#6B7280", textAlign: "center", marginTop: 6 },
-  ownerBadge: { fontSize: 15, color: "#1D4ED8", marginTop: 8, fontWeight: "600" },
-  navItem: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", marginBottom: 14, padding: 18, borderRadius: 14, elevation: 2 },
-  emojiBox: { width: 44, height: 44, borderRadius: 14, backgroundColor: "#F3F4F6", justifyContent: "center", alignItems: "center", marginRight: 14 },
-  emoji: { fontSize: 22 },
-  navTextContainer: { flex: 1 },
-  navTitle: { fontSize: 17, fontWeight: "600", color: "#111827" },
-  navDescription: { fontSize: 13, color: "#6B7280", marginTop: 2 },
-  logoutButton: { marginTop: 20, backgroundColor: "#EF4444", paddingVertical: 16, borderRadius: 14, alignItems: "center" },
-  logoutText: { fontSize: 18, fontWeight: "600", color: "#fff" },
-  footer: { alignItems: "center", marginTop: 24, marginBottom: 30 },
-  footerText: { fontSize: 13, color: "#9CA3AF" },
-  modalOverlay: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
-  modalContainer: { width: "90%", backgroundColor: "#fff", borderRadius: 16, padding: 20, alignItems: "center" },
-  modalTitle: { fontSize: 20, fontWeight: "700", marginBottom: 20 },
-  imagePicker: { width: 100, height: 100, borderRadius: 16, backgroundColor: "#F3F4F6", justifyContent: "center", alignItems: "center", marginBottom: 20 },
-  shopImage: { width: 100, height: 100, borderRadius: 16 },
-  imagePlaceholder: { color: "#6B7280" },
-  input: { width: "100%", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, padding: 12, marginBottom: 12 },
+  safeArea: { 
+    flex: 1, 
+    backgroundColor: "#F9FAFB",
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingRight:24,
+    paddingLeft:24
+  },
+  
+  // Custom Header Styles
+  customHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+    backgroundColor: "#fff",
+    marginHorizontal: 24,
+    marginTop: 20,
+    marginBottom: 15,
+    borderRadius: 16,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  backArrow: {
+    fontSize: 20,
+    color: "#374151",
+    fontWeight: "bold",
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerTitle: { 
+    fontSize: 20, 
+    fontWeight: "700", 
+    color: "#111827" 
+  },
+  notificationButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerIcon: { 
+    fontSize: 24 
+  },
+  
+  // Removed old container styles since we're using scrollContainer now
+  
+  // Card Styles
+  card: { 
+    backgroundColor: "#fff", 
+    marginBottom: 20, 
+    borderRadius: 20, 
+    padding: 24, 
+    alignItems: "center", 
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    position: 'relative',
+  },
+  cardHeader: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  editIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  editText: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  shopImagePreview: {
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+    marginBottom: 15,
+  },
+  companyEmoji: { 
+    fontSize: 48, 
+    marginBottom: 12 
+  },
+  companyName: { 
+    fontSize: 22, 
+    fontWeight: "700", 
+    color: "#111827",
+    textAlign: 'center',
+  },
+  companyAddress: { 
+    fontSize: 15, 
+    color: "#6B7280", 
+    textAlign: "center", 
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  ownerContainer: {
+    marginTop: 12,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  ownerBadge: { 
+    fontSize: 15, 
+    color: "#1D4ED8", 
+    fontWeight: "600" 
+  },
+  
+  // Navigation Styles
+  navItem: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    backgroundColor: "#fff", 
+    marginBottom: 12, 
+    padding: 18, 
+    borderRadius: 16, 
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  emojiBox: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 14, 
+    backgroundColor: "#F3F4F6", 
+    justifyContent: "center", 
+    alignItems: "center", 
+    marginRight: 16 
+  },
+  emoji: { 
+    fontSize: 22 
+  },
+  navTextContainer: { 
+    flex: 1 
+  },
+  navTitle: { 
+    fontSize: 17, 
+    fontWeight: "600", 
+    color: "#111827",
+    marginBottom: 2,
+  },
+  navDescription: { 
+    fontSize: 13, 
+    color: "#6B7280", 
+    lineHeight: 18,
+  },
+  navChevron: {
+    fontSize: 20,
+    color: "#9CA3AF",
+    fontWeight: "bold",
+  },
+  
+  // Button Styles
+  logoutButton: { 
+    marginTop: 20, 
+    backgroundColor: "#EF4444", 
+    paddingVertical: 18, 
+    borderRadius: 16, 
+    alignItems: "center",
+    elevation: 3,
+  },
+  logoutText: { 
+    fontSize: 18, 
+    fontWeight: "600", 
+    color: "#fff" 
+  },
+  
+  // Footer Styles
+  footer: { 
+    alignItems: "center", 
+    marginTop: 30, 
+    marginBottom: 20 
+  },
+  footerText: { 
+    fontSize: 13, 
+    color: "#6B7280",
+    marginBottom: 4,
+  },
+  footerVersion: { 
+    fontSize: 12, 
+    color: "#9CA3AF" 
+  },
+  
+  // Modal Styles
+  modalOverlay: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    backgroundColor: "rgba(0,0,0,0.6)" 
+  },
+  modalContainer: { 
+    width: "92%", 
+    maxHeight: "85%",
+    backgroundColor: "#fff", 
+    borderRadius: 20, 
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: { 
+    fontSize: 22, 
+    fontWeight: "700",
+    color: "#111827",
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCloseText: {
+    fontSize: 16,
+    color: "#6B7280",
+    fontWeight: "bold",
+  },
+  
+  // Image Picker Styles
+  imagePicker: { 
+    width: 120, 
+    height: 120, 
+    borderRadius: 20, 
+    backgroundColor: "#F9FAFB", 
+    justifyContent: "center", 
+    alignItems: "center", 
+    marginBottom: 20,
+    alignSelf: "center",
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    borderStyle: 'dashed',
+  },
+  shopImage: { 
+    width: 116, 
+    height: 116, 
+    borderRadius: 18 
+  },
+  imagePlaceholderContainer: {
+    alignItems: 'center',
+  },
+  imagePlaceholderEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  imagePlaceholder: { 
+    color: "#6B7280",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  
+  // Input Styles
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#374151",
+    marginBottom: 8,
+  },
+  input: { 
+    width: "100%", 
+    borderWidth: 1.5, 
+    borderColor: "#E5E7EB", 
+    borderRadius: 14, 
+    padding: 14,
+    fontSize: 16,
+    backgroundColor: "#F9FAFB",
+  },
+  textArea: {
+    minHeight: 60,
+    textAlignVertical: 'top',
+  },
+  
+  // Modal Button Styles
+  modalButtonContainer: {
+    marginTop: 10,
+  },
+  previewButton: {
+    backgroundColor: "#3B82F6",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  previewButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  buttonRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    color: "#6B7280",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: "#10B981",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  
+  // Preview Modal Styles
+  previewOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.8)",
+  },
+  previewContainer: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 20,
+  },
+  previewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  previewTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  previewClose: {
+    fontSize: 18,
+    color: "#6B7280",
+    fontWeight: "bold",
+  },
+  previewCard: {
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#F9FAFB",
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  previewImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 14,
+    marginBottom: 12,
+  },
+  previewEmoji: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  previewName: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  previewAddress: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  previewOwner: {
+    fontSize: 14,
+    color: "#1D4ED8",
+    fontWeight: "600",
+  },
+  previewCloseButton: {
+    backgroundColor: "#6B7280",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  previewCloseButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });

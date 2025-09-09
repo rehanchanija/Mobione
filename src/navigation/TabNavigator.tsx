@@ -3,10 +3,10 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootTabParamList } from "./types";
 import HomeScreen from "../screens/HomeScreen";
 import { Alert, Text, View, TouchableOpacity, Platform, StatusBar } from "react-native";
-import ProductsStack from "./ProductsStack";
 import BillingStack from "./BillingStack";
 import BillsStack from "./BillsStack";
 import { useNavigation } from "@react-navigation/native";
+import ProductsStack from "./ProductsStack";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
