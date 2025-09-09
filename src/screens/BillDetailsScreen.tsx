@@ -25,7 +25,7 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
-      <Text style={styles.header}>🧾 Bill Details</Text>
+      {/* <Text style={styles.header}>🧾 Bill Details</Text> */}
 
       {/* Bill Summary */}
       <View style={styles.card}>

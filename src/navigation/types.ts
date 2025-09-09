@@ -5,7 +5,7 @@
       Products: undefined;
       CustomerDetailsScreen: undefined;
       BillDetailsScreen: undefined;
-      PaymentScreen:undefined
+      PaymentScreen:undefined;
     
     };
 
@@ -13,10 +13,12 @@
       Home: undefined;
       Products: undefined;
       Orders: undefined;
-      Reports: undefined;
+      Bills: undefined;
       Settings: undefined;
       Billing: undefined;
+      Sales: undefined;
       
       
     };
+    
 

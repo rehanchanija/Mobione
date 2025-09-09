@@ -5,7 +5,7 @@ import HomeScreen from "../screens/HomeScreen";
 import { Alert, Text, View, TouchableOpacity, Platform, StatusBar } from "react-native";
 import ProductsStack from "./ProductsStack";
 import BillingStack from "./BillingStack";
-import ReportsScreen from "../screens/ReportsScreen";
+import SalesAnalyticsScreen from "../screens/SalesAnalyticsScreen";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -17,8 +17,8 @@ const getEmojiIcon = (route: keyof RootTabParamList) => {
       return "🛍️";
     case "Billing":
       return "🧾";
-    case "Reports":
-      return "📊";
+    case "Bills":
+      return "📑";
     case "Settings":
       return "⚙️";
     default:
@@ -34,8 +34,8 @@ const getHeaderTitle = (route: keyof RootTabParamList) => {
       return "🛍️ Products";
     case "Billing":
       return "🧾  Create Bill";
-    case "Reports":
-      return "📑 Reports";
+    case "Bills":
+      return "📑 Sales Analytics";
     case "Settings":
       return "⚙️ Settings";
     default:
@@ -93,7 +93,7 @@ const TabNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Products" component={ProductsStack} />
       <Tab.Screen name="Billing" component={BillingStack} />
-      <Tab.Screen name="Reports" component={ReportsScreen} />
+      <Tab.Screen name="Bills" component={SalesAnalyticsScreen} />
     </Tab.Navigator>
   );
 };
