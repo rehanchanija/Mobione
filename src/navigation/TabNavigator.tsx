@@ -6,6 +6,7 @@ import { Alert, Text, View, TouchableOpacity, Platform, StatusBar } from "react-
 import ProductsStack from "./ProductsStack";
 import BillingStack from "./BillingStack";
 import BillsStack from "./BillsStack";
+import { useNavigation } from "@react-navigation/native";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -19,8 +20,8 @@ const getEmojiIcon = (route: keyof RootTabParamList) => {
       return "🧾";
     case "Bills":
       return "📑";
-    case "Settings":
-      return "⚙️";
+    // case "Settings":
+    //   return "⚙️";
     default:
       return "❓";
   }
@@ -36,14 +37,15 @@ const getHeaderTitle = (route: keyof RootTabParamList) => {
       return "🧾  Create Bill";
     case "Bills":
       return "📑 Sales Analytics";
-    case "Settings":
-      return "⚙️ Settings";
+    // case "Settings":
+    //   return "⚙️ Settings";
     default:
       return "❓ Screen";
   }
 };
 
 const TabNavigator = () => {
+  const navigation = useNavigation();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -67,7 +69,8 @@ const TabNavigator = () => {
               <Text style={{ fontSize: 30, marginRight: 18 }}>🔔</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => Alert.alert("Profile screen will open")}
+              onPress={() =>navigation.navigate("Profile" as never)}
+
             >
               <Text style={{ fontSize: 32 }}>👤</Text>
             </TouchableOpacity>
