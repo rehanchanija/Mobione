@@ -5,7 +5,7 @@ import HomeScreen from "../screens/HomeScreen";
 import { Alert, Text, View, TouchableOpacity, Platform, StatusBar } from "react-native";
 import ProductsStack from "./ProductsStack";
 import BillingStack from "./BillingStack";
-import SalesAnalyticsScreen from "../screens/SalesAnalyticsScreen";
+import BillsStack from "./BillsStack";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -93,7 +93,7 @@ const TabNavigator = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Products" component={ProductsStack} />
       <Tab.Screen name="Billing" component={BillingStack} />
-      <Tab.Screen name="Bills" component={SalesAnalyticsScreen} />
+      <Tab.Screen name="Bills" component={BillsStack} />
     </Tab.Navigator>
   );
 };

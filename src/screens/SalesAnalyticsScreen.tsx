@@ -10,6 +10,8 @@ import {
   Modal,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/types';
 
 interface Bill {
   id: string;
@@ -17,21 +19,41 @@ interface Bill {
   amount: number;
   status: 'Paid' | 'Pending' | 'Cancelled';
   date: string;
+  paymentMethod: 'Cash' | 'Online';
 }
 
 const bills: Bill[] = [
-  { id: 'FPT001', customerName: 'Alice Johnson', amount: 150.75, status: 'Paid', date: '2024-07-20' },
-  { id: 'FPT002', customerName: 'Bob Williams', amount: 89.90, status: 'Pending', date: '2024-07-19' },
-  { id: 'FPT003', customerName: 'Charlie Davis', amount: 230.00, status: 'Paid', date: '2024-07-18' },
-  { id: 'FPT004', customerName: 'Diana Miller', amount: 45.50, status: 'Cancelled', date: '2024-07-18' },
-  { id: 'FPT005', customerName: 'Ethan White', amount: 320.40, status: 'Paid', date: '2024-07-17' },
-  { id: 'FPT006', customerName: 'Fiona Green', amount: 112.30, status: 'Pending', date: '2024-07-16' },
-  { id: 'FPT010', customerName: 'Julia Wilson', amount: 289.80, status: 'Cancelled', date: '2024-07-12' },
+  { id: 'FPT001', customerName: 'Alice Johnson', amount: 150.75, status: 'Paid', date: '2024-07-20', paymentMethod: 'Online' },
+  { id: 'FPT002', customerName: 'Bob Williams', amount: 89.90, status: 'Pending', date: '2024-07-19', paymentMethod: 'Cash' },
+  { id: 'FPT003', customerName: 'Charlie Davis', amount: 230.00, status: 'Paid', date: '2024-07-18', paymentMethod: 'Online' },
+  { id: 'FPT004', customerName: 'Diana Miller', amount: 45.50, status: 'Cancelled', date: '2024-07-18', paymentMethod: 'Cash' },
+  { id: 'FPT005', customerName: 'Ethan White', amount: 320.40, status: 'Paid', date: '2024-07-17', paymentMethod: 'Online' },
+  { id: 'FPT006', customerName: 'Fiona Green', amount: 112.30, status: 'Pending', date: '2024-07-16', paymentMethod: 'Cash' },
+  { id: 'FPT010', customerName: 'Julia Wilson', amount: 289.80, status: 'Cancelled', date: '2024-07-12', paymentMethod: 'Online' },
 ];
 
-export default function SalesAnalyticsScreen() {
-  const navigation = useNavigation();
-  const [activeFilter, setActiveFilter] = useState<'Date' | 'Customer' | 'Status' | 'Amount'>('Date');
+export default function SalesAnalyticsScreen({ route }: any) {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  
+  // Initialize bills state with the sample data
+  const [billsData, setBillsData] = useState<Bill[]>(bills);
+  
+  // Check if we have an updated bill from the detail screen
+  React.useEffect(() => {
+    if (route.params?.updatedBill) {
+      const updatedBill = route.params.updatedBill;
+      // Update the bills array with the updated bill
+      setBillsData(prevBills => {
+        return prevBills.map(bill => 
+          bill.id === updatedBill.id ? updatedBill : bill
+        );
+      });
+      // Clear the route params to prevent re-updating on re-renders
+      navigation.setParams({ updatedBill: undefined });
+    }
+  }, [route.params?.updatedBill, navigation]);
+  
+  const [activeFilter, setActiveFilter] = useState<'Date' | 'Customer' | 'Status' | 'Amount' | 'Payment'>('Date');
   const [searchQuery, setSearchQuery] = useState('');
   const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Paid', 'Pending', 'Cancelled']);
@@ -39,6 +61,8 @@ export default function SalesAnalyticsScreen() {
   const [amountRange, setAmountRange] = useState({ min: '', max: '' });
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [showPaymentFilter, setShowPaymentFilter] = useState(false);
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>(['Cash', 'Online']);
 
   const getStatusBadgeStyle = (status: string) => {
     switch (status) {
@@ -89,7 +113,7 @@ export default function SalesAnalyticsScreen() {
 
   // Enhanced filtering and sorting logic
   const processedBills = useMemo(() => {
-    let filtered = [...bills];
+    let filtered = [...billsData];
 
     // Filter by search query (name and bill ID)
     if (searchQuery.trim()) {
@@ -102,6 +126,9 @@ export default function SalesAnalyticsScreen() {
 
     // Filter by selected statuses
     filtered = filtered.filter(bill => selectedStatuses.includes(bill.status));
+
+    // Filter by selected payment methods
+    filtered = filtered.filter(bill => selectedPaymentMethods.includes(bill.paymentMethod));
 
     // Filter by amount range
     if (amountRange.min || amountRange.max) {
@@ -136,22 +163,27 @@ export default function SalesAnalyticsScreen() {
       case 'Amount':
         filtered.sort((a, b) => b.amount - a.amount);
         break;
+      case 'Payment':
+        filtered.sort((a, b) => a.paymentMethod.localeCompare(b.paymentMethod));
+        break;
     }
 
     return filtered;
-  }, [activeFilter, searchQuery, selectedStatuses, amountRange, dateRange]);
+  }, [activeFilter, searchQuery, selectedStatuses, amountRange, dateRange,selectedPaymentMethods]);
 
   const clearAllFilters = () => {
     setSearchQuery('');
     setSelectedStatuses(['Paid', 'Pending', 'Cancelled']);
     setAmountRange({ min: '', max: '' });
     setDateRange({ start: '', end: '' });
+    setSelectedPaymentMethods(['Cash', 'Online']);
   };
 
   const getActiveFiltersCount = () => {
     let count = 0;
     if (searchQuery.trim()) count++;
     if (selectedStatuses.length < 3) count++;
+    if (selectedPaymentMethods.length < 2) count++;
     if (amountRange.min || amountRange.max) count++;
     if (dateRange.start || dateRange.end) count++;
     return count;
@@ -202,6 +234,19 @@ export default function SalesAnalyticsScreen() {
     </Text>
   </TouchableOpacity>
 
+  {/* Payment Method → opens Payment modal */}
+  <TouchableOpacity
+    style={[styles.filterButton, activeFilter === 'Payment' && styles.filterButtonActive]}
+    onPress={() => {
+      setActiveFilter('Payment');
+      setShowPaymentFilter(true); // 👈 open payment filter modal
+    }}
+  >
+    <Text style={[styles.filterText, activeFilter === 'Payment' && styles.filterTextActive]}>
+      💳 Payment ({selectedPaymentMethods.length}/2)
+    </Text>
+  </TouchableOpacity>
+
   {/* Amount → opens Amount modal */}
   <TouchableOpacity
     style={[styles.filterButton, activeFilter === 'Amount' && styles.filterButtonActive]}
@@ -234,7 +279,7 @@ export default function SalesAnalyticsScreen() {
               <TouchableOpacity
                 key={bill.id}
                 style={styles.billItem}
-                onPress={() => {/* Navigate to bill details */}}
+                onPress={() => navigation.navigate('SalesDetail', { bill })}
               >
                 <View style={styles.billHeader}>
                   <Text style={styles.billId}>Bill ID: {bill.id}</Text>
@@ -242,18 +287,28 @@ export default function SalesAnalyticsScreen() {
                 </View>
 
                 <View style={styles.billContent}>
-                  <View>
-                    <Text style={styles.customerName}>{bill.customerName}</Text>
+                <View>
+                  <Text style={styles.customerName}>{bill.customerName}</Text>
+                  <View style={styles.badgeContainer}>
                     <View style={[styles.statusBadge, getStatusBadgeStyle(bill.status)]}>
                       <Text style={getStatusTextStyle(bill.status)}>
                         {getStatusEmoji(bill.status)} {bill.status}
                       </Text>
                     </View>
+                    <View style={[styles.paymentBadge, bill.paymentMethod === 'Cash' ? styles.cashBadge : styles.onlineBadge]}>
+                      <Text style={bill.paymentMethod === 'Cash' ? styles.cashText : styles.onlineText}>
+                        {bill.paymentMethod === 'Cash' ? '💵' : '💳'} {bill.paymentMethod}
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={styles.amount}>₹{bill.amount.toFixed(2)}</Text>
                 </View>
+                <Text style={styles.amount}>₹{bill.amount.toFixed(2)}</Text>
+              </View>
 
-                <TouchableOpacity style={styles.viewDetails}>
+                <TouchableOpacity 
+                  style={styles.viewDetails}
+                  onPress={() => navigation.navigate('SalesDetail', { bill })}
+                >
                   <Text style={styles.viewDetailsText}>View Details 👉</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
@@ -383,6 +438,47 @@ export default function SalesAnalyticsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Payment Method Filter Modal */}
+      <Modal visible={showPaymentFilter} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Filter by Payment Method</Text>
+            
+            {['Cash', 'Online'].map(method => (
+              <TouchableOpacity
+                key={method}
+                style={styles.checkboxItem}
+                onPress={() => {
+                  setSelectedPaymentMethods(prev => 
+                    prev.includes(method) 
+                      ? prev.filter(m => m !== method)
+                      : [...prev, method]
+                  );
+                }}
+              >
+                <View style={styles.checkbox}>
+                  {selectedPaymentMethods.includes(method) && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </View>
+                <Text style={styles.checkboxLabel}>
+                  {method === 'Cash' ? '💵' : '💳'} {method}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowPaymentFilter(false)}
+              >
+                <Text style={styles.modalButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -463,9 +559,15 @@ const styles = StyleSheet.create({
   paidBadge: { backgroundColor: '#E8F5E9' },
   pendingBadge: { backgroundColor: '#FFF3E0' },
   cancelledBadge: { backgroundColor: '#FFEBEE' },
+  cashBadge: { backgroundColor: '#E3F2FD' },
+  onlineBadge: { backgroundColor: '#E8F5E9' },
   paidText: { fontSize: 12, fontWeight: '600', color: '#2E7D32' },
   pendingText: { fontSize: 12, fontWeight: '600', color: '#EF6C00' },
   cancelledText: { fontSize: 12, fontWeight: '600', color: '#C62828' },
+  cashText: { fontSize: 12, fontWeight: '600', color: '#1565C0' },
+  onlineText: { fontSize: 12, fontWeight: '600', color: '#2E7D32' },
+  badgeContainer: { flexDirection: 'row', gap: 8 },
+  paymentBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
   amount: { fontSize: 18, fontWeight: '700', color: '#0066FF' },
   viewDetails: { alignSelf: 'flex-end' },
   viewDetailsText: { color: '#0066FF', fontSize: 14, fontWeight: '600' },
