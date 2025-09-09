@@ -18,9 +18,11 @@ interface SalesDetailScreenProps {
         id: string;
         customerName: string;
         amount: number;
-        status: 'Paid' | 'Pending' | 'Cancelled';
+        status: 'Paid' | 'Pending';
         date: string;
         paymentMethod: 'Cash' | 'Online';
+        advanceAmount?: number;
+        pendingAmount?: number;
       };
     };
   };
@@ -30,6 +32,23 @@ export default function SalesDetailScreen() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const { bill } = route.params as SalesDetailScreenProps['route']['params'];
+  
+  // Calculate advance and pending amounts if not provided
+  const advanceAmount = bill.advanceAmount || (bill.status === 'Paid' ? bill.amount : bill.amount * 0.3);
+  const pendingAmount = bill.pendingAmount || (bill.status === 'Paid' ? 0 : bill.amount * 0.7);
+  
+  const handleMarkAsPaid = () => {
+    // Create a new bill object with updated status and settled amounts
+    const updatedBill = {
+      ...bill,
+      status: 'Paid',
+      advanceAmount: bill.amount, // Full amount is now paid
+      pendingAmount: 0, // No pending amount
+    };
+    
+    // Navigate back to the analytics screen with the updated bill
+    navigation.navigate('SalesAnalytics', { updatedBill });
+  };
 
   const getStatusBadgeStyle = (status: string) => {
     switch (status) {
@@ -37,8 +56,6 @@ export default function SalesDetailScreen() {
         return styles.paidBadge;
       case 'Pending':
         return styles.pendingBadge;
-      case 'Cancelled':
-        return styles.cancelledBadge;
       default:
         return {};
     }
@@ -50,8 +67,6 @@ export default function SalesDetailScreen() {
         return styles.paidText;
       case 'Pending':
         return styles.pendingText;
-      case 'Cancelled':
-        return styles.cancelledText;
       default:
         return {};
     }
@@ -63,8 +78,6 @@ export default function SalesDetailScreen() {
         return '✅';
       case 'Pending':
         return '⏳';
-      case 'Cancelled':
-        return '❌';
       default:
         return '📝';
     }
@@ -118,8 +131,16 @@ export default function SalesDetailScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Payment Information</Text>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Amount:</Text>
+              <Text style={styles.infoLabel}>Total Amount:</Text>
               <Text style={styles.amountValue}>₹{bill.amount.toFixed(2)}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Advance Amount:</Text>
+              <Text style={styles.advanceValue}>₹{advanceAmount.toFixed(2)}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Pending Amount:</Text>
+              <Text style={styles.pendingValue}>₹{pendingAmount.toFixed(2)}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Payment Method:</Text>
@@ -140,6 +161,7 @@ export default function SalesDetailScreen() {
           <TouchableOpacity 
             style={[styles.actionButton, bill.status === 'Pending' ? styles.primaryButton : styles.disabledButton]}
             disabled={bill.status !== 'Pending'}
+            onPress={handleMarkAsPaid}
           >
             <Text style={[styles.actionButtonText, bill.status === 'Pending' ? styles.primaryButtonText : styles.disabledButtonText]}>
               Mark as Paid
@@ -226,6 +248,16 @@ const styles = StyleSheet.create({
     color: '#0066FF',
     fontWeight: '700',
   },
+  advanceValue: {
+    fontSize: 16,
+    color: '#2E7D32',
+    fontWeight: '700',
+  },
+  pendingValue: {
+    fontSize: 16,
+    color: '#EF6C00',
+    fontWeight: '700',
+  },
   divider: {
     height: 1,
     backgroundColor: '#E5E5E5',
@@ -238,12 +270,10 @@ const styles = StyleSheet.create({
   },
   paidBadge: { backgroundColor: '#E8F5E9' },
   pendingBadge: { backgroundColor: '#FFF3E0' },
-  cancelledBadge: { backgroundColor: '#FFEBEE' },
   cashBadge: { backgroundColor: '#E3F2FD' },
   onlineBadge: { backgroundColor: '#E8F5E9' },
   paidText: { fontSize: 12, fontWeight: '600', color: '#2E7D32' },
   pendingText: { fontSize: 12, fontWeight: '600', color: '#EF6C00' },
-  cancelledText: { fontSize: 12, fontWeight: '600', color: '#C62828' },
   cashText: { fontSize: 12, fontWeight: '600', color: '#1565C0' },
   onlineText: { fontSize: 12, fontWeight: '600', color: '#2E7D32' },
   paymentBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },

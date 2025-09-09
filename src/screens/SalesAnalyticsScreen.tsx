@@ -17,7 +17,7 @@ interface Bill {
   id: string;
   customerName: string;
   amount: number;
-  status: 'Paid' | 'Pending' | 'Cancelled';
+  status: 'Paid' | 'Pending';
   date: string;
   paymentMethod: 'Cash' | 'Online';
 }
@@ -26,10 +26,8 @@ const bills: Bill[] = [
   { id: 'FPT001', customerName: 'Alice Johnson', amount: 150.75, status: 'Paid', date: '2024-07-20', paymentMethod: 'Online' },
   { id: 'FPT002', customerName: 'Bob Williams', amount: 89.90, status: 'Pending', date: '2024-07-19', paymentMethod: 'Cash' },
   { id: 'FPT003', customerName: 'Charlie Davis', amount: 230.00, status: 'Paid', date: '2024-07-18', paymentMethod: 'Online' },
-  { id: 'FPT004', customerName: 'Diana Miller', amount: 45.50, status: 'Cancelled', date: '2024-07-18', paymentMethod: 'Cash' },
   { id: 'FPT005', customerName: 'Ethan White', amount: 320.40, status: 'Paid', date: '2024-07-17', paymentMethod: 'Online' },
   { id: 'FPT006', customerName: 'Fiona Green', amount: 112.30, status: 'Pending', date: '2024-07-16', paymentMethod: 'Cash' },
-  { id: 'FPT010', customerName: 'Julia Wilson', amount: 289.80, status: 'Cancelled', date: '2024-07-12', paymentMethod: 'Online' },
 ];
 
 export default function SalesAnalyticsScreen({ route }: any) {
@@ -56,7 +54,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
   const [activeFilter, setActiveFilter] = useState<'Date' | 'Customer' | 'Status' | 'Amount' | 'Payment'>('Date');
   const [searchQuery, setSearchQuery] = useState('');
   const [showStatusFilter, setShowStatusFilter] = useState(false);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Paid', 'Pending', 'Cancelled']);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Paid', 'Pending']);
   const [showAmountFilter, setShowAmountFilter] = useState(false);
   const [amountRange, setAmountRange] = useState({ min: '', max: '' });
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -70,8 +68,6 @@ export default function SalesAnalyticsScreen({ route }: any) {
         return styles.paidBadge;
       case 'Pending':
         return styles.pendingBadge;
-      case 'Cancelled':
-        return styles.cancelledBadge;
       default:
         return {};
     }
@@ -83,8 +79,6 @@ export default function SalesAnalyticsScreen({ route }: any) {
         return styles.paidText;
       case 'Pending':
         return styles.pendingText;
-      case 'Cancelled':
-        return styles.cancelledText;
       default:
         return {};
     }
@@ -96,8 +90,6 @@ export default function SalesAnalyticsScreen({ route }: any) {
         return '✅';
       case 'Pending':
         return '⏳';
-      case 'Cancelled':
-        return '❌';
       default:
         return '📝';
     }
@@ -157,7 +149,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
         filtered.sort((a, b) => a.customerName.localeCompare(b.customerName));
         break;
       case 'Status':
-        const statusOrder = { Paid: 1, Pending: 2, Cancelled: 3 };
+        const statusOrder = { Paid: 1, Pending: 2 };
         filtered.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
         break;
       case 'Amount':
@@ -173,7 +165,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
 
   const clearAllFilters = () => {
     setSearchQuery('');
-    setSelectedStatuses(['Paid', 'Pending', 'Cancelled']);
+    setSelectedStatuses(['Paid', 'Pending']);
     setAmountRange({ min: '', max: '' });
     setDateRange({ start: '', end: '' });
     setSelectedPaymentMethods(['Cash', 'Online']);
@@ -182,7 +174,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
   const getActiveFiltersCount = () => {
     let count = 0;
     if (searchQuery.trim()) count++;
-    if (selectedStatuses.length < 3) count++;
+    if (selectedStatuses.length < 2) count++;
     if (selectedPaymentMethods.length < 2) count++;
     if (amountRange.min || amountRange.max) count++;
     if (dateRange.start || dateRange.end) count++;
@@ -230,7 +222,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
     }}
   >
     <Text style={[styles.filterText, activeFilter === 'Status' && styles.filterTextActive]}>
-      🔄 Status ({selectedStatuses.length}/3)
+      🔄 Status ({selectedStatuses.length}/2)
     </Text>
   </TouchableOpacity>
 
@@ -328,7 +320,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Filter by Status</Text>
             
-            {['Paid', 'Pending', 'Cancelled'].map(status => (
+            {['Paid', 'Pending'].map(status => (
               <TouchableOpacity
                 key={status}
                 style={styles.checkboxItem}
@@ -558,12 +550,10 @@ const styles = StyleSheet.create({
   statusBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
   paidBadge: { backgroundColor: '#E8F5E9' },
   pendingBadge: { backgroundColor: '#FFF3E0' },
-  cancelledBadge: { backgroundColor: '#FFEBEE' },
   cashBadge: { backgroundColor: '#E3F2FD' },
   onlineBadge: { backgroundColor: '#E8F5E9' },
   paidText: { fontSize: 12, fontWeight: '600', color: '#2E7D32' },
   pendingText: { fontSize: 12, fontWeight: '600', color: '#EF6C00' },
-  cancelledText: { fontSize: 12, fontWeight: '600', color: '#C62828' },
   cashText: { fontSize: 12, fontWeight: '600', color: '#1565C0' },
   onlineText: { fontSize: 12, fontWeight: '600', color: '#2E7D32' },
   badgeContainer: { flexDirection: 'row', gap: 8 },

@@ -7,7 +7,7 @@ export type RootStackParamList = {
       BillDetailsScreen: undefined;
       PaymentScreen: undefined;
       SalesAnalytics: { updatedBill?: any };
-      SalesDetail: { bill: { id: string; customerName: string; amount: number; status: 'Paid' | 'Pending' | 'Cancelled'; date: string; paymentMethod: 'Cash' | 'Online'; advanceAmount?: number; pendingAmount?: number; } };
+      SalesDetail: { bill: { id: string; customerName: string; amount: number; status: 'Paid' | 'Pending'; date: string; paymentMethod: 'Cash' | 'Online'; advanceAmount?: number; pendingAmount?: number; } };
     };
 
     export type RootTabParamList = {
