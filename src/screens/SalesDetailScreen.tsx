@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -37,7 +37,12 @@ export default function SalesDetailScreen() {
   const advanceAmount = bill.advanceAmount || (bill.status === 'Paid' ? bill.amount : bill.amount * 0.3);
   const pendingAmount = bill.pendingAmount || (bill.status === 'Paid' ? 0 : bill.amount * 0.7);
   
+  const [showSettlementInfo, setShowSettlementInfo] = useState(false);
+
   const handleMarkAsPaid = () => {
+    // Show settlement info
+    setShowSettlementInfo(true);
+    
     // Create a new bill object with updated status and settled amounts
     const updatedBill = {
       ...bill,
@@ -46,8 +51,10 @@ export default function SalesDetailScreen() {
       pendingAmount: 0, // No pending amount
     };
     
-    // Navigate back to the analytics screen with the updated bill
-    navigation.navigate('SalesAnalytics', { updatedBill });
+    // Navigate back to the analytics screen with the updated bill after a short delay
+    setTimeout(() => {
+      navigation.navigate('SalesAnalytics', { updatedBill });
+    }, 2000); // 2 second delay to show the settlement info
   };
 
   const getStatusBadgeStyle = (status: string) => {
@@ -169,6 +176,24 @@ export default function SalesDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Settlement Info Overlay */}
+      {showSettlementInfo && (
+        <View style={styles.settlementOverlay}>
+          <View style={styles.settlementCard}>
+            <Text style={styles.settlementTitle}>Payment Complete! ✅</Text>
+            <Text style={styles.settlementText}>All settlement has been paid</Text>
+            <View style={styles.settlementDetails}>
+              <Text style={styles.settlementLabel}>Total Amount:</Text>
+              <Text style={styles.settlementValue}>₹{bill.amount.toFixed(2)}</Text>
+            </View>
+            <View style={styles.settlementDetails}>
+              <Text style={styles.settlementLabel}>Status:</Text>
+              <Text style={styles.settlementPaidStatus}>Paid</Text>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -304,8 +329,69 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: '#F5F5F5',
     opacity: 0.5,
+    color: '#999999',
   },
   disabledButtonText: {
     color: '#999999',
   },
+  settlementOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  settlementCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '80%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  settlementTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  settlementText: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  settlementDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 8,
+  },
+  settlementLabel: {
+    fontSize: 16,
+    color: '#666666',
+  },
+  settlementValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0066FF',
+  },
+  settlementPaidStatus: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+  },
+ 
+ 
+  
+  
 });

@@ -484,8 +484,8 @@ const styles = StyleSheet.create({
   filterSection: { padding: 16, backgroundColor: '#F9F9F9' },
   filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   filterTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A' },
-  clearButton: { padding: 4 },
-  clearButtonText: { color: '#FF4444', fontSize: 12, fontWeight: '600' },
+  clearButton: { padding: 4,  },
+  clearButtonText: { color: '#FF4444', fontSize: 15, fontWeight: '900'  },
   
   searchInput: {
     marginBottom: 8,
