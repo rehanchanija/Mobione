@@ -30,7 +30,7 @@ const ProfileScreen = ({ navigation }: { navigation: NativeStackNavigationProp<a
   const [tempShopAddress, setTempShopAddress] = useState(shopAddress);
   const [tempOwnerName, setTempOwnerName] = useState(ownerName);
   const [tempShopImage, setTempShopImage] = useState<string | null>(shopImage);
-
+const [tempOwnerPhone, setTempOwnerPhone] = useState("");
   const handleBack = () => {
     if (navigation && navigation.goBack) {
       navigation.goBack();
@@ -59,6 +59,7 @@ const ProfileScreen = ({ navigation }: { navigation: NativeStackNavigationProp<a
     setShopAddress(tempShopAddress);
     setOwnerName(tempOwnerName);
     setShopImage(tempShopImage);
+    setTempOwnerPhone(tempOwnerPhone);
     setModalVisible(false);
     Alert.alert("Success", "Shop details updated successfully!");
   };
@@ -99,7 +100,7 @@ const ProfileScreen = ({ navigation }: { navigation: NativeStackNavigationProp<a
       </View>
 
       <ScrollView 
-        contentContainerStyle={{ paddingBottom: 30 }}
+        contentContainerStyle={{ paddingBottom: 30,padding:20 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Shop Info Card */}
@@ -118,6 +119,7 @@ const ProfileScreen = ({ navigation }: { navigation: NativeStackNavigationProp<a
           <Text style={styles.companyAddress}>{shopAddress}</Text>
           <View style={styles.ownerContainer}>
             <Text style={styles.ownerBadge}>👑 Owner: {ownerName}</Text>
+            
           </View>
         </TouchableOpacity>
 
@@ -231,6 +233,18 @@ const ProfileScreen = ({ navigation }: { navigation: NativeStackNavigationProp<a
                     placeholderTextColor="#9CA3AF"
                   />
                 </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>📞 Contact Number</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={tempOwnerPhone}
+                    onChangeText={setTempOwnerPhone}
+                    placeholder="Enter contact number"
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
 
                 <View style={styles.modalButtonContainer}>
                   <TouchableOpacity 
@@ -280,6 +294,7 @@ const ProfileScreen = ({ navigation }: { navigation: NativeStackNavigationProp<a
                 <Text style={styles.previewName}>{tempShopName}</Text>
                 <Text style={styles.previewAddress}>{tempShopAddress}</Text>
                 <Text style={styles.previewOwner}>👑 Owner: {tempOwnerName}</Text>
+                <Text style={styles.previewOwner}>📞 Contact: {tempOwnerPhone}</Text>
               </View>
               
               <TouchableOpacity 
@@ -303,8 +318,7 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: "#F9FAFB",
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    paddingRight:24,
-    paddingLeft:24
+   
   },
   
   // Custom Header Styles
@@ -576,6 +590,7 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontSize: 14,
     fontWeight: "500",
+    textAlign:'center'
   },
   
   // Input Styles
