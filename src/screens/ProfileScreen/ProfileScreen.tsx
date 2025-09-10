@@ -1,5 +1,4 @@
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from "react";
 import {
   View,
@@ -11,13 +10,22 @@ import {
   TextInput,
   Image,
   Modal,
-  Button,
   StatusBar,
   Platform,
   Alert,
 } from "react-native";
 import * as ImagePicker from "react-native-image-picker";
-const ProfileScreen = ({ navigation }: { navigation: NativeStackNavigationProp<any> }) => {
+const ProfileScreen = () => {
+    const navigation = useNavigation();
+    const screens = [
+  { title: "Staff Management", description: "Manage roles, permissions and staff accounts", screen: "StaffManagement" },
+  { title: "Sales Reports", description: "View detailed sales analytics and reports", screen: "SalesReport" },
+  { title: "Transaction History", description: "View all transaction records and details", screen: "TransactionHistory" },
+  { title: "Inventory Management", description: "Track and manage your product inventory", screen: "InventoryManagement" },
+  { title: "App Settings", description: "Configure app preferences & notifications", screen: "AppSettings" },
+  { title: "Help & Support", description: "Get help, contact support or view FAQs", screen: "HelpSupport" },
+];
+
   const [modalVisible, setModalVisible] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [shopName, setShopName] = useState("My Mobile Store");
@@ -31,13 +39,7 @@ const ProfileScreen = ({ navigation }: { navigation: NativeStackNavigationProp<a
   const [tempOwnerName, setTempOwnerName] = useState(ownerName);
   const [tempShopImage, setTempShopImage] = useState<string | null>(shopImage);
 const [tempOwnerPhone, setTempOwnerPhone] = useState("");
-  const handleBack = () => {
-    if (navigation && navigation.goBack) {
-      navigation.goBack();
-    } else {
-      Alert.alert("Back", "Navigation back functionality");
-    }
-  };
+
 
   const pickImage = () => {
     ImagePicker.launchImageLibrary(
@@ -88,7 +90,7 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
       
       {/* Custom Header with Back Button */}
       <View style={styles.customHeader}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -124,18 +126,11 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
         </TouchableOpacity>
 
         {/* Navigation Items */}
-        {[
-          "Staff Management", 
-          "Sales Reports", 
-          "Transaction History",
-          "Inventory Management", 
-          "App Settings", 
-          "Help & Support"
-        ].map((item, i) => (
+        {screens.map((item, i) => (
           <TouchableOpacity 
             style={styles.navItem} 
             key={i}
-            onPress={() => Alert.alert(item, `Navigate to ${item}`)}
+    onPress={() => navigation.navigate(item.screen as never)}
           >
             <View style={styles.emojiBox}>
               <Text style={styles.emoji}>
@@ -143,16 +138,9 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
               </Text>
             </View>
             <View style={styles.navTextContainer}>
-              <Text style={styles.navTitle}>{item}</Text>
+              <Text style={styles.navTitle}>{item.title}</Text>
               <Text style={styles.navDescription}>
-                {[
-                  "Manage roles, permissions and staff accounts",
-                  "View detailed sales analytics and reports",
-                  "View all transaction records and details",
-                  "Track and manage your product inventory",
-                  "Configure app preferences & notifications",
-                  "Get help, contact support or view FAQs",
-                ][i]}
+                {item.description}
               </Text>
             </View>
             <Text style={styles.navChevron}>›</Text>
