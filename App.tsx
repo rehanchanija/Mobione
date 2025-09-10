@@ -18,7 +18,7 @@ const App = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="MainTabs" component={TabNavigator} />
-          <Stack.Screen name="Profile" component={ProfileStack} />  
+        <Stack.Screen name="Profile" component={ProfileStack} />
 
       </Stack.Navigator>
     </NavigationContainer>

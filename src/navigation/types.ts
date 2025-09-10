@@ -11,6 +11,11 @@ export type RootStackParamList = {
       Profile: undefined;
       SalesReport: undefined;
       Settings: undefined;
+      StaffManagement: undefined;
+      TransactionHistory: undefined;
+      InventoryManagement: undefined;
+      AppSettings: undefined;
+      HelpSupport: undefined;
     };
 
     export type RootTabParamList = {

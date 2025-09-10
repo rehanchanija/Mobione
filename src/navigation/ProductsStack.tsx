@@ -13,9 +13,9 @@ export default function ProductsStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Products" component={ProductsScreen}
-    // options={{
-    //       headerShown: false, // 👈 hide default header
-    //     }}
+    options={{
+          headerShown: false, // 👈 hide default header
+        }}
    />
       <Stack.Screen
         name="CreateProduct"

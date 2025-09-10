@@ -21,7 +21,6 @@ const ProfileScreen = () => {
   { title: "Staff Management", description: "Manage roles, permissions and staff accounts", screen: "StaffManagement" },
   { title: "Sales Reports", description: "View detailed sales analytics and reports", screen: "SalesReport" },
   { title: "Transaction History", description: "View all transaction records and details", screen: "TransactionHistory" },
-  { title: "Inventory Management", description: "Track and manage your product inventory", screen: "InventoryManagement" },
   { title: "App Settings", description: "Configure app preferences & notifications", screen: "AppSettings" },
   { title: "Help & Support", description: "Get help, contact support or view FAQs", screen: "HelpSupport" },
 ];
@@ -134,7 +133,7 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
           >
             <View style={styles.emojiBox}>
               <Text style={styles.emoji}>
-                {["👥", "📊", "💳", "📦", "⚙️", "💬"][i]}
+                {["👥", "📊", "💳", "⚙️", "💬"][i]}
               </Text>
             </View>
             <View style={styles.navTextContainer}>
