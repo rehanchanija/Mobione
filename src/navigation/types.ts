@@ -9,6 +9,7 @@ export type RootStackParamList = {
       SalesAnalytics: { updatedBill?: any };
       SalesDetail: { bill: { id: string; customerName: string; amount: number; status: 'Paid' | 'Pending'; date: string; paymentMethod: 'Cash' | 'Online'; advanceAmount?: number; pendingAmount?: number; } };
       Profile: undefined;
+      SalesReport: undefined;
       Settings: undefined;
     };
 
