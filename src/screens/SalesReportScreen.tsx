@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { LineChart } from 'react-native-chart-kit'; 
+import { LineChart } from 'react-native-chart-kit';
 
 interface SalesData {
   totalSales: number;
@@ -166,7 +166,7 @@ const SalesReportScreen = () => {
         horizontal 
         showsHorizontalScrollIndicator={false}
         style={styles.filterContainer}
-        contentContainerStyle={{ paddingRight: 20 }}
+        contentContainerStyle={styles.filterContent}
       >
         <FilterTab 
           title="Today" 
@@ -308,12 +308,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#f3f4f6b2',
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   backArrow: {
-    fontSize: 24,
+    fontSize: 20,
     color: '#374151',
     fontWeight: 'bold',
   },
@@ -322,59 +322,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: '#111827',
   },
   filterContainer: {
-    marginVertical: 8,
-    paddingHorizontal: 22,
-    paddingBottom:24
+    marginBottom: 20,
+  },
+  filterContent: {
+    paddingHorizontal: 24,
   },
   filterTab: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: "#fff",
-    borderRadius: 25,
+    backgroundColor: '#fff',
+    borderRadius: 12,
     marginRight: 12,
-    minWidth: 120,
-    height: 44,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    elevation: 1,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
   },
   filterTabActive: {
-    backgroundColor: "#6a5acd",
-    borderColor: "#6a5acd",
+    backgroundColor: '#6a5acd',
   },
   filterEmoji: {
-    width: 16,
-    height: 16,
+    fontSize: 16,
     marginRight: 6,
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  filterEmojiActive: {
-    color: "#fff",
   },
   filterText: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    flex: 1,
+    fontWeight: '600',
+    color: '#374151',
   },
   filterTextActive: {
-    color: "#fff",
+    color: '#fff',
   },
-
   container: {
-    paddingHorizontal: 22,
+    flex: 1,
+    paddingHorizontal: 24,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -395,7 +384,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   statIcon: {
-    fontSize: 28,
+    fontSize: 24,
     marginBottom: 8,
   },
   statTitle: {
