@@ -3,6 +3,10 @@ export type RootStackParamList = {
       MainTabs: undefined;
       CreateProduct: undefined;
       Products: undefined;
+      ProductList: {
+        brand: string;
+        products: any[];
+      };
       CustomerDetailsScreen: undefined;
       BillDetailsScreen: undefined;
       PaymentScreen: undefined;
