@@ -109,128 +109,113 @@ export default function ProductsScreen() {
       </View>
 
       {/* Stock Update Modal */}
-    {/* Stock Update Modal */}
-<Modal
-  animationType="slide"
-  transparent={true}
-  visible={isModalVisible}
-  onRequestClose={() => setIsModalVisible(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>📦 Update Stock</Text>
-      {selectedProduct && (
-        <View>
-          <Text style={styles.modalText}>
-            <Text style={styles.label}>Product: </Text>
-            {selectedProduct.name}
-          </Text>
-          <Text style={styles.modalText}>
-            <Text style={styles.label}>Current Stock: </Text>
-            {selectedProduct.stock}
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter stock quantity to add"
-            keyboardType="numeric"
-            value={stockQuantity}
-            onChangeText={setStockQuantity}
-          />
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={() => {
-                setIsModalVisible(false);
-                setStockQuantity("");
-              }}
-            >
-              <Text style={styles.buttonText}>✖ Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.updateButton]}
-              onPress={() => {
-                if (!stockQuantity.trim()) {
-                  Alert.alert("Error", "Please enter a valid quantity");
-                  return;
-                }
-                const quantity = parseInt(stockQuantity);
-                if (isNaN(quantity) || quantity < 0) {
-                  Alert.alert("Error", "Please enter a valid quantity");
-                  return;
-                }
-
-                const currentStock = parseInt(
-                  selectedProduct?.stock.split(" ")[0] || "0"
-                );
-                const updatedQuantity = currentStock + quantity;
-
-                const newStatus =
-                  updatedQuantity === 0
-                    ? "Out of Stock"
-                    : updatedQuantity <= 5
-                    ? "Low Stock"
-                    : "In Stock";
-
-                const updatedProducts = products.map((p) =>
-                  p.id === selectedProduct?.id
-                    ? {
-                        ...p,
-                        stock: `${updatedQuantity} available`,
-                        status: newStatus,
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Update Stock</Text>
+            {selectedProduct && (
+              <View>
+                <Text style={styles.modalText}>
+                  Product: {selectedProduct.name}
+                </Text>
+                <Text style={styles.modalText}>
+                  Current Stock: {selectedProduct.stock}
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter new stock quantity"
+                  keyboardType="numeric"
+                  value={stockQuantity}
+                  onChangeText={setStockQuantity}
+                />
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.button, styles.cancelButton]}
+                    onPress={() => {
+                      setIsModalVisible(false);
+                      setStockQuantity("");
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.updateButton]}
+                    onPress={() => {
+                      if (!stockQuantity.trim()) {
+                        Alert.alert("Error", "Please enter a valid quantity");
+                        return;
                       }
-                    : p
-                );
-
-                setProducts(updatedProducts as Product[]);
-                setIsModalVisible(false);
-                setStockQuantity("");
-                Alert.alert("✅ Success", "Stock updated successfully");
-              }}
-            >
-              <Text style={styles.buttonText}>✔ Update</Text>
-            </TouchableOpacity>
+                      const quantity = parseInt(stockQuantity);
+                      if (isNaN(quantity) || quantity < 0) {
+                        Alert.alert("Error", "Please enter a valid quantity");
+                        return;
+                      }
+                      const newStatus = quantity === 0 
+                        ? "Out of Stock" 
+                        : quantity <= 5 
+                        ? "Low Stock" 
+                        : "In Stock";
+                      const updatedProducts = products.map(p =>
+                        p.id === selectedProduct.id
+                          ? {
+                              ...p,
+                              stock: `${quantity} available`,
+                              status: newStatus as "In Stock" | "Low Stock" | "Out of Stock"
+                            }
+                          : p
+                      );
+                      setProducts(updatedProducts);
+                      setIsModalVisible(false);
+                      setStockQuantity("");
+                      Alert.alert("Success", "Stock updated successfully");
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Update</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </View>
         </View>
-      )}
-    </View>
-  </View>
-</Modal>
-
+      </Modal>
 
       {/* Product List */}
-     <FlatList
-  data={filteredProducts}
-  keyExtractor={(item) => item.id}
-  renderItem={({ item }) => (
-    <View style={styles.card}>
-      <Image source={item.image} style={styles.image} />
-      <View style={styles.details}>
-        <Text style={styles.productName}>
-          {item.emoji} {item.name}
-        </Text>
-        <Text style={styles.price}>{item.price}</Text>
-        <Text style={styles.stock}>{item.stock}</Text>
-      </View>
-
-      {/* ✅ Only this badge is clickable now */}
-      <TouchableOpacity
-        style={[
-          styles.badge,
-          item.status === "In Stock"
-            ? styles.inStock
-            : item.status === "Low Stock"
-            ? styles.lowStock
-            : styles.outStock,
-        ]}
-        onPress={() => handleProductPress(item)}
-      >
-        <Text style={styles.badgeText}>{item.status}</Text>
-      </TouchableOpacity>
-    </View>
-  )}
-/>
-
+      <FlatList
+        data={filteredProducts}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            style={styles.card}
+            onPress={() => handleProductPress(item)}
+          >
+            <Image source={item.image} style={styles.image} />
+            <View style={styles.details}>
+              <Text style={styles.productName}>
+                {item.emoji} {item.name}
+              </Text>
+              <Text style={styles.price}>{item.price}</Text>
+              <Text style={styles.stock}>{item.stock}</Text>
+            </View>
+            <View
+              style={[
+                styles.badge,
+                item.status === "In Stock"
+                  ? styles.inStock
+                  : item.status === "Low Stock"
+                  ? styles.lowStock
+                  : styles.outStock,
+              ]}
+            >
+              <Text style={styles.badgeText}>{item.status}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
 
       {/* Floating Add Product Button */}
       <TouchableOpacity
@@ -250,72 +235,57 @@ const styles = StyleSheet.create({
     padding: 15,
     paddingTop: 20,
   },
-modalOverlay: {
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.4)",
-  justifyContent: "center",
-  alignItems: "center",
-},
-modalContent: {
-  backgroundColor: "#fff",
-  borderRadius: 20,
-  padding: 25,
-  width: "85%",
-  shadowColor: "#000",
-  shadowOpacity: 0.2,
-  shadowOffset: { width: 0, height: 4 },
-  shadowRadius: 8,
-  elevation: 6,
-},
-modalTitle: {
-  fontSize: 22,
-  fontWeight: "700",
-  marginBottom: 20,
-  textAlign: "center",
-  color: "#007AFF",
-},
-modalText: {
-  fontSize: 16,
-  marginBottom: 12,
-  color: "#333",
-},
-label: {
-  fontWeight: "700",
-  color: "#111",
-},
-input: {
-  borderWidth: 1,
-  borderColor: "#DDD",
-  borderRadius: 10,
-  padding: 12,
-  marginBottom: 20,
-  fontSize: 15,
-  backgroundColor: "#FAFAFA",
-},
-modalButtons: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  marginTop: 10,
-},
-button: {
-  flex: 1,
-  paddingVertical: 14,
-  borderRadius: 10,
-  marginHorizontal: 6,
-},
-cancelButton: {
-  backgroundColor: "#FF3B30",
-},
-updateButton: {
-  backgroundColor: "#34C759",
-},
-buttonText: {
-  color: "white",
-  textAlign: "center",
-  fontWeight: "600",
-  fontSize: 16,
-},
-
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 20,
+    width: "80%",
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  modalText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  button: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: "#FF3B30",
+  },
+  updateButton: {
+    backgroundColor: "#34C759",
+  },
+  buttonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "600",
+  },
   filterRow: {
     flexDirection: "row",
     justifyContent: "space-around",
