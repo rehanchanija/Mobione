@@ -3,9 +3,9 @@ import ProfileScreen from "../screens/ProfileScreen/ProfileScreen";
 import SalesReportScreen from "../screens/ProfileScreen/SalesReportScreen";
 import StaffManagementScreen from "../screens/ProfileScreen/StaffManagementScreen";
 import TransactionHistoryScreen from "../screens/ProfileScreen/TransactionHistoryScreen";
-import InventoryManagementScreen from "../screens/ProfileScreen/InventoryManagementScreen";
 import AppSettingsScreen from "../screens/ProfileScreen/AppSettingsScreen";
 import HelpSupportScreen from "../screens/ProfileScreen/HelpSupportScreen";
+import NotificationScreen from "../screens/ProfileScreen/NotificationScreen";
 
 export type RootStackParamList = {
   Profile: undefined;
@@ -14,6 +14,7 @@ export type RootStackParamList = {
   TransactionHistory: undefined;
   AppSettings: undefined;
   HelpSupport: undefined;
+  
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

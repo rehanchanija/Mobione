@@ -64,8 +64,7 @@ const TabNavigator = () => {
         headerRight: () => (
           <View style={{ flexDirection: "row", marginRight: 10 }}>
             <TouchableOpacity
-              onPress={() => Alert.alert("Notifications will open")}
-            >
+              onPress={() =>navigation.navigate("Notification" as never)}            >
               <Text style={{ fontSize: 30, marginRight: 18 }}>🔔</Text>
             </TouchableOpacity>
             <TouchableOpacity

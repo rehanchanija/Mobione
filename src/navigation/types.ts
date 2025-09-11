@@ -16,12 +16,12 @@ export type RootStackParamList = {
       InventoryManagement: undefined;
       AppSettings: undefined;
       HelpSupport: undefined;
+      Notification: undefined;
     };
 
     export type RootTabParamList = {
       Home: undefined;
       Products: undefined;
-      Orders: undefined;
       Bills: undefined;
       Billing: undefined;
 

@@ -6,6 +6,7 @@ import SplashScreen from './src/screens/SplashScreen';
 import TabNavigator from './src/navigation/TabNavigator';
 import { RootStackParamList } from './src/navigation/types';
 import ProfileStack from './src/navigation/ProfileStack';
+import NotificationScreen from './src/screens/ProfileScreen/NotificationScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -19,6 +20,9 @@ const App = () => {
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="MainTabs" component={TabNavigator} />
         <Stack.Screen name="Profile" component={ProfileStack} />
+      <Stack.Screen name="Notification" component={NotificationScreen} />
+
+        
 
       </Stack.Navigator>
     </NavigationContainer>

@@ -6,10 +6,24 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-const products = [
+interface Product {
+  id: string;
+  name: string;
+  price: string;
+  stock: string;
+  status: "In Stock" | "Low Stock" | "Out of Stock";
+  image: any;
+  emoji: string;
+  quantity?: number;
+}
+
+const initialProducts: Product[] = [
   {
     id: "1",
     name: "iPhone 14 Pro",
@@ -50,12 +64,21 @@ const products = [
 
 export default function ProductsScreen() {
   const navigation = useNavigation();
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [filter, setFilter] = useState("All");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [stockQuantity, setStockQuantity] = useState("");
 
   const filteredProducts =
     filter === "All"
       ? products
       : products.filter((p) => p.status === filter);
+
+  const handleProductPress = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalVisible(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -85,35 +108,129 @@ export default function ProductsScreen() {
         ))}
       </View>
 
-      {/* Product List */}
-      <FlatList
-        data={filteredProducts}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Image source={item.image} style={styles.image} />
-            <View style={styles.details}>
-              <Text style={styles.productName}>
-                {item.emoji} {item.name}
-              </Text>
-              <Text style={styles.price}>{item.price}</Text>
-              <Text style={styles.stock}>{item.stock}</Text>
-            </View>
-            <View
-              style={[
-                styles.badge,
-                item.status === "In Stock"
-                  ? styles.inStock
-                  : item.status === "Low Stock"
-                  ? styles.lowStock
-                  : styles.outStock,
-              ]}
+      {/* Stock Update Modal */}
+    {/* Stock Update Modal */}
+<Modal
+  animationType="slide"
+  transparent={true}
+  visible={isModalVisible}
+  onRequestClose={() => setIsModalVisible(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>📦 Update Stock</Text>
+      {selectedProduct && (
+        <View>
+          <Text style={styles.modalText}>
+            <Text style={styles.label}>Product: </Text>
+            {selectedProduct.name}
+          </Text>
+          <Text style={styles.modalText}>
+            <Text style={styles.label}>Current Stock: </Text>
+            {selectedProduct.stock}
+          </Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter stock quantity to add"
+            keyboardType="numeric"
+            value={stockQuantity}
+            onChangeText={setStockQuantity}
+          />
+          <View style={styles.modalButtons}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={() => {
+                setIsModalVisible(false);
+                setStockQuantity("");
+              }}
             >
-              <Text style={styles.badgeText}>{item.status}</Text>
-            </View>
+              <Text style={styles.buttonText}>✖ Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.button, styles.updateButton]}
+              onPress={() => {
+                if (!stockQuantity.trim()) {
+                  Alert.alert("Error", "Please enter a valid quantity");
+                  return;
+                }
+                const quantity = parseInt(stockQuantity);
+                if (isNaN(quantity) || quantity < 0) {
+                  Alert.alert("Error", "Please enter a valid quantity");
+                  return;
+                }
+
+                const currentStock = parseInt(
+                  selectedProduct?.stock.split(" ")[0] || "0"
+                );
+                const updatedQuantity = currentStock + quantity;
+
+                const newStatus =
+                  updatedQuantity === 0
+                    ? "Out of Stock"
+                    : updatedQuantity <= 5
+                    ? "Low Stock"
+                    : "In Stock";
+
+                const updatedProducts = products.map((p) =>
+                  p.id === selectedProduct?.id
+                    ? {
+                        ...p,
+                        stock: `${updatedQuantity} available`,
+                        status: newStatus,
+                      }
+                    : p
+                );
+
+                setProducts(updatedProducts as Product[]);
+                setIsModalVisible(false);
+                setStockQuantity("");
+                Alert.alert("✅ Success", "Stock updated successfully");
+              }}
+            >
+              <Text style={styles.buttonText}>✔ Update</Text>
+            </TouchableOpacity>
           </View>
-        )}
-      />
+        </View>
+      )}
+    </View>
+  </View>
+</Modal>
+
+
+      {/* Product List */}
+     <FlatList
+  data={filteredProducts}
+  keyExtractor={(item) => item.id}
+  renderItem={({ item }) => (
+    <View style={styles.card}>
+      <Image source={item.image} style={styles.image} />
+      <View style={styles.details}>
+        <Text style={styles.productName}>
+          {item.emoji} {item.name}
+        </Text>
+        <Text style={styles.price}>{item.price}</Text>
+        <Text style={styles.stock}>{item.stock}</Text>
+      </View>
+
+      {/* ✅ Only this badge is clickable now */}
+      <TouchableOpacity
+        style={[
+          styles.badge,
+          item.status === "In Stock"
+            ? styles.inStock
+            : item.status === "Low Stock"
+            ? styles.lowStock
+            : styles.outStock,
+        ]}
+        onPress={() => handleProductPress(item)}
+      >
+        <Text style={styles.badgeText}>{item.status}</Text>
+      </TouchableOpacity>
+    </View>
+  )}
+/>
+
 
       {/* Floating Add Product Button */}
       <TouchableOpacity
@@ -133,6 +250,72 @@ const styles = StyleSheet.create({
     padding: 15,
     paddingTop: 20,
   },
+modalOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.4)",
+  justifyContent: "center",
+  alignItems: "center",
+},
+modalContent: {
+  backgroundColor: "#fff",
+  borderRadius: 20,
+  padding: 25,
+  width: "85%",
+  shadowColor: "#000",
+  shadowOpacity: 0.2,
+  shadowOffset: { width: 0, height: 4 },
+  shadowRadius: 8,
+  elevation: 6,
+},
+modalTitle: {
+  fontSize: 22,
+  fontWeight: "700",
+  marginBottom: 20,
+  textAlign: "center",
+  color: "#007AFF",
+},
+modalText: {
+  fontSize: 16,
+  marginBottom: 12,
+  color: "#333",
+},
+label: {
+  fontWeight: "700",
+  color: "#111",
+},
+input: {
+  borderWidth: 1,
+  borderColor: "#DDD",
+  borderRadius: 10,
+  padding: 12,
+  marginBottom: 20,
+  fontSize: 15,
+  backgroundColor: "#FAFAFA",
+},
+modalButtons: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  marginTop: 10,
+},
+button: {
+  flex: 1,
+  paddingVertical: 14,
+  borderRadius: 10,
+  marginHorizontal: 6,
+},
+cancelButton: {
+  backgroundColor: "#FF3B30",
+},
+updateButton: {
+  backgroundColor: "#34C759",
+},
+buttonText: {
+  color: "white",
+  textAlign: "center",
+  fontWeight: "600",
+  fontSize: 16,
+},
+
   filterRow: {
     flexDirection: "row",
     justifyContent: "space-around",
