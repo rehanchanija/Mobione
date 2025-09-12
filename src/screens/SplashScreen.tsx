@@ -11,7 +11,7 @@ type Props = { navigation: SplashScreenNavigationProp };
 const SplashScreen: React.FC<Props> = ({ navigation }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.replace('MainTabs'); // Navigate to TabNavigator
+      navigation.replace('AuthScreen'); // Navigate to Authentication Screen
     }, 2000);
 
     return () => clearTimeout(timer);

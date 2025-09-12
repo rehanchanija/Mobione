@@ -1,6 +1,7 @@
 export type RootStackParamList = {
       Splash: undefined;
       MainTabs: undefined;
+      AuthScreen: undefined;
       CreateProduct: undefined;
       Products: undefined;
       ProductList: {

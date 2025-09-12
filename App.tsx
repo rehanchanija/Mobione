@@ -7,6 +7,7 @@ import TabNavigator from './src/navigation/TabNavigator';
 import { RootStackParamList } from './src/navigation/types';
 import ProfileStack from './src/navigation/ProfileStack';
 import NotificationScreen from './src/screens/ProfileScreen/NotificationScreen';
+import AuthScreen from './src/screens/AuthScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -18,6 +19,7 @@ const App = () => {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="AuthScreen" component={AuthScreen} />
         <Stack.Screen name="MainTabs" component={TabNavigator} />
         <Stack.Screen name="Profile" component={ProfileStack} />
       <Stack.Screen name="Notification" component={NotificationScreen} />
