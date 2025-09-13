@@ -222,7 +222,7 @@ const SplashScreen = () => {
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
       <LinearGradient
-        colors={['#667eea', '#764ba2']}
+        colors={['#667eea', '#667eea']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
