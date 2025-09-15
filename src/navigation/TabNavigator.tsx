@@ -20,8 +20,7 @@ const getEmojiIcon = (route: keyof RootTabParamList) => {
       return "🧾";
     case "Bills":
       return "📑";
-    // case "Settings":
-    //   return "⚙️";
+ 
     default:
       return "❓";
   }
@@ -37,8 +36,7 @@ const getHeaderTitle = (route: keyof RootTabParamList) => {
       return "🧾  Create Bill";
     case "Bills":
       return "📑 Sales Analytics";
-    // case "Settings":
-    //   return "⚙️ Settings";
+  
     default:
       return "❓ Screen";
   }

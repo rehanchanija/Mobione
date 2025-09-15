@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import BillingScreen from "../screens/BillingScreen";
+import BillingScreen from "../screens/CreateBillScreen";
 import BillDetailsScreen from "../screens/BillDetailsScreen";
 import CustomerDetailsScreen from "../screens/CustomerDetailsScreen";
 import PaymentScreen from "../screens/PaymentScreen";

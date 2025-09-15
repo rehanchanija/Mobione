@@ -18,7 +18,6 @@ export type RootStackParamList = {
       Settings: undefined;
       StaffManagement: undefined;
       TransactionHistory: undefined;
-      InventoryManagement: undefined;
       AppSettings: undefined;
       HelpSupport: undefined;
       Notification: undefined;

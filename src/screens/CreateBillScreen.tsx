@@ -10,7 +10,10 @@ import {
 } from "react-native";
 import { BillingStackParamList } from "../navigation/BillingStack";
 
-type BillingNavProp = NativeStackNavigationProp<BillingStackParamList, "Billing">;
+type BillingNavProp = NativeStackNavigationProp<
+  BillingStackParamList,
+  "Billing"
+>;
 
 export default function BillingScreen() {
   const navigation = useNavigation<BillingNavProp>();
@@ -30,11 +33,12 @@ export default function BillingScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-
+     
+      
 
       {/* Start New Bill */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Start New Bill</Text>
+        <Text style={styles.sectionTitle}>🚀 Start New Bill</Text>
         <TouchableOpacity style={styles.primaryBtn}>
           <Text style={styles.primaryBtnText}>📷 Scan Barcode</Text>
         </TouchableOpacity>
@@ -45,24 +49,24 @@ export default function BillingScreen() {
 
       {/* Current Bill */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Current Bill</Text>
+        <Text style={styles.sectionTitle}>🧮 Current Bill</Text>
 
         <View style={styles.billItem}>
-          <Text>☕ Espresso Blend Coffee {"\n"}2 x ₹150</Text>
-          <Text>₹300.00</Text>
+          <Text style={styles.billText}>☕ Espresso Blend {"\n"}2 x ₹150</Text>
+          <Text style={styles.billAmount}>₹300.00</Text>
         </View>
         <View style={styles.billItem}>
-          <Text>🥐 Artisan Croissant {"\n"}1 x ₹80</Text>
-          <Text>₹80.00</Text>
+          <Text style={styles.billText}>🥐 Croissant {"\n"}1 x ₹80</Text>
+          <Text style={styles.billAmount}>₹80.00</Text>
         </View>
         <View style={styles.billItem}>
-          <Text>🍊 Fresh Orange Juice {"\n"}1 x ₹120</Text>
-          <Text>₹120.00</Text>
+          <Text style={styles.billText}>🍊 Orange Juice {"\n"}1 x ₹120</Text>
+          <Text style={styles.billAmount}>₹120.00</Text>
         </View>
 
         <View style={styles.billTotal}>
-          <Text style={{ fontWeight: "600" }}>Subtotal:</Text>
-          <Text style={{ fontWeight: "600" }}>₹500.00</Text>
+          <Text style={styles.billTotalText}>Subtotal</Text>
+          <Text style={styles.billTotalText}>₹500.00</Text>
         </View>
 
         <TouchableOpacity
@@ -74,7 +78,7 @@ export default function BillingScreen() {
       </View>
 
       {/* Recent Orders */}
-      <Text style={[styles.sectionTitle, { marginTop: 10 }]}>Recent Orders</Text>
+      <Text style={[styles.sectionTitle, { marginTop: 5 }]}>📋 Recent Orders</Text>
       <View style={styles.filterRow}>
         {["All", "Paid", "Pending"].map((f) => (
           <TouchableOpacity
@@ -106,18 +110,20 @@ export default function BillingScreen() {
           ]}
         >
           <View>
-            <Text style={styles.orderName}>{order.name}</Text>
+            <Text style={styles.orderName}>👤 {order.name}</Text>
             <Text style={styles.orderDetails}>
-              Bill {order.id} • {order.items} items
+              🧾 Bill {order.id} • {order.items} items
             </Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={styles.orderTotal}>₹{order.total}</Text>
             <Text
-              style={{
-                color: order.status === "Paid" ? "green" : "orange",
-                fontWeight: "600",
-              }}
+              style={[
+                styles.orderStatus,
+                {
+                  color: order.status === "Paid" ? "#16a34a" : "#f59e0b",
+                },
+              ]}
             >
               {order.status}
             </Text>
@@ -126,78 +132,87 @@ export default function BillingScreen() {
       ))}
     </ScrollView>
   );
-};
-
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 15 },
+  container: { flex: 1, backgroundColor: "#f9f9f9", padding: 15 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
   },
-  headerTitle: { fontSize: 20, fontWeight: "700" },
-  icon: { fontSize: 20, marginLeft: 15 },
+  headerTitle: { fontSize: 26, fontWeight: "700" }, // bigger font
+  icon: { fontSize: 26 },
   card: {
     backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 25,
-    elevation: 2,
+    padding: 18,
+    borderRadius: 18,
+    marginBottom: 20,
+    elevation: 3,
     shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
-  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12 },
+  sectionTitle: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
   primaryBtn: {
     backgroundColor: "#0066FF",
-    padding: 14,
-    borderRadius: 10,
+    padding: 16,
+    borderRadius: 12,
     marginTop: 10,
     alignItems: "center",
   },
-  primaryBtnText: { color: "#fff", fontWeight: "600" },
+  primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   secondaryBtn: {
-    backgroundColor: "#f1f1f1",
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: "#f3f4f6",
+    padding: 14,
+    borderRadius: 12,
     marginTop: 10,
     alignItems: "center",
   },
-  secondaryBtnText: { color: "#333", fontWeight: "600" },
+  secondaryBtnText: { color: "#333", fontWeight: "600", fontSize: 15 },
   billItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 8, // more spacing between items
+    marginVertical: 10,
   },
+  billText: { fontSize: 16 },
+  billAmount: { fontWeight: "600", fontSize: 16 },
   billTotal: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 15,
+    borderTopWidth: 1,
+    borderColor: "#eee",
+    paddingTop: 8,
   },
+  billTotalText: { fontWeight: "700", fontSize: 17 },
   filterRow: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 15,
     marginTop: 5,
   },
   filterBtn: {
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 6,
-    marginRight: 12,
+    borderRadius: 25,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    marginRight: 10,
   },
   filterBtnActive: { backgroundColor: "#0066FF", borderColor: "#0066FF" },
-  filterBtnText: { fontWeight: "600", color: "#333" },
+  filterBtnText: { fontWeight: "600", color: "#333", fontSize: 15 },
   orderItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
-    marginBottom: 8,
+    backgroundColor: "#fff",
+    paddingVertical: 18,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    marginBottom: 12,
+    elevation: 2,
   },
-  orderName: { fontWeight: "600", fontSize: 15, marginBottom: 3 },
-  orderDetails: { fontSize: 13, color: "#777" },
-  orderTotal: { fontWeight: "700", fontSize: 15 },
+  orderName: { fontWeight: "700", fontSize: 16, marginBottom: 2 },
+  orderDetails: { fontSize: 14, color: "#6b7280" },
+  orderTotal: { fontWeight: "700", fontSize: 16 },
+  orderStatus: { fontWeight: "600", fontSize: 14, marginTop: 3 },
 });
