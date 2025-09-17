@@ -95,9 +95,7 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Profile & Settings</Text>
         </View>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Text style={styles.headerIcon}>🔔</Text>
-        </TouchableOpacity>
+       
       </View>
 
       <ScrollView 
