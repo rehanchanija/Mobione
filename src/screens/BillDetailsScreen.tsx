@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 18, fontWeight: "bold", marginBottom: 8 },
   item: { fontSize: 16, marginVertical: 4 },
-  total: { fontSize: 18, fontWeight: "bold", color: "#007BFF", marginTop: 8 },
+  total: { fontSize: 18, fontWeight: "bold", color: "#4A90E2", marginTop: 8 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   edit: { fontSize: 20 },
   line: { height: 1, backgroundColor: "#eee", marginVertical: 6 },
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   payBtn: {
     flex: 1,
     marginLeft: 6,
-    backgroundColor: "#007BFF",
+    backgroundColor: "#4A90E2",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",

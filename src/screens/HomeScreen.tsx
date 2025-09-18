@@ -40,8 +40,8 @@ export default function HomeScreen() {
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
         <View style={styles.quickActions}>
-          <TouchableOpacity style={[styles.quickCard, styles.quickPrimary]}>
-            <Text style={styles.quickEmoji}>➕</Text>
+          <TouchableOpacity style={[styles.quickCard, styles.quickPrimary] }>
+            <Text style={styles.quickEmoji}>✚</Text>
             <Text style={styles.quickTextPrimary}>New Bill</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickCard}>
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   quickPrimary: {
-    backgroundColor: "#4A90E2",
+    backgroundColor: "#4A90E2"
   },
   quickText: {
     marginTop: 10,
@@ -179,10 +179,12 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   quickEmoji: {
-    fontSize: 26, // 🔹 Bigger quick action emoji
+    fontSize: 32,
+    color: "#eeefeefe",
   },
   emoji: {
-    fontSize: 22, // 🔹 Slightly bigger emojis
+    fontSize: 22,
+     // 🔹 Slightly bigger emojis
   },
   activityItem: {
     flexDirection: "row",

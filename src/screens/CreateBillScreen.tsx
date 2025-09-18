@@ -155,13 +155,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
   primaryBtn: {
-    backgroundColor: "#0066FF",
+    backgroundColor: "#4A90E2",
     padding: 16,
     borderRadius: 12,
     marginTop: 10,
     alignItems: "center",
   },
-  primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 17 },
   secondaryBtn: {
     backgroundColor: "#f3f4f6",
     padding: 14,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     alignItems: "center",
   },
-  secondaryBtnText: { color: "#333", fontWeight: "600", fontSize: 15 },
+  secondaryBtnText: { color: "#333", fontWeight: "700", fontSize: 18 },
   billItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 10,
   },
-  filterBtnActive: { backgroundColor: "#0066FF", borderColor: "#0066FF" },
+  filterBtnActive: { backgroundColor: "#4A90E2", borderColor: "#0066FF" },
   filterBtnText: { fontWeight: "600", color: "#333", fontSize: 15 },
   orderItem: {
     flexDirection: "row",

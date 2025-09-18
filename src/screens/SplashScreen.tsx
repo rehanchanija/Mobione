@@ -61,12 +61,12 @@ const SplashScreen = () => {
     Animated.parallel([
       Animated.timing(logoScale, {
         toValue: 1,
-        duration: 1500,
+        duration: 2000,
         useNativeDriver: true,
       }),
       Animated.timing(logoOpacity, {
         toValue: 1,
-        duration: 1500,
+        duration: 500,
         useNativeDriver: true,
       }),
     ]).start();
@@ -75,7 +75,7 @@ const SplashScreen = () => {
     Animated.loop(
       Animated.timing(logoRotation, {
         toValue: 1,
-        duration: 20000,
+        duration: 15000,
         useNativeDriver: true,
       })
     ).start();

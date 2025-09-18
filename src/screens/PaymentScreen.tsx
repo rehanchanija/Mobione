@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   paidButton: {
-    backgroundColor: '#0066FF',
+    backgroundColor: '#4A90E2',
   },
   pendingButton: {
     backgroundColor: '#F5F5F5',
