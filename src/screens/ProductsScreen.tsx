@@ -258,6 +258,10 @@ export default function ProductsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Brands</Text>
+        <Text style={styles.totalCount}>{brands.length} Total Brands</Text>
+      </View>
       <FlatList
         data={brands}
         numColumns={2}
@@ -291,12 +295,6 @@ export default function ProductsScreen() {
               onChangeText={setBrandName}
             />
             
-            <TextInput
-              style={styles.input}
-              placeholder="Brand Emoji"
-              value={brandEmoji}
-              onChangeText={setBrandEmoji}
-            />
             
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -327,8 +325,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F7F9FC",
     padding: 15,
-    paddingTop: 20,
   },
+  header: {
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 20,
+          paddingBottom: 15,
+          backgroundColor: "#FFF",
+          borderBottomWidth: 1,
+          borderBottomColor: "#E5E5E5",
+          marginBottom: 10,
+        },
+        headerTitle: {
+          fontSize: 24,
+          fontWeight: "bold",
+          color: "#1a1a1a",
+        },
+        totalCount: {
+          fontSize: 18,
+          color: "#666",
+          fontWeight: "500",
+        },
   brandCard: {
     flex: 1,
     margin: 8,
@@ -377,7 +395,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 20,
     right: 20,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#ffff",
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -387,7 +405,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     fontSize: 28,
-    color: "#fff",
+    color: "#eeefeefe",
   },
   modalOverlay: {
     flex: 1,
