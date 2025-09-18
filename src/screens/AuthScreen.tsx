@@ -15,11 +15,13 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../hooks/useAuth';
 
-const { width } = Dimensions.get('window');
+
 
 const AuthScreen = () => {
   const navigation = useNavigation();
@@ -36,7 +38,6 @@ const togglePassword = useCallback(() => setShowPassword(prev => !prev), []);
     password: '',
     confirmPassword: '',
   });
-  const [userType, setUserType] = useState<'staff' | 'owner'>('staff');
 
   const validateEmail = (email: string) => {
     return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email);
@@ -57,14 +58,14 @@ const togglePassword = useCallback(() => setShowPassword(prev => !prev), []);
     );
   };
 
+  const { login, register, isLoading, error } = useAuth();
+
   const handleLogin = () => {
     if (!isLoginValid()) {
       Alert.alert('Error', 'Please fill in all fields correctly.');
       return;
     }
-    Alert.alert('Success', 'Login successful!', [
-      { text: 'OK', onPress: () => navigation.navigate('MainTabs' as never) },
-    ]);
+    login(loginData);
   };
 
   const handleRegister = () => {
@@ -72,9 +73,12 @@ const togglePassword = useCallback(() => setShowPassword(prev => !prev), []);
       Alert.alert('Error', 'Please fill in all fields correctly.');
       return;
     }
-    Alert.alert('Success', `Account created successfully as ${userType}!`, [
-      { text: 'OK', onPress: () => navigation.navigate('MainTabs' as never) },
-    ]);
+    register({
+      name: registerData.fullName,
+      email: registerData.email,
+      password: registerData.password,
+      phone: registerData.phone,
+    });
   };
 
   const handleSkip = () => {
@@ -224,18 +228,22 @@ const togglePassword = useCallback(() => setShowPassword(prev => !prev), []);
 )}
 
 
+                {error && (
+                  <Text style={styles.errorText}>{error.message}</Text>
+                )}
                 <TouchableOpacity
-                  style={[
-                    styles.submitButton,
-                    {
-                      opacity: (activeTab === 'login' ? isLoginValid() : isRegisterValid()) ? 1 : 0.6,
-                      backgroundColor: (activeTab === 'login' ? isLoginValid() : isRegisterValid()) ? '#667eea' : '#cccccc',
-                    },
-                  ]}
+                  style={[styles.submitButton, {
+                    opacity: (activeTab === 'login' ? isLoginValid() : isRegisterValid()) ? 1 : 0.6,
+                    backgroundColor: (activeTab === 'login' ? isLoginValid() : isRegisterValid()) ? '#667eea' : '#cccccc',
+                  }]}
                   onPress={activeTab === 'login' ? handleLogin : handleRegister}
-                  disabled={!(activeTab === 'login' ? isLoginValid() : isRegisterValid())}
+                  disabled={!(activeTab === 'login' ? isLoginValid() : isRegisterValid()) || isLoading}
                 >
-                  <Text style={styles.submitButtonText}>{activeTab === 'login' ? 'Login' : 'Register'}</Text>
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>{activeTab === 'login' ? 'Login' : 'Register'}</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -247,6 +255,12 @@ const togglePassword = useCallback(() => setShowPassword(prev => !prev), []);
 };
 
 const styles = StyleSheet.create({
+  errorText: {
+    color: '#ff4444',
+    textAlign: 'center',
+    marginBottom: 16,
+    fontSize: 14,
+  },
   container: { flex: 1 },
   gradient: { flex: 1 },
  skipButton: {
@@ -285,5 +299,7 @@ skipButtonText: {
   submitButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   submitButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
+
+
 
 export default AuthScreen;

@@ -34,7 +34,7 @@ interface Product {
   quantity?: number;
 }
 
-const brands: Brand[] = [
+const initialBrands: Brand[] = [
   { id: "1", name: "Apple", emoji: "🍎" },
   { id: "2", name: "Samsung", emoji: "📱" },
   { id: "3", name: "OnePlus", emoji: "⭐" },
@@ -104,7 +104,7 @@ const initialProducts: Product[] = [
     image: require("../assets/iphone.jpg"),
     emoji: "📱",
   },
-    {
+  {
     id: "11",
     name: "OnePlus 18",
     price: "₹62,000",
@@ -144,12 +144,16 @@ const initialProducts: Product[] = [
     image: require("../assets/phone.png"),
     emoji: "💡",
   },
-
 ];
 
 export default function ProductsScreen() {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
   const [products] = useState<Product[]>(initialProducts);
+  const [brands, setBrands] = useState<Brand[]>(initialBrands);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
+  const [brandName, setBrandName] = useState("");
+  const [brandEmoji, setBrandEmoji] = useState("");
 
   const handleBrandPress = (brand: Brand) => {
     const brandProducts = products.filter(p => p.brandId === brand.id);
@@ -159,28 +163,163 @@ export default function ProductsScreen() {
     });
   };
 
+  const handleCreateBrand = () => {
+    setEditingBrand(null);
+    setBrandName("");
+    setBrandEmoji("");
+    setModalVisible(true);
+  };
+
+  const handleEditBrand = (brand: Brand) => {
+    setEditingBrand(brand);
+    setBrandName(brand.name);
+    setBrandEmoji(brand.emoji);
+    setModalVisible(true);
+  };
+
+  const handleDeleteBrand = (brand: Brand) => {
+    Alert.alert(
+      "Delete Brand",
+      "Do you really want to delete this brand?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            setBrands(brands.filter(b => b.id !== brand.id));
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSaveBrand = () => {
+    if (!brandName.trim() || !brandEmoji.trim()) {
+      Alert.alert("Error", "Please enter both brand name and emoji");
+      return;
+    }
+
+    if (editingBrand) {
+      // Update existing brand
+      setBrands(brands.map(b => 
+        b.id === editingBrand.id 
+          ? { ...b, name: brandName, emoji: brandEmoji }
+          : b
+      ));
+    } else {
+      // Create new brand
+      const newBrand: Brand = {
+        id: (brands.length + 1).toString(),
+        name: brandName,
+        emoji: brandEmoji,
+      };
+      setBrands([...brands, newBrand]);
+    }
+
+    setModalVisible(false);
+    setBrandName("");
+    setBrandEmoji("");
+    setEditingBrand(null);
+  };
+
+  const renderBrandCard = ({ item }: { item: Brand }) => (
+    <View style={styles.brandCard}>
+      <TouchableOpacity
+        style={styles.brandContent}
+        onPress={() => handleBrandPress(item)}
+      >
+        <Text style={styles.brandEmoji}>{item.emoji}</Text>
+        <Text style={styles.brandName}>{item.name}</Text>
+        <Text style={styles.productCount}>
+          {products.filter(p => p.brandId === item.id).length} Products
+        </Text>
+      </TouchableOpacity>
+      
+      <View style={styles.brandActions}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleEditBrand(item)}
+        >
+          <Text style={styles.actionEmoji}>✏️</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => handleDeleteBrand(item)}
+        >
+          <Text style={styles.actionEmoji}>🗑️</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <FlatList
         data={brands}
         numColumns={2}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.brandCard}
-            onPress={() => handleBrandPress(item)}
-          >
-            <Text style={styles.brandEmoji}>{item.emoji}</Text>
-            <Text style={styles.brandName}>{item.name}</Text>
-            <Text style={styles.productCount}>
-              {products.filter(p => p.brandId === item.id).length} Products
-            </Text>
-          </TouchableOpacity>
-        )}
+        renderItem={renderBrandCard}
       />
+
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={handleCreateBrand}
+      >
+        <Text style={styles.addButtonText}>➕</Text>
+      </TouchableOpacity>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>
+              {editingBrand ? "Edit Brand" : "Create Brand"}
+            </Text>
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Brand Name"
+              value={brandName}
+              onChangeText={setBrandName}
+            />
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Brand Emoji"
+              value={brandEmoji}
+              onChangeText={setBrandEmoji}
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleSaveBrand}
+              >
+                <Text style={styles.saveButtonText}>
+                  {editingBrand ? "Update" : "Create"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
-
 }
 
 const styles = StyleSheet.create({
@@ -193,15 +332,17 @@ const styles = StyleSheet.create({
   brandCard: {
     flex: 1,
     margin: 8,
-    padding: 16,
     backgroundColor: "#FFF",
     borderRadius: 16,
-    alignItems: "center",
     elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  brandContent: {
+    padding: 16,
+    alignItems: "center",
   },
   brandEmoji: {
     fontSize: 40,
@@ -216,6 +357,94 @@ const styles = StyleSheet.create({
   productCount: {
     fontSize: 14,
     color: "#666",
+  },
+  brandActions: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRightWidth: 0.5,
+    borderRightColor: "#F0F0F0",
+  },
+  actionEmoji: {
+    fontSize: 18,
+  },
+  addButton: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    backgroundColor: "#007AFF",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 5,
+  },
+  addButtonText: {
+    fontSize: 28,
+    color: "#fff",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    padding: 20,
+    width: "85%",
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#1a1a1a",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 10,
+    padding: 15,
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 10,
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: "#F5F5F5",
+  },
+  saveButton: {
+    backgroundColor: "#007AFF",
+  },
+  cancelButtonText: {
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
+  saveButtonText: {
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFF",
   },
   filterRow: {
     flexDirection: "row",
@@ -257,11 +486,6 @@ const styles = StyleSheet.create({
   details: {
     flex: 1,
   },
-  // productName: {
-  //   fontSize: 17,
-  //   fontWeight: "700",
-  //   color: "#111",
-  // },
   price: {
     fontSize: 15,
     color: "#4A90E2",
@@ -272,40 +496,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#666",
     marginTop: 2,
-  },
-  // badge: {
-  //   paddingVertical: 4,
-  //   paddingHorizontal: 10,
-  //   borderRadius: 8,
-  // },
-  // inStock: {
-  //   backgroundColor: "#E1F9E3",
-  // },
-  // lowStock: {
-  //   backgroundColor: "#FFF5D9",
-  // },
-  // outStock: {
-  //   backgroundColor: "#FDE2E2",
-  // },
-  // badgeText: {
-  //   fontSize: 12,
-  //   fontWeight: "600",
-  //   color: "#333",
-  // },
-  addButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: "#007AFF",
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 5,
-  },
-  addButtonText: {
-    fontSize: 28,
-    color: "#fff",
   },
 });
