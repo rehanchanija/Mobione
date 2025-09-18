@@ -25,7 +25,7 @@ export const useAuth = () => {
     onSuccess: async (data) => {
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
-      navigation.navigate('MainTabs' as never);
+      navigation.navigate('CreateProfile' as never);
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Registration failed. Please try again.';
