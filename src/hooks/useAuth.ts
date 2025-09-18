@@ -1,5 +1,5 @@
-import { useMutation } from '@tanstack/react-query';
-import { authApi, LoginData, RegisterData, AuthResponse } from '../services/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { authApi, LoginData, RegisterData, AuthResponse, profileApi, Profile, UpdateProfileData } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { Alert } from 'react-native';
@@ -33,9 +33,35 @@ export const useAuth = () => {
     }
   });
 
+  const queryClient = useQueryClient();
+
+  // Profile query
+  const { data: profile, isLoading: isProfileLoading } = useQuery<Profile>({
+    queryKey: ['profile'],
+    queryFn: profileApi.getProfile,
+    enabled: !!AsyncStorage.getItem('token'), // Only fetch if token exists
+    retry: false,
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation<Profile, Error, UpdateProfileData>({
+    mutationFn: profileApi.updateProfile,
+    onSuccess: (data) => {
+      // Update profile in cache
+      queryClient.setQueryData(['profile'], data);
+      Alert.alert('Success', 'Profile updated successfully');
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to update profile';
+      Alert.alert('Error', message);
+    },
+  });
+
   const logout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
+    // Clear all queries from cache on logout
+    queryClient.clear();
     navigation.navigate('Auth' as never);
   };
 
@@ -43,7 +69,12 @@ export const useAuth = () => {
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout,
+    profile,
+    updateProfile: updateProfileMutation.mutate,
     isLoading: loginMutation.isPending || registerMutation.isPending,
+    isProfileLoading,
+    isUpdatingProfile: updateProfileMutation.isPending,
     error: loginMutation.error || registerMutation.error,
+    profileError: updateProfileMutation.error,
   };
 };

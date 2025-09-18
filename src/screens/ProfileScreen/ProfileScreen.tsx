@@ -1,5 +1,5 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
+import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,41 +13,71 @@ import {
   StatusBar,
   Platform,
   Alert,
-} from "react-native";
-import * as ImagePicker from "react-native-image-picker";
+  ActivityIndicator,
+} from 'react-native';
+import * as ImagePicker from 'react-native-image-picker';
+import { useAuth } from '../../hooks/useAuth';
 const ProfileScreen = () => {
-    const navigation = useNavigation();
-    const screens = [
-  { title: "Staff Management", description: "Manage roles, permissions and staff accounts", screen: "StaffManagement" },
-  { title: "Sales Reports", description: "View detailed sales analytics and reports", screen: "SalesReport" },
-  { title: "Transaction History", description: "View all transaction records and details", screen: "TransactionHistory" },
-  { title: "App Settings", description: "Configure app preferences & notifications", screen: "AppSettings" },
-  { title: "Help & Support", description: "Get help, contact support or view FAQs", screen: "HelpSupport" },
-];
+  const navigation = useNavigation();
+  const screens = [
+    {
+      title: 'Staff Management',
+      description: 'Manage roles, permissions and staff accounts',
+      screen: 'StaffManagement',
+    },
+    {
+      title: 'Sales Reports',
+      description: 'View detailed sales analytics and reports',
+      screen: 'SalesReport',
+    },
+    {
+      title: 'Transaction History',
+      description: 'View all transaction records and details',
+      screen: 'TransactionHistory',
+    },
+    {
+      title: 'App Settings',
+      description: 'Configure app preferences & notifications',
+      screen: 'AppSettings',
+    },
+    {
+      title: 'Help & Support',
+      description: 'Get help, contact support or view FAQs',
+      screen: 'HelpSupport',
+    },
+  ];
 
+  const [isLoading, setIsLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
-  const [shopName, setShopName] = useState("My Mobile Store");
-  const [shopAddress, setShopAddress] = useState("45 Gandhi Road, Ahmedabad");
-  const [ownerName, setOwnerName] = useState("Mohammed Rehan");
+  const [shopName, setShopName] = useState('');
+  const [shopDetails, setShopDetails] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState('');
+  const [ownerPhone, setOwnerPhone] = useState('');
   const [shopImage, setShopImage] = useState<string | null>(null);
 
   // Temporary state for preview
-  const [tempShopName, setTempShopName] = useState(shopName);
-  const [tempShopAddress, setTempShopAddress] = useState(shopAddress);
-  const [tempOwnerName, setTempOwnerName] = useState(ownerName);
-  const [tempShopImage, setTempShopImage] = useState<string | null>(shopImage);
-const [tempOwnerPhone, setTempOwnerPhone] = useState("");
-
+  const [tempShopName, setTempShopName] = useState('');
+  const [tempShopDetails, setTempShopDetails] = useState('');
+  const [tempOwnerName, setTempOwnerName] = useState('');
+  const [tempOwnerEmail, setTempOwnerEmail] = useState('');
+  const [tempOwnerPhone, setTempOwnerPhone] = useState('');
+  const [tempShopImage, setTempShopImage] = useState<string | null>(null);
 
   const pickImage = () => {
     ImagePicker.launchImageLibrary(
-      { mediaType: "photo", quality: 0.7 },
-      (response) => {
-        if (!response.didCancel && !response.errorCode && response.assets && response.assets.length > 0) {
+      { mediaType: 'photo', quality: 0.7 },
+      response => {
+        if (
+          !response.didCancel &&
+          !response.errorCode &&
+          response.assets &&
+          response.assets.length > 0
+        ) {
           setTempShopImage(response.assets[0].uri || null);
         }
-      }
+      },
     );
   };
 
@@ -55,21 +85,46 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
     setPreviewVisible(true);
   };
 
+  const { profile, updateProfile, isProfileLoading, isUpdatingProfile } =
+    useAuth();
+
+  useEffect(() => {
+    if (profile) {
+      setOwnerName(profile.name);
+      setOwnerEmail(profile.email);
+      setOwnerPhone(profile.phone || '');
+      setShopName(profile.shopName || '');
+      setShopDetails(profile.shopDetails || '');
+
+      // Also set temporary values
+      setTempOwnerName(profile.name);
+      setTempOwnerEmail(profile.email);
+      setTempOwnerPhone(profile.phone || '');
+      setTempShopName(profile.shopName || '');
+      setTempShopDetails(profile.shopDetails || '');
+    }
+  }, [profile]);
+
   const handleSave = () => {
-    setShopName(tempShopName);
-    setShopAddress(tempShopAddress);
-    setOwnerName(tempOwnerName);
-    setShopImage(tempShopImage);
-    setTempOwnerPhone(tempOwnerPhone);
+    updateProfile({
+      name: tempOwnerName,
+      email: tempOwnerEmail,
+      phone: tempOwnerPhone,
+      shopName: tempShopName,
+      shopDetails: tempShopDetails,
+    });
+
+    // Close the modal
     setModalVisible(false);
-    Alert.alert("Success", "Shop details updated successfully!");
   };
 
   const handleModalClose = () => {
     // Reset temp values when closing without saving
     setTempShopName(shopName);
-    setTempShopAddress(shopAddress);
+    setTempShopDetails(shopDetails);
     setTempOwnerName(ownerName);
+    setTempOwnerEmail(ownerEmail);
+    setTempOwnerPhone(ownerPhone);
     setTempShopImage(shopImage);
     setModalVisible(false);
   };
@@ -77,8 +132,10 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
   const openModal = () => {
     // Set temp values to current values when opening modal
     setTempShopName(shopName);
-    setTempShopAddress(shopAddress);
+    setTempShopDetails(shopDetails);
     setTempOwnerName(ownerName);
+    setTempOwnerEmail(ownerEmail);
+    setTempOwnerPhone(ownerPhone);
     setTempShopImage(shopImage);
     setModalVisible(true);
   };
@@ -86,20 +143,22 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      
+
       {/* Custom Header with Back Button */}
       <View style={styles.customHeader}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Profile & Settings</Text>
         </View>
-       
       </View>
 
-      <ScrollView 
-        contentContainerStyle={{ paddingBottom: 30,padding:20 }}
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 30, padding: 20 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Shop Info Card */}
@@ -108,46 +167,62 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
             <Text style={styles.editIcon}>✏️</Text>
             <Text style={styles.editText}>Tap to edit</Text>
           </View>
-          
+
           {shopImage && (
-            <Image source={{ uri: shopImage }} style={styles.shopImagePreview} />
+            <Image
+              source={{ uri: shopImage }}
+              style={styles.shopImagePreview}
+            />
           )}
-          
-          <Text style={styles.companyEmoji}>🏪</Text>
-          <Text style={styles.companyName}>{shopName}</Text>
-          <Text style={styles.companyAddress}>{shopAddress}</Text>
-          <View style={styles.ownerContainer}>
-            <Text style={styles.ownerBadge}>👑 Owner: {ownerName}</Text>
-            
-          </View>
+
+          {isProfileLoading ? (
+            <ActivityIndicator size="large" color="#0000ff" />
+          ) : (
+            <>
+              <Text style={styles.companyEmoji}>🏪</Text>
+              <Text style={styles.companyName}>
+                {shopName || 'No shop name'}
+              </Text>
+              <Text style={styles.companyAddress}>
+                {shopDetails || 'No shop details'}
+              </Text>
+              <View style={styles.ownerContainer}>
+                <Text style={styles.ownerBadge}>👑 Owner: {ownerName}</Text>
+                <Text style={styles.ownerDetail}>{ownerEmail}</Text>
+                <Text style={styles.ownerDetail}>
+                  {ownerPhone || 'No phone'}
+                </Text>
+              </View>
+            </>
+          )}
         </TouchableOpacity>
 
         {/* Navigation Items */}
         {screens.map((item, i) => (
-          <TouchableOpacity 
-            style={styles.navItem} 
+          <TouchableOpacity
+            style={styles.navItem}
             key={i}
-    onPress={() => navigation.navigate(item.screen as never)}
+            onPress={() => navigation.navigate(item.screen as never)}
           >
             <View style={styles.emojiBox}>
               <Text style={styles.emoji}>
-                {["👥", "📊", "💳", "⚙️", "💬"][i]}
+                {['👥', '📊', '💳', '⚙️', '💬'][i]}
               </Text>
             </View>
             <View style={styles.navTextContainer}>
               <Text style={styles.navTitle}>{item.title}</Text>
-              <Text style={styles.navDescription}>
-                {item.description}
-              </Text>
+              <Text style={styles.navDescription}>{item.description}</Text>
             </View>
             <Text style={styles.navChevron}>›</Text>
           </TouchableOpacity>
         ))}
 
         {/* Logout Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.logoutButton}
-          onPress={() => Alert.alert("Logout", "Are you sure you want to logout?")}
+          onPress={() =>
+            Alert.alert('Logout', 'Are you sure you want to logout?')
+          }
         >
           <Text style={styles.logoutText}>🚪 Logout</Text>
         </TouchableOpacity>
@@ -155,7 +230,9 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>Made with ❤️ by FlowPay Team</Text>
-          <Text style={styles.footerVersion}>Version 2.1.0 • © 2024 FlowPay Solutions</Text>
+          <Text style={styles.footerVersion}>
+            Version 2.1.0 • © 2024 FlowPay Solutions
+          </Text>
         </View>
 
         {/* Edit Shop Details Modal */}
@@ -164,7 +241,7 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Shop & Owner Details</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={handleModalClose}
                   style={styles.modalCloseButton}
                 >
@@ -173,13 +250,21 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false}>
-                <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
+                <TouchableOpacity
+                  onPress={pickImage}
+                  style={styles.imagePicker}
+                >
                   {tempShopImage ? (
-                    <Image source={{ uri: tempShopImage }} style={styles.shopImage} />
+                    <Image
+                      source={{ uri: tempShopImage }}
+                      style={styles.shopImage}
+                    />
                   ) : (
                     <View style={styles.imagePlaceholderContainer}>
                       <Text style={styles.imagePlaceholderEmoji}>📷</Text>
-                      <Text style={styles.imagePlaceholder}>Upload Shop Image</Text>
+                      <Text style={styles.imagePlaceholder}>
+                        Upload Shop Image
+                      </Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -196,12 +281,12 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
                 </View>
 
                 <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>📍 Shop Address</Text>
+                  <Text style={styles.inputLabel}>📍 Shop Details</Text>
                   <TextInput
                     style={[styles.input, styles.textArea]}
-                    value={tempShopAddress}
-                    onChangeText={setTempShopAddress}
-                    placeholder="Enter shop address"
+                    value={tempShopDetails}
+                    onChangeText={setTempShopDetails}
+                    placeholder="Enter shop details"
                     placeholderTextColor="#9CA3AF"
                     multiline={true}
                     numberOfLines={2}
@@ -209,22 +294,36 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
                 </View>
 
                 <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>👤 Owner Name</Text>
+                  <Text style={styles.inputLabel}>👤 Full Name</Text>
                   <TextInput
                     style={styles.input}
                     value={tempOwnerName}
                     onChangeText={setTempOwnerName}
-                    placeholder="Enter owner name"
+                    placeholder="Enter your full name"
                     placeholderTextColor="#9CA3AF"
                   />
                 </View>
+
                 <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>📞 Contact Number</Text>
+                  <Text style={styles.inputLabel}>� Email</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={tempOwnerEmail}
+                    onChangeText={setTempOwnerEmail}
+                    placeholder="Enter your email"
+                    keyboardType="email-address"
+                    placeholderTextColor="#9CA3AF"
+                    editable={false}
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>📞 Phone Number</Text>
                   <TextInput
                     style={styles.input}
                     value={tempOwnerPhone}
                     onChangeText={setTempOwnerPhone}
-                    placeholder="Enter contact number"
+                    placeholder="Enter phone number"
                     keyboardType="phone-pad"
                     maxLength={10}
                     placeholderTextColor="#9CA3AF"
@@ -232,26 +331,36 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
                 </View>
 
                 <View style={styles.modalButtonContainer}>
-                  <TouchableOpacity 
-                    style={styles.previewButton} 
+                  <TouchableOpacity
+                    style={styles.previewButton}
                     onPress={handlePreview}
                   >
                     <Text style={styles.previewButtonText}>👁️ Preview</Text>
                   </TouchableOpacity>
-                  
+
                   <View style={styles.buttonRow}>
-                    <TouchableOpacity 
-                      style={styles.cancelButton} 
+                    <TouchableOpacity
+                      style={styles.cancelButton}
                       onPress={handleModalClose}
                     >
                       <Text style={styles.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
-                    
-                    <TouchableOpacity 
-                      style={styles.saveButton} 
+
+                    <TouchableOpacity
+                      style={[
+                        styles.saveButton,
+                        isUpdatingProfile && styles.saveButtonDisabled,
+                      ]}
                       onPress={handleSave}
+                      disabled={isUpdatingProfile}
                     >
-                      <Text style={styles.saveButtonText}>💾 Save Changes</Text>
+                      {isUpdatingProfile ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.saveButtonText}>
+                          💾 Save Changes
+                        </Text>
+                      )}
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -270,19 +379,31 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
                   <Text style={styles.previewClose}>✕</Text>
                 </TouchableOpacity>
               </View>
-              
+
               <View style={styles.previewCard}>
                 {tempShopImage && (
-                  <Image source={{ uri: tempShopImage }} style={styles.previewImage} />
+                  <Image
+                    source={{ uri: tempShopImage }}
+                    style={styles.previewImage}
+                  />
                 )}
                 <Text style={styles.previewEmoji}>🏪</Text>
-                <Text style={styles.previewName}>{tempShopName}</Text>
-                <Text style={styles.previewAddress}>{tempShopAddress}</Text>
-                <Text style={styles.previewOwner}>👑 Owner: {tempOwnerName}</Text>
-                <Text style={styles.previewOwner}>📞 Contact: {tempOwnerPhone}</Text>
+                <Text style={styles.previewName}>
+                  {tempShopName || 'No shop name'}
+                </Text>
+                <Text style={styles.previewAddress}>
+                  {tempShopDetails || 'No shop details'}
+                </Text>
+                <Text style={styles.previewOwner}>� Name: {tempOwnerName}</Text>
+                <Text style={styles.previewOwner}>
+                  📧 Email: {tempOwnerEmail}
+                </Text>
+                <Text style={styles.previewOwner}>
+                  📞 Phone: {tempOwnerPhone || 'No phone number'}
+                </Text>
               </View>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.previewCloseButton}
                 onPress={() => setPreviewVisible(false)}
               >
@@ -299,75 +420,73 @@ const [tempOwnerPhone, setTempOwnerPhone] = useState("");
 export default ProfileScreen;
 
 const styles = StyleSheet.create({
-  safeArea: { 
-    flex: 1, 
-    backgroundColor: "#F9FAFB",
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-   
   },
-  
+
   // Custom Header Styles
   customHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 24,
     paddingVertical: 18,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     marginHorizontal: 24,
     marginTop: 20,
     marginBottom: 15,
     borderRadius: 16,
     elevation: 3,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
 
-  
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backArrow: {
     fontSize: 20,
-    color: "#374151",
-    fontWeight: "bold",
+    color: '#374151',
+    fontWeight: 'bold',
   },
   headerCenter: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
-  headerTitle: { 
-    fontSize: 20, 
-    fontWeight: "700", 
-    color: "#111827" 
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
   },
   notificationButton: {
     width: 40,
     height: 40,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  headerIcon: { 
-    fontSize: 24 
+  headerIcon: {
+    fontSize: 24,
   },
-  
+
   // Removed old container styles since we're using scrollContainer now
-  
+
   // Card Styles
-  card: { 
-    backgroundColor: "#fff", 
-    marginBottom: 20, 
-    borderRadius: 20, 
-    padding: 24, 
-    alignItems: "center", 
+  card: {
+    backgroundColor: '#fff',
+    marginBottom: 20,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
     elevation: 4,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -399,20 +518,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 15,
   },
-  companyEmoji: { 
-    fontSize: 48, 
-    marginBottom: 12 
+  companyEmoji: {
+    fontSize: 48,
+    marginBottom: 12,
   },
-  companyName: { 
-    fontSize: 22, 
-    fontWeight: "700", 
-    color: "#111827",
+  companyName: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111827',
     textAlign: 'center',
   },
-  companyAddress: { 
-    fontSize: 15, 
-    color: "#6B7280", 
-    textAlign: "center", 
+  companyAddress: {
+    fontSize: 15,
+    color: '#6B7280',
+    textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
   },
@@ -423,101 +542,107 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
   },
-  ownerBadge: { 
-    fontSize: 15, 
-    color: "#1D4ED8", 
-    fontWeight: "600" 
+  ownerBadge: {
+    fontSize: 15,
+    color: '#1D4ED8',
+    fontWeight: '600',
+    marginBottom: 4,
   },
-  
+  ownerDetail: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+
   // Navigation Styles
-  navItem: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    backgroundColor: "#fff", 
-    marginBottom: 12, 
-    padding: 18, 
-    borderRadius: 16, 
+  navItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginBottom: 12,
+    padding: 18,
+    borderRadius: 16,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
   },
-  emojiBox: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 14, 
-    backgroundColor: "#F3F4F6", 
-    justifyContent: "center", 
-    alignItems: "center", 
-    marginRight: 16 
+  emojiBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  emoji: { 
-    fontSize: 22 
+  emoji: {
+    fontSize: 22,
   },
-  navTextContainer: { 
-    flex: 1 
+  navTextContainer: {
+    flex: 1,
   },
-  navTitle: { 
-    fontSize: 17, 
-    fontWeight: "600", 
-    color: "#111827",
+  navTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#111827',
     marginBottom: 2,
   },
-  navDescription: { 
-    fontSize: 13, 
-    color: "#6B7280", 
+  navDescription: {
+    fontSize: 13,
+    color: '#6B7280',
     lineHeight: 18,
   },
   navChevron: {
     fontSize: 20,
-    color: "#9CA3AF",
-    fontWeight: "bold",
+    color: '#9CA3AF',
+    fontWeight: 'bold',
   },
-  
+
   // Button Styles
-  logoutButton: { 
-    marginTop: 20, 
-    backgroundColor: "#EF4444", 
-    paddingVertical: 18, 
-    borderRadius: 16, 
-    alignItems: "center",
+  logoutButton: {
+    marginTop: 20,
+    backgroundColor: '#EF4444',
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
     elevation: 3,
   },
-  logoutText: { 
-    fontSize: 18, 
-    fontWeight: "600", 
-    color: "#fff" 
+  logoutText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
   },
-  
+
   // Footer Styles
-  footer: { 
-    alignItems: "center", 
-    marginTop: 30, 
-    marginBottom: 20 
+  footer: {
+    alignItems: 'center',
+    marginTop: 30,
+    marginBottom: 20,
   },
-  footerText: { 
-    fontSize: 13, 
-    color: "#6B7280",
+  footerText: {
+    fontSize: 13,
+    color: '#6B7280',
     marginBottom: 4,
   },
-  footerVersion: { 
-    fontSize: 12, 
-    color: "#9CA3AF" 
+  footerVersion: {
+    fontSize: 12,
+    color: '#9CA3AF',
   },
-  
+
   // Modal Styles
-  modalOverlay: { 
-    flex: 1, 
-    justifyContent: "center", 
-    alignItems: "center", 
-    backgroundColor: "rgba(0,0,0,0.6)" 
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
-  modalContainer: { 
-    width: "92%", 
-    maxHeight: "85%",
-    backgroundColor: "#fff", 
-    borderRadius: 20, 
+  modalContainer: {
+    width: '92%',
+    maxHeight: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
     padding: 20,
   },
   modalHeader: {
@@ -526,43 +651,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  modalTitle: { 
-    fontSize: 22, 
-    fontWeight: "700",
-    color: "#111827",
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111827',
   },
   modalCloseButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#F3F4F6",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalCloseText: {
     fontSize: 16,
-    color: "#6B7280",
-    fontWeight: "bold",
+    color: '#6B7280',
+    fontWeight: 'bold',
   },
-  
+
   // Image Picker Styles
-  imagePicker: { 
-    width: 120, 
-    height: 120, 
-    borderRadius: 20, 
-    backgroundColor: "#F9FAFB", 
-    justifyContent: "center", 
-    alignItems: "center", 
+  imagePicker: {
+    width: 120,
+    height: 120,
+    borderRadius: 20,
+    backgroundColor: '#F9FAFB',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
-    alignSelf: "center",
+    alignSelf: 'center',
     borderWidth: 2,
-    borderColor: "#E5E7EB",
+    borderColor: '#E5E7EB',
     borderStyle: 'dashed',
   },
-  shopImage: { 
-    width: 116, 
-    height: 116, 
-    borderRadius: 18 
+  shopImage: {
+    width: 116,
+    height: 116,
+    borderRadius: 18,
   },
   imagePlaceholderContainer: {
     alignItems: 'center',
@@ -571,116 +696,119 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginBottom: 8,
   },
-  imagePlaceholder: { 
-    color: "#6B7280",
+  imagePlaceholder: {
+    color: '#6B7280',
     fontSize: 14,
-    fontWeight: "500",
-    textAlign:'center'
+    fontWeight: '500',
+    textAlign: 'center',
   },
-  
+
   // Input Styles
   inputContainer: {
     marginBottom: 16,
   },
   inputLabel: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
+    fontWeight: '600',
+    color: '#374151',
     marginBottom: 8,
   },
-  input: { 
-    width: "100%", 
-    borderWidth: 1.5, 
-    borderColor: "#E5E7EB", 
-    borderRadius: 14, 
+  input: {
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 14,
     padding: 14,
     fontSize: 16,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: '#F9FAFB',
   },
   textArea: {
     minHeight: 60,
     textAlignVertical: 'top',
   },
-  
+
   // Modal Button Styles
   modalButtonContainer: {
     marginTop: 10,
   },
   previewButton: {
-    backgroundColor: "#3B82F6",
+    backgroundColor: '#3B82F6',
     paddingVertical: 12,
     borderRadius: 12,
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: 16,
   },
   previewButtonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
-  buttonRow: { 
-    flexDirection: "row", 
-    justifyContent: "space-between",
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 12,
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: '#F3F4F6',
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: "center",
+    alignItems: 'center',
   },
   cancelButtonText: {
-    color: "#6B7280",
+    color: '#6B7280',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   saveButton: {
     flex: 1,
-    backgroundColor: "#10B981",
+    backgroundColor: '#10B981',
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: "center",
+    alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#9CA3AF',
   },
   saveButtonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
-  
+
   // Preview Modal Styles
   previewOverlay: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.8)',
   },
   previewContainer: {
-    width: "85%",
-    backgroundColor: "#fff",
+    width: '85%',
+    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 20,
   },
   previewHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
   previewTitle: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
+    fontWeight: '700',
+    color: '#111827',
   },
   previewClose: {
     fontSize: 18,
-    color: "#6B7280",
-    fontWeight: "bold",
+    color: '#6B7280',
+    fontWeight: 'bold',
   },
   previewCard: {
-    alignItems: "center",
+    alignItems: 'center',
     padding: 20,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: '#F9FAFB',
     borderRadius: 16,
     marginBottom: 20,
   },
@@ -696,31 +824,31 @@ const styles = StyleSheet.create({
   },
   previewName: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-    textAlign: "center",
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
     marginBottom: 6,
   },
   previewAddress: {
     fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
+    color: '#6B7280',
+    textAlign: 'center',
     marginBottom: 10,
   },
   previewOwner: {
     fontSize: 14,
-    color: "#1D4ED8",
-    fontWeight: "600",
+    color: '#1D4ED8',
+    fontWeight: '600',
   },
   previewCloseButton: {
-    backgroundColor: "#6B7280",
+    backgroundColor: '#6B7280',
     paddingVertical: 12,
     borderRadius: 12,
-    alignItems: "center",
+    alignItems: 'center',
   },
   previewCloseButtonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

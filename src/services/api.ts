@@ -56,3 +56,34 @@ export const authApi = {
     return response.data;
   },
 };
+
+// Profile types
+export interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  shopName?: string;
+  shopDetails?: string;
+}
+
+export interface UpdateProfileData {
+  name: string;
+  email: string;
+  phone?: string;
+  shopName?: string;
+  shopDetails?: string;
+}
+
+// Profile API functions
+export const profileApi = {
+  getProfile: async (): Promise<Profile> => {
+    const response = await api.get<Profile>('/users/profile');
+    return response.data;
+  },
+
+  updateProfile: async (data: UpdateProfileData): Promise<Profile> => {
+    const response = await api.put<Profile>('/users/profile', data);
+    return response.data;
+  },
+};
