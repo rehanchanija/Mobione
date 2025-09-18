@@ -1,4 +1,3 @@
-// BillDetailsScreen.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -8,6 +7,7 @@ import {
   Switch,
   ScrollView,
   TextInput,
+  Modal,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BillingStackParamList } from "../navigation/BillingStack";
@@ -18,15 +18,17 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
   const [discountEnabled, setDiscountEnabled] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("0");
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [name, setName] = useState("Jane Doe");
+  const [phone, setPhone] = useState("+1 (555) 123-4567");
+  const [address, setAddress] = useState("123 Main St, Anytown, CA");
+
   const subtotal = 44.0;
   const discount = parseFloat(discountAmount) || 0;
   const total = subtotal - discount;
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
-      {/* <Text style={styles.header}>🧾 Bill Details</Text> */}
-
       {/* Bill Summary */}
       <View style={styles.card}>
         <Text style={styles.title}>📋 Bill Summary</Text>
@@ -41,10 +43,7 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
       <View style={styles.card}>
         <View style={styles.row}>
           <Text style={styles.title}>💲 Apply Discount</Text>
-          <Switch
-            value={discountEnabled}
-            onValueChange={setDiscountEnabled}
-          />
+          <Switch value={discountEnabled} onValueChange={setDiscountEnabled} />
         </View>
 
         {discountEnabled && (
@@ -67,18 +66,14 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
       <View style={styles.card}>
         <View style={styles.row}>
           <Text style={styles.title}>👤 Customer Details</Text>
-        <TouchableOpacity
-  onPress={() => navigation.navigate("CustomerDetails" as never)}
->
-  <Text style={styles.edit}>✏️</Text>
-</TouchableOpacity>
-
-
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
+            <Text style={styles.edit}>✏️</Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.line} />
-        <Text style={styles.item}>Jane Doe</Text>
-        <Text style={styles.item}>📞 +1 (555) 123-4567</Text>
-        <Text style={styles.item}>🏠 123 Main St, Anytown, CA</Text>
+        <Text style={styles.item}>{name}</Text>
+        <Text style={styles.item}>📞 {phone}</Text>
+        <Text style={styles.item}>🏠 {address}</Text>
       </View>
 
       {/* Total */}
@@ -107,13 +102,49 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
           <Text style={styles.payText}>Next 💳</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Customer Details Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalHeader}>👤 Enter Customer Details</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Full Name"
+              value={name}
+              onChangeText={setName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Address"
+              value={address}
+              onChangeText={setAddress}
+              multiline
+            />
+
+            <TouchableOpacity
+              style={styles.saveBtn}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.saveText}>💾 Save & Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9f9f9", padding: 16 },
-  header: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   card: {
     backgroundColor: "#fff",
     padding: 14,
@@ -134,11 +165,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    padding: 8,
-    marginTop: 8,
+    padding: 10,
+    marginTop: 10,
     fontSize: 16,
   },
-  footer: { flexDirection: "row", justifyContent: "space-between", marginTop: 16, marginBottom: 30 },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+    marginBottom: 30,
+  },
   backBtn: {
     flex: 1,
     marginRight: 6,
@@ -158,4 +194,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   payText: { fontSize: 20, fontWeight: "bold", color: "#fff", textAlign: "center" },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCard: {
+    backgroundColor: "#fff",
+    width: "90%",
+    borderRadius: 12,
+    padding: 20,
+    elevation: 5,
+  },
+  modalHeader: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  saveBtn: {
+    backgroundColor: "#28a745",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  saveText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });
