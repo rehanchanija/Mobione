@@ -21,6 +21,7 @@ export type RootStackParamList = {
       AppSettings: undefined;
       HelpSupport: undefined;
       Notification: undefined;
+      CreateProfile:undefined;
     };
 
     export type RootTabParamList = {

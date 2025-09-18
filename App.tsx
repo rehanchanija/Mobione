@@ -9,6 +9,7 @@ import { RootStackParamList } from './src/navigation/types';
 import ProfileStack from './src/navigation/ProfileStack';
 import NotificationScreen from './src/screens/ProfileScreen/NotificationScreen';
 import AuthScreen from './src/screens/AuthScreen';
+import CreateProfileScreen from './src/screens/ProfileScreen/CreateProfileScreen';
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Splash" component={SplashScreen} />
           <Stack.Screen name="AuthScreen" component={AuthScreen} />
+          <Stack.Screen name="CreateProfile" component={CreateProfileScreen} />
           <Stack.Screen name="MainTabs" component={TabNavigator} />
           <Stack.Screen name="Profile" component={ProfileStack} />
           <Stack.Screen name="Notification" component={NotificationScreen} />
