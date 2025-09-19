@@ -3,16 +3,23 @@ import { authApi, LoginData, RegisterData, AuthResponse, profileApi, Profile, Up
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { useAuthContext } from '../context/AuthContext';
 
 export const useAuth = () => {
   const navigation = useNavigation();
+  const { initialize } = useAuthContext();
 
   const loginMutation = useMutation<AuthResponse, Error, LoginData>({
     mutationFn: authApi.login,
     onSuccess: async (data) => {
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
-      navigation.navigate('MainTabs' as never);
+      await initialize();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' as never }],
+      });
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Login failed. Please try again.';
@@ -36,11 +43,31 @@ export const useAuth = () => {
   const queryClient = useQueryClient();
 
   // Profile query
-  const { data: profile, isLoading: isProfileLoading } = useQuery<Profile>({
+  const [isTokenAvailable, setIsTokenAvailable] = useState(false);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem('token');
+      setIsTokenAvailable(!!token);
+    };
+    checkToken();
+  }, []);
+
+  const { data: profile, isLoading: isProfileLoading, error: profileQueryError } = useQuery<Profile>({
     queryKey: ['profile'],
-    queryFn: profileApi.getProfile,
-    enabled: !!AsyncStorage.getItem('token'), // Only fetch if token exists
-    retry: false,
+    queryFn: async () => {
+      try {
+        const result = await profileApi.getProfile();
+        return result;
+      } catch (error: any) {
+        const message = error.response?.data?.message || 'Failed to fetch profile';
+        console.error('Profile fetch error:', error);
+        Alert.alert('Error', message);
+        throw error;
+      }
+    },
+    enabled: isTokenAvailable,
+    retry: false
   });
 
   // Update profile mutation
@@ -62,7 +89,11 @@ export const useAuth = () => {
     await AsyncStorage.removeItem('user');
     // Clear all queries from cache on logout
     queryClient.clear();
-    navigation.navigate('Auth' as never);
+    await initialize();
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'AuthScreen' as never }],
+    });
   };
 
   return {

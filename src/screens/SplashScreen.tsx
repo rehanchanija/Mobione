@@ -10,12 +10,13 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { useAuthContext } from '../context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
   const navigation = useNavigation();
-  
+
   // Animation values
   const logoScale = useRef(new Animated.Value(0)).current;
   const logoRotation = useRef(new Animated.Value(0)).current;
@@ -27,34 +28,58 @@ const SplashScreen = () => {
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const loadingOpacity = useRef(new Animated.Value(0)).current;
   const progressWidth = useRef(new Animated.Value(0)).current;
-  
+
   // Floating shapes animations
   const shape1TranslateY = useRef(new Animated.Value(0)).current;
   const shape1Opacity = useRef(new Animated.Value(0.3)).current;
   const shape1Rotation = useRef(new Animated.Value(0)).current;
-  
+
   const shape2TranslateY = useRef(new Animated.Value(0)).current;
   const shape2Opacity = useRef(new Animated.Value(0.3)).current;
   const shape2Rotation = useRef(new Animated.Value(0)).current;
-  
+
   const shape3TranslateY = useRef(new Animated.Value(0)).current;
   const shape3Opacity = useRef(new Animated.Value(0.3)).current;
   const shape3Rotation = useRef(new Animated.Value(0)).current;
-  
+
   const shape4TranslateY = useRef(new Animated.Value(0)).current;
   const shape4Opacity = useRef(new Animated.Value(0.3)).current;
   const shape4Rotation = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    startAnimations();
-    
-    // Navigate to main screen after 3.5 seconds
-    const timer = setTimeout(() => {
-      navigation.navigate('AuthScreen' as never); // Navigate to AuthScreen 
-    }, 3500);
+  const { isAuthenticated, isLoading } = useAuthContext();
 
-    return () => clearTimeout(timer);
-  }, []);
+  useEffect(() => {
+    const checkAuthAndNavigate = async () => {
+      try {
+        await startAnimations();
+
+        // small delay so splash is visible for ~3.5s
+        await new Promise(resolve => setTimeout(resolve, 3500));
+
+        if (!isLoading) {
+          if (isAuthenticated) {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTabs' as never }],
+            });
+          } else {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'AuthScreen' as never }],
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error in auth check:', error);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'AuthScreen' as never }],
+        });
+      }
+    };
+
+    checkAuthAndNavigate();
+  }, [isLoading, isAuthenticated]);
 
   const startAnimations = () => {
     // Logo animation
@@ -145,11 +170,12 @@ const SplashScreen = () => {
   };
 
   const startFloatingAnimation = (
- translateY: Animated.Value,
-  opacity: Animated.Value,
-  rotation: Animated.Value,
-  duration: number,
-  delay: number  ) => {
+    translateY: Animated.Value,
+    opacity: Animated.Value,
+    rotation: Animated.Value,
+    duration: number,
+    delay: number
+  ) => {
     setTimeout(() => {
       Animated.loop(
         Animated.parallel([
@@ -220,7 +246,7 @@ const SplashScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
+
       <LinearGradient
         colors={['#667eea', '#667eea']}
         start={{ x: 0, y: 0 }}
@@ -241,7 +267,7 @@ const SplashScreen = () => {
             },
           ]}
         />
-        
+
         <Animated.View
           style={[
             styles.floatingShape,
@@ -255,7 +281,7 @@ const SplashScreen = () => {
             },
           ]}
         />
-        
+
         <Animated.View
           style={[
             styles.floatingShape,
@@ -269,7 +295,7 @@ const SplashScreen = () => {
             },
           ]}
         />
-        
+
         <Animated.View
           style={[
             styles.floatingShape,

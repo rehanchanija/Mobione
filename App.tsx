@@ -1,5 +1,6 @@
 import React from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
+import { AuthProvider } from './src/context/AuthContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,17 +21,31 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Splash" component={SplashScreen} />
-          <Stack.Screen name="AuthScreen" component={AuthScreen} />
-          <Stack.Screen name="CreateProfile" component={CreateProfileScreen} />
-          <Stack.Screen name="MainTabs" component={TabNavigator} />
-          <Stack.Screen name="Profile" component={ProfileStack} />
-          <Stack.Screen name="Notification" component={NotificationScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <AuthProvider>
+        <NavigationContainer>
+          <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen 
+              name="AuthScreen" 
+              component={AuthScreen}
+              options={{
+                gestureEnabled: false,
+              }} 
+            />
+            <Stack.Screen name="CreateProfile" component={CreateProfileScreen} />
+            <Stack.Screen 
+              name="MainTabs" 
+              component={TabNavigator}
+              options={{
+                gestureEnabled: false,
+              }} 
+            />
+            <Stack.Screen name="Profile" component={ProfileStack} />
+            <Stack.Screen name="Notification" component={NotificationScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

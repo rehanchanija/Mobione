@@ -229,7 +229,7 @@ const ProfileScreen = () => {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Made with ❤️ by FlowPay Team</Text>
+          <Text style={styles.footerText}>Made with ❤️ by MobiOne Team</Text>
           <Text style={styles.footerVersion}>
             Version 2.1.0 • © 2024 FlowPay Solutions
           </Text>
