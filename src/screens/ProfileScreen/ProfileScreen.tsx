@@ -47,7 +47,6 @@ const ProfileScreen = () => {
     },
   ];
 
-  const [isLoading, setIsLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [shopName, setShopName] = useState('');
