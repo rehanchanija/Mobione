@@ -43,15 +43,28 @@ export interface AuthResponse {
     id: string;
     email: string;
     name: string;
+    phone?: string;
+    shopName?: string;
+    shopDetails?: string;
   };
-  token: string;
+  token: string; // normalized token (could be backend access_token)
 }
 
 export const authApi = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     try {
-      const response = await api.post<AuthResponse>('/auth/login', data);
-      return response.data;
+      const response = await api.post('/auth/login', data);
+      const raw = response.data as any;
+      const token = raw?.token || raw?.access_token;
+
+      if (!token) {
+        console.warn('Login succeeded but token is missing in response');
+      }
+
+      return {
+        user: raw?.user,
+        token,
+      } as AuthResponse;
     } catch (error: any) {
       console.error('Login error details:', {
         message: error.message,

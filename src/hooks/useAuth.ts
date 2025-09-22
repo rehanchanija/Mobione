@@ -55,7 +55,7 @@ export const useAuth = () => {
     checkToken();
   }, []);
 
-  const { data: profile, isLoading: isProfileLoading, error: profileQueryError } = useQuery<Profile>({
+  const { data: profile, isLoading: isProfileLoading, error: profileQueryError, refetch: refetchProfile } = useQuery<Profile>({
     queryKey: ['profile'],
     queryFn: async () => {
       try {
@@ -63,11 +63,15 @@ export const useAuth = () => {
         return result;
       } catch (error: any) {
         const message = error.response?.data?.message || 'Failed to fetch profile';
+        console.log('Profile query error:', message);
         throw error;
       }
     },
-    enabled: isTokenAvailable,
-    retry: false
+    // Always enabled; interceptor adds Authorization when token exists
+    enabled: true,
+    retry: false,
+    refetchOnMount: 'always',
+    refetchOnReconnect: true,
   });
 
   // Update profile mutation
@@ -100,11 +104,12 @@ export const useAuth = () => {
     login: loginMutation.mutate,
     logout,
     profile,
+    refetchProfile,
     updateProfile: updateProfileMutation.mutate,
     isLoading: loginMutation.isPending ,
     isProfileLoading,
     isUpdatingProfile: updateProfileMutation.isPending,
     error: loginMutation.error ,
-    profileError: updateProfileMutation.error,
+    profileError: profileQueryError,
   };
 };

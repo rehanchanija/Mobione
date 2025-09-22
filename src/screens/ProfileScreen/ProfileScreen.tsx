@@ -17,6 +17,8 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import { useAuth } from '../../hooks/useAuth';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const screens = [
@@ -84,10 +86,11 @@ const ProfileScreen = () => {
     setPreviewVisible(true);
   };
 
-  const { profile, updateProfile,logout, isProfileLoading, isUpdatingProfile } =
+  const { profile, updateProfile,logout, isProfileLoading, isUpdatingProfile, refetchProfile } =
     useAuth();
 
   useEffect(() => {
+    
     if (profile) {
       setOwnerName(profile.name);
       setOwnerEmail(profile.email);
@@ -102,6 +105,14 @@ const ProfileScreen = () => {
       setTempShopDetails(profile.shopDetails || '');
     }
   }, [profile]);
+
+  useFocusEffect(
+    useCallback(() => {
+      // Refetch profile whenever screen comes into focus
+      refetchProfile();
+      return () => {};
+    }, [refetchProfile])
+  );
 
   const handleSave = () => {
     updateProfile({
