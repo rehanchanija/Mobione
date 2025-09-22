@@ -61,8 +61,6 @@ export const useAuth = () => {
         return result;
       } catch (error: any) {
         const message = error.response?.data?.message || 'Failed to fetch profile';
-        console.error('Profile fetch error:', error);
-        Alert.alert('Error', message);
         throw error;
       }
     },

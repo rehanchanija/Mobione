@@ -10,7 +10,6 @@ import { RootStackParamList } from './src/navigation/types';
 import ProfileStack from './src/navigation/ProfileStack';
 import NotificationScreen from './src/screens/ProfileScreen/NotificationScreen';
 import AuthScreen from './src/screens/AuthScreen';
-import CreateProfileScreen from './src/screens/ProfileScreen/CreateProfileScreen';
 
 const queryClient = new QueryClient();
 
@@ -33,7 +32,7 @@ const App = () => {
                 gestureEnabled: false,
               }} 
             />
-            <Stack.Screen name="CreateProfile" component={CreateProfileScreen} />
+         
             <Stack.Screen 
               name="MainTabs" 
               component={TabNavigator}

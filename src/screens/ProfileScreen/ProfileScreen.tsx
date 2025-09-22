@@ -84,7 +84,7 @@ const ProfileScreen = () => {
     setPreviewVisible(true);
   };
 
-  const { profile, updateProfile, isProfileLoading, isUpdatingProfile } =
+  const { profile, updateProfile,logout, isProfileLoading, isUpdatingProfile } =
     useAuth();
 
   useEffect(() => {
@@ -95,7 +95,6 @@ const ProfileScreen = () => {
       setShopName(profile.shopName || '');
       setShopDetails(profile.shopDetails || '');
 
-      // Also set temporary values
       setTempOwnerName(profile.name);
       setTempOwnerEmail(profile.email);
       setTempOwnerPhone(profile.phone || '');
@@ -139,6 +138,9 @@ const ProfileScreen = () => {
     setModalVisible(true);
   };
 
+  const handlelogout = async () => {
+   logout()
+  };
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
@@ -220,7 +222,10 @@ const ProfileScreen = () => {
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={() =>
-            Alert.alert('Logout', 'Are you sure you want to logout?')
+            Alert.alert('Logout', 'Are you sure you want to logout?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Logout', onPress: handlelogout },
+            ])
           }
         >
           <Text style={styles.logoutText}>🚪 Logout</Text>
