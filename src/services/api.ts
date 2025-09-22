@@ -2,22 +2,21 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-const BASE_URL = Platform.select({
-  android: __DEV__
-    ? 'http://10.155.160.71:3000'  // Android Emulator
-    : 'http://10.155.160.71:3000',  // REPLACE X with your IP's last number
-
-}) 
+// ✅ Safer BASE_URL handling
+const BASE_URL =
+  Platform.OS === 'android'
+    ? 'http://10.155.160.71:3000'
+    : 'http://10.155.160.71:3000';
 
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 10000,
 });
 
-// Add token to requests if it exists
+// ✅ Attach token automatically
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
   if (token) {
@@ -26,9 +25,7 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Test connection function
-
-// Auth types
+// ---------------- AUTH ----------------
 export interface LoginData {
   email: string;
   password: string;
@@ -50,15 +47,10 @@ export interface AuthResponse {
   token: string;
 }
 
-// Auth API functions
 export const authApi = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     try {
-      console.log('Attempting login with:', { email: data.email });
-      console.log('API URL:', `${BASE_URL}/auth/login`);
-      
       const response = await api.post<AuthResponse>('/auth/login', data);
-      console.log('Login response:', response.data);
       return response.data;
     } catch (error: any) {
       console.error('Login error details:', {
@@ -70,32 +62,9 @@ export const authApi = {
       throw error;
     }
   },
-  
-  register: async (data: RegisterData): Promise<AuthResponse> => {
-    try {
-      console.log('Attempting registration with:', { 
-        email: data.email,
-        name: data.name,
-        phone: data.phone 
-      });
-      console.log('API URL:', `${BASE_URL}/auth/register`);
-      
-      const response = await api.post<AuthResponse>('/auth/register', data);
-      console.log('Registration response:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('Registration error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        url: error.config?.url,
-      });
-      throw error;
-    }
-  },
 };
 
-// Profile types
+// ---------------- PROFILE ----------------
 export interface Profile {
   id: string;
   name: string;
@@ -113,20 +82,19 @@ export interface UpdateProfileData {
   shopDetails?: string;
 }
 
-// Profile API functions
 export const profileApi = {
   getProfile: async (): Promise<Profile> => {
     try {
-      // Log token before making request
       const token = await AsyncStorage.getItem('token');
-      console.log('Getting profile with token:', token ? 'Token exists' : 'No token');
-      console.log('API URL:', `${BASE_URL}/auth/profile`);
+      console.log('📌 Getting profile, token:', token);
 
+      // ✅ Adjust this endpoint if Postman uses `/api/auth/profile`
       const response = await api.get<Profile>('/auth/profile');
-      console.log('Profile response:', response.data);
+      console.log('✅ Profile response:', response.data);
+
       return response.data;
     } catch (error: any) {
-      console.error('Get profile error details:', {
+      console.error('❌ Get profile error details:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
@@ -138,14 +106,15 @@ export const profileApi = {
 
   updateProfile: async (data: UpdateProfileData): Promise<Profile> => {
     try {
-      console.log('Updating profile with data:', data);
-      console.log('API URL:', `${BASE_URL}/auth/profile`);
+      console.log('📌 Updating profile with:', data);
 
+      // ✅ Adjust endpoint if Postman uses `/api/auth/profile`
       const response = await api.put<Profile>('/auth/profile', data);
-      console.log('Update profile response:', response.data);
+      console.log('✅ Update profile response:', response.data);
+
       return response.data;
     } catch (error: any) {
-      console.error('Update profile error details:', {
+      console.error('❌ Update profile error details:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,

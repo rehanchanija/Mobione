@@ -12,33 +12,35 @@ export const useAuth = () => {
 
   const loginMutation = useMutation<AuthResponse, Error, LoginData>({
     mutationFn: authApi.login,
-    onSuccess: async (data) => {
-      await AsyncStorage.setItem('token', data.token);
-      await AsyncStorage.setItem('user', JSON.stringify(data.user));
-      await initialize();
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'MainTabs' as never }],
-      });
-    },
+  onSuccess: async (data) => {
+  console.log('Login Success:', data);
+
+  if (data?.token) {
+    await AsyncStorage.setItem('token', String(data.token));
+  } else {
+    console.warn('No token found in response');
+  }
+
+  if (data?.user) {
+    await AsyncStorage.setItem('user', JSON.stringify(data.user));
+  } else {
+    console.warn('No user found in response');
+  }
+
+  await initialize();
+  navigation.reset({
+    index: 0,
+    routes: [{ name: 'MainTabs' as never }],
+  });
+},
+
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Login failed. Please try again.';
       Alert.alert('Error', message);
     }
   });
 
-  const registerMutation = useMutation<AuthResponse, Error, RegisterData>({
-    mutationFn: authApi.register,
-    onSuccess: async (data) => {
-      await AsyncStorage.setItem('token', data.token);
-      await AsyncStorage.setItem('user', JSON.stringify(data.user));
-      navigation.navigate('CreateProfile' as never);
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Registration failed. Please try again.';
-      Alert.alert('Error', message);
-    }
-  });
+  
 
   const queryClient = useQueryClient();
 
@@ -96,14 +98,13 @@ export const useAuth = () => {
 
   return {
     login: loginMutation.mutate,
-    register: registerMutation.mutate,
     logout,
     profile,
     updateProfile: updateProfileMutation.mutate,
-    isLoading: loginMutation.isPending || registerMutation.isPending,
+    isLoading: loginMutation.isPending ,
     isProfileLoading,
     isUpdatingProfile: updateProfileMutation.isPending,
-    error: loginMutation.error || registerMutation.error,
+    error: loginMutation.error ,
     profileError: updateProfileMutation.error,
   };
 };
