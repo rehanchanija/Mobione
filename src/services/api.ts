@@ -179,7 +179,7 @@ export const brandsApi = {
   },
   createProduct: async (
     brandId: string,
-    data: { name: string; description?: string; price: number; stock: number; categoryId: string },
+    data: { name: string; description?: string; barcode?: string; price: number; stock: number; categoryId: string },
   ): Promise<any> => {
     const res = await api.post<any>(`/brands/${brandId}/products`, data);
     return res.data;
@@ -194,7 +194,7 @@ export const productsApi = {
   },
   update: async (
     id: string,
-    data: Partial<{ name: string; description?: string; price: number; stock: number; brandId: string; categoryId: string }>,
+    data: Partial<{ name: string; description?: string; barcode?: string; price: number; stock: number; brandId: string; categoryId: string }>,
   ): Promise<any> => {
     const res = await api.put<any>(`/products/${id}`, data);
     return res.data;

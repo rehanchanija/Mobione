@@ -10,6 +10,8 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
+import { RNCamera } from 'react-native-camera';
+import { PermissionsAndroid, Platform, Linking } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { brandsApi, categoriesApi, productsApi } from "../services/api";
 
@@ -84,11 +86,43 @@ export default function ProductListScreen() {
   const [productPrice, setProductPrice] = useState("");
   const [productStock, setProductStock] = useState("");
   const [productDetails, setProductDetails] = useState("");
+  const [productBarcode, setProductBarcode] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [isScannerVisible, setIsScannerVisible] = useState(false);
+
+  const requestCameraPermission = async (): Promise<boolean> => {
+    if (Platform.OS !== 'android') return true;
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        {
+          title: 'Camera Permission',
+          message: 'We need access to your camera to scan barcodes.',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        }
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) return true;
+      if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+        Alert.alert(
+          'Permission required',
+          'Camera permission is permanently denied. Open settings to enable it.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ],
+        );
+      }
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -119,6 +153,7 @@ export default function ProductListScreen() {
     setProductPrice("");
     setProductStock("0");
     setProductDetails("");
+    setProductBarcode("");
     setSelectedCategoryId("");
     setIsProductModalVisible(true);
   };
@@ -131,6 +166,7 @@ export default function ProductListScreen() {
   setProductStock(String(product.stock));
   setAddStockQuantity(""); // blank input for adding stock
   setProductDetails("");
+  setProductBarcode("");
   setSelectedCategoryId(product.category);
   setIsProductModalVisible(true);
 };
@@ -172,6 +208,7 @@ export default function ProductListScreen() {
     const base = {
       name: productName,
       description: productDetails || undefined,
+      barcode: productBarcode || undefined,
       price: isNaN(numericPrice) ? 0 : numericPrice,
       stock: Math.max(0, Number(productStock) + (parseInt(addStockQuantity) || 0)),
       categoryId: selectedCategoryId,
@@ -290,6 +327,7 @@ export default function ProductListScreen() {
             </View>
           </View>
         )}
+        contentContainerStyle={{ paddingBottom: 100 }}
       />
 
       {/* Add Product Button */}
@@ -393,6 +431,24 @@ export default function ProductListScreen() {
                 onChangeText={setProductDetails}
                 textAlignVertical="top"
               />
+              <View style={styles.barcodeRow}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Barcode (Optional)"
+                  value={productBarcode}
+                  onChangeText={setProductBarcode}
+                />
+                <TouchableOpacity
+                  style={styles.scanButton}
+                  onPress={async () => {
+                    const ok = await requestCameraPermission();
+                    if (ok) setIsScannerVisible(true);
+                    else Alert.alert('Permission required', 'Camera permission was denied');
+                  }}
+                >
+                  <Text style={styles.scanButtonText}>📷</Text>
+                </TouchableOpacity>
+              </View>
               
               <View style={styles.modalButtons}>
                 <TouchableOpacity
@@ -403,6 +459,7 @@ export default function ProductListScreen() {
                     setProductPrice("");
                     setProductStock("");
                     setProductDetails("");
+                    setProductBarcode("");
                     setSelectedCategoryId("");
                     setShowCategoryDropdown(false);
                     setIsEditMode(false);
@@ -422,6 +479,33 @@ export default function ProductListScreen() {
               </View>
             </ScrollView>
           </View>
+        </View>
+      </Modal>
+
+      {/* Scanner Modal */}
+      <Modal
+        animationType="fade"
+        transparent={false}
+        visible={isScannerVisible}
+        onRequestClose={() => setIsScannerVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: '#000' }}>
+          <RNCamera
+            style={{ flex: 1 }}
+            captureAudio={false}
+            onBarCodeRead={(e: { data: string }) => {
+              if (e?.data) {
+                setProductBarcode(e.data);
+                setIsScannerVisible(false);
+              }
+            }}
+          />
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 40, right: 20, backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}
+            onPress={() => setIsScannerVisible(false)}
+          >
+            <Text style={{ color: '#111827', fontWeight: '600' }}>Close</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
 
@@ -478,6 +562,7 @@ export default function ProductListScreen() {
 
 const styles = StyleSheet.create({
   container: { 
+    flex: 1,
     backgroundColor: "#FFFFFF", 
     paddingHorizontal: 24,
     paddingVertical:12,
@@ -729,5 +814,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
+  },
+  barcodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  scanButton: {
+    marginLeft: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#EEE',
+    borderRadius: 8,
+  },
+  scanButtonText: {
+    color: '#111827',
+    fontWeight: '600',
   },
 });
