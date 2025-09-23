@@ -169,6 +169,14 @@ export const brandsApi = {
     const res = await api.get<any[]>(`/brands/${brandId}/products`);
     return res.data;
   },
+  stockTotal: async (brandId: string): Promise<{ stockTotal: number }> => {
+    const res = await api.get<{ stockTotal: number }>(`/brands/${brandId}/stock`);
+    return res.data;
+  },
+  productCount: async (brandId: string): Promise<{ productCount: number }> => {
+    const res = await api.get<{ productCount: number }>(`/brands/${brandId}/product-count`);
+    return res.data;
+  },
   createProduct: async (
     brandId: string,
     data: { name: string; description?: string; price: number; stock: number; categoryId: string },

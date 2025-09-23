@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -20,6 +21,7 @@ type ProductsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList
 interface Brand {
   _id: string;
   name: string;
+  productCount?: number;
 }
 
 interface Product {
@@ -147,16 +149,37 @@ export default function ProductsScreen() {
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [brandName, setBrandName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadBrands = async () => {
     try {
       setLoading(true);
       const data = await brandsApi.list();
-      setBrands(data);
+      // fetch product counts in parallel per brand (simple N+1; can optimize later)
+      const withTotals = await Promise.all(
+        data.map(async (b) => {
+          try {
+            const c = await brandsApi.productCount(b._id);
+            return { ...b, productCount: c.productCount } as Brand;
+          } catch {
+            return { ...b, productCount: 0 } as Brand;
+          }
+        })
+      );
+      setBrands(withTotals);
     } catch (e) {
       Alert.alert("Error", "Failed to load brands");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await loadBrands();
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -239,7 +262,7 @@ export default function ProductsScreen() {
         onPress={() => handleBrandPress(item)}
       >
         <Text style={styles.brandName}>{item.name}</Text>
-        {/* Optionally could fetch per-brand product counts */}
+        <Text style={styles.productCount}>{(item.productCount ?? 0)} products</Text>
       </TouchableOpacity>
       
       <View style={styles.brandActions}>
@@ -270,6 +293,7 @@ export default function ProductsScreen() {
         numColumns={2}
         keyExtractor={(item) => item._id}
         renderItem={renderBrandCard}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
 
       <TouchableOpacity

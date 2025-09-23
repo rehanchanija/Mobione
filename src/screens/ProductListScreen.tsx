@@ -69,6 +69,7 @@ export default function ProductListScreen() {
   const { brand } = route.params;
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [brandStockTotal, setBrandStockTotal] = useState<number>(0);
   const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const [activeFilter, setActiveFilter] = useState<'daily' | 'weekly' | 'monthly' | 'allTime'>('allTime');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -92,12 +93,14 @@ export default function ProductListScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [prods, cats] = await Promise.all([
+      const [prods, cats, stock] = await Promise.all([
         brandsApi.products(brand.id),
         categoriesApi.list(),
+        brandsApi.stockTotal(brand.id),
       ]);
       setProducts(prods as any);
       setCategories(cats);
+      setBrandStockTotal(stock.stockTotal ?? 0);
     } catch {
       Alert.alert('Error', 'Failed to load products/categories');
     } finally {
@@ -204,7 +207,7 @@ export default function ProductListScreen() {
           </TouchableOpacity>
         </View>
           <Text style={styles.brandTitle}>
-            {brand.emoji} {brand.name}
+            Total Stock: {brandStockTotal}
           </Text>
       </View>
 
@@ -503,10 +506,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
  brandTitle: { 
-  fontSize: 24, 
-  fontWeight: "700",
+  fontSize: 16, 
+  fontWeight: "600",
   color: "#1a1a1a",
-  flex: 1,
   textAlign: "center",
   backgroundColor: "transparent"
 },
