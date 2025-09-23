@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,13 +13,13 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
+import { brandsApi } from "../services/api";
 
 type ProductsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Brand {
-  id: string;
+  _id: string;
   name: string;
-  emoji: string;
 }
 
 interface Product {
@@ -34,14 +34,7 @@ interface Product {
   quantity?: number;
 }
 
-const initialBrands: Brand[] = [
-  { id: "1", name: "Apple", emoji: "🍎" },
-  { id: "2", name: "Samsung", emoji: "📱" },
-  { id: "3", name: "OnePlus", emoji: "⭐" },
-  { id: "4", name: "Xiaomi", emoji: "📱" },
-  { id: "5", name: "Google", emoji: "🤖" },
-  { id: "6", name: "Nothing", emoji: "💡" },
-];
+const initialBrands: Brand[] = [];
 
 const initialProducts: Product[] = [
   {
@@ -153,27 +146,40 @@ export default function ProductsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [brandName, setBrandName] = useState("");
-  const [brandEmoji, setBrandEmoji] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const loadBrands = async () => {
+    try {
+      setLoading(true);
+      const data = await brandsApi.list();
+      setBrands(data);
+    } catch (e) {
+      Alert.alert("Error", "Failed to load brands");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBrands();
+  }, []);
 
   const handleBrandPress = (brand: Brand) => {
-    const brandProducts = products.filter(p => p.brandId === brand.id);
     navigation.navigate("ProductList", {
-      brand: brand.name,
-      products: brandProducts,
+      brand: { id: brand._id, name: brand.name, emoji: "" },
+      products: [],
     });
   };
 
   const handleCreateBrand = () => {
     setEditingBrand(null);
     setBrandName("");
-    setBrandEmoji("");
     setModalVisible(true);
   };
 
   const handleEditBrand = (brand: Brand) => {
     setEditingBrand(brand);
     setBrandName(brand.name);
-    setBrandEmoji(brand.emoji);
     setModalVisible(true);
   };
 
@@ -189,40 +195,40 @@ export default function ProductsScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setBrands(brands.filter(b => b.id !== brand.id));
+          onPress: async () => {
+            try {
+              await brandsApi.remove(brand._id);
+              setBrands(brands.filter(b => b._id !== brand._id));
+            } catch {
+              Alert.alert("Error", "Failed to delete brand");
+            }
           },
         },
       ]
     );
   };
 
-  const handleSaveBrand = () => {
-    if (!brandName.trim() || !brandEmoji.trim()) {
-      Alert.alert("Error", "Please enter both brand name and emoji");
+  const handleSaveBrand = async () => {
+    if (!brandName.trim()) {
+      Alert.alert("Error", "Please enter brand name");
       return;
     }
 
-    if (editingBrand) {
-      // Update existing brand
-      setBrands(brands.map(b => 
-        b.id === editingBrand.id 
-          ? { ...b, name: brandName, emoji: brandEmoji }
-          : b
-      ));
-    } else {
-      // Create new brand
-      const newBrand: Brand = {
-        id: (brands.length + 1).toString(),
-        name: brandName,
-        emoji: brandEmoji,
-      };
-      setBrands([...brands, newBrand]);
+    try {
+      if (editingBrand) {
+        const updated = await brandsApi.update(editingBrand._id, { name: brandName });
+        setBrands(brands.map(b => (b._id === editingBrand._id ? updated : b)));
+      } else {
+        const created = await brandsApi.create({ name: brandName });
+        setBrands([...brands, created]);
+      }
+    } catch {
+      Alert.alert("Error", editingBrand ? "Failed to update brand" : "Failed to create brand");
+      return;
     }
 
     setModalVisible(false);
     setBrandName("");
-    setBrandEmoji("");
     setEditingBrand(null);
   };
 
@@ -232,11 +238,8 @@ export default function ProductsScreen() {
         style={styles.brandContent}
         onPress={() => handleBrandPress(item)}
       >
-        <Text style={styles.brandEmoji}>{item.emoji}</Text>
         <Text style={styles.brandName}>{item.name}</Text>
-        <Text style={styles.productCount}>
-          {products.filter(p => p.brandId === item.id).length} Products
-        </Text>
+        {/* Optionally could fetch per-brand product counts */}
       </TouchableOpacity>
       
       <View style={styles.brandActions}>
@@ -265,7 +268,7 @@ export default function ProductsScreen() {
       <FlatList
         data={brands}
         numColumns={2}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         renderItem={renderBrandCard}
       />
 

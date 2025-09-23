@@ -137,3 +137,79 @@ export const profileApi = {
     }
   },
 };
+
+// ---------------- BRANDS ----------------
+export interface BrandDto {
+  _id: string;
+  name: string;
+}
+
+export const brandsApi = {
+  list: async (): Promise<BrandDto[]> => {
+    const res = await api.get<BrandDto[]>('/brands');
+    return res.data;
+  },
+  total: async (): Promise<{ total: number }> => {
+    const res = await api.get<{ total: number }>(`/brands/total`);
+    return res.data;
+  },
+  create: async (data: { name: string }): Promise<BrandDto> => {
+    const res = await api.post<BrandDto>('/brands', data);
+    return res.data;
+  },
+  update: async (id: string, data: { name: string }): Promise<BrandDto> => {
+    const res = await api.put<BrandDto>(`/brands/${id}`, data);
+    return res.data;
+  },
+  remove: async (id: string): Promise<{ success: boolean }> => {
+    const res = await api.delete<{ success: boolean }>(`/brands/${id}`);
+    return res.data;
+  },
+  products: async (brandId: string): Promise<any[]> => {
+    const res = await api.get<any[]>(`/brands/${brandId}/products`);
+    return res.data;
+  },
+  createProduct: async (
+    brandId: string,
+    data: { name: string; description?: string; price: number; stock: number; categoryId: string },
+  ): Promise<any> => {
+    const res = await api.post<any>(`/brands/${brandId}/products`, data);
+    return res.data;
+  },
+};
+
+// ---------------- PRODUCTS ----------------
+export const productsApi = {
+  getById: async (id: string): Promise<any> => {
+    const res = await api.get<any>(`/products/${id}`);
+    return res.data;
+  },
+  update: async (
+    id: string,
+    data: Partial<{ name: string; description?: string; price: number; stock: number; brandId: string; categoryId: string }>,
+  ): Promise<any> => {
+    const res = await api.put<any>(`/products/${id}`, data);
+    return res.data;
+  },
+  remove: async (id: string): Promise<{ success: boolean }> => {
+    const res = await api.delete<{ success: boolean }>(`/products/${id}`);
+    return res.data;
+  },
+};
+
+// ---------------- CATEGORIES ----------------
+export interface CategoryDto {
+  _id: string;
+  name: string;
+}
+
+export const categoriesApi = {
+  list: async (): Promise<CategoryDto[]> => {
+    const res = await api.get<CategoryDto[]>(`/categories`);
+    return res.data;
+  },
+  create: async (data: { name: string }): Promise<CategoryDto> => {
+    const res = await api.post<CategoryDto>(`/categories`, data);
+    return res.data;
+  },
+};

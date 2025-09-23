@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,30 +11,18 @@ import {
   ScrollView,
 } from "react-native";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { brandsApi, categoriesApi, productsApi } from "../services/api";
 
 interface Product {
-  id: string;
+  _id: string;
   name: string;
-  price: string;
-  stock: string;
-  status: "In Stock" | "Low Stock" | "Out of Stock";
-  image: any;
-  emoji: string;
-  brandId: string;
-  quantity?: number;
-  sold?: {
-    daily: number;
-    weekly: number;
-    monthly: number;
-    allTime: number;
-  };
+  price: number;
+  stock: number;
+  brand: string;
+  category: string;
 }
 
-interface Brand {
-  id: string;
-  name: string;
-  emoji: string;
-}
+interface Brand { id: string; name: string; emoji?: string }
 
 interface FilterTabProps {
   title: string;
@@ -78,9 +66,10 @@ const availableBrands: Brand[] = [
 export default function ProductListScreen() {
   const navigation = useNavigation();
   const route = useRoute<ProductListScreenRouteProp>();
-  const { brand, products: initialProducts } = route.params;
+  const { brand } = route.params;
 
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const [activeFilter, setActiveFilter] = useState<'daily' | 'weekly' | 'monthly' | 'allTime'>('allTime');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -94,17 +83,40 @@ export default function ProductListScreen() {
   const [productPrice, setProductPrice] = useState("");
   const [productStock, setProductStock] = useState("");
   const [productDetails, setProductDetails] = useState("");
-  const [selectedBrandId, setSelectedBrandId] = useState(brand.id);
-  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [prods, cats] = await Promise.all([
+        brandsApi.products(brand.id),
+        categoriesApi.list(),
+      ]);
+      setProducts(prods as any);
+      setCategories(cats);
+    } catch {
+      Alert.alert('Error', 'Failed to load products/categories');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [brand.id]);
 
   const handleCreateProduct = () => {
     setIsEditMode(false);
     setEditingProduct(null);
     setProductName("");
     setProductPrice("");
-    setProductStock("");
+    setProductStock("0");
     setProductDetails("");
-    setSelectedBrandId(brand.id);
+    setSelectedCategoryId("");
     setIsProductModalVisible(true);
   };
 
@@ -112,12 +124,11 @@ export default function ProductListScreen() {
   setIsEditMode(true);
   setEditingProduct(product);
   setProductName(product.name);
-  setProductPrice(product.price);
-  // Show existing stock in a separate Text element
-  setProductStock(product.stock.replace(" available", ""));
+  setProductPrice(String(product.price));
+  setProductStock(String(product.stock));
   setAddStockQuantity(""); // blank input for adding stock
   setProductDetails("");
-  setSelectedBrandId(product.brandId);
+  setSelectedCategoryId(product.category);
   setIsProductModalVisible(true);
 };
 
@@ -134,55 +145,49 @@ export default function ProductListScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setProducts(products.filter(p => p.id !== product.id));
-            Alert.alert("Success", "Product deleted successfully");
+          onPress: async () => {
+            try {
+              await productsApi.remove(product._id);
+              setProducts(products.filter(p => p._id !== product._id));
+              Alert.alert("Success", "Product deleted successfully");
+            } catch {
+              Alert.alert('Error', 'Failed to delete product');
+            }
           },
         },
       ]
     );
   };
 
-  const handleSaveProduct = () => {
-    if (!productName.trim() || !productPrice.trim() || !productStock.trim()) {
-      Alert.alert("Error", "Please fill in all required fields");
+  const handleSaveProduct = async () => {
+    if (!productName.trim() || !productPrice.trim() || !selectedCategoryId) {
+      Alert.alert("Error", "Please fill in name, price, and category");
       return;
     }
 
-const stockNum = parseInt(productStock) + (parseInt(addStockQuantity) || 0);
-   const addedStock = parseInt(addStockQuantity) || 0;
-let newStockNum = parseInt(productStock) + addedStock;
+    const numericPrice = Number((productPrice || '').toString().replace(/[^0-9.\-]/g, ''));
+    const base = {
+      name: productName,
+      description: productDetails || undefined,
+      price: isNaN(numericPrice) ? 0 : numericPrice,
+      stock: Math.max(0, Number(productStock) + (parseInt(addStockQuantity) || 0)),
+      categoryId: selectedCategoryId,
+    };
 
-// Prevent stock from going negative
-if (newStockNum < 0) newStockNum = 0;
-
-const newStatus =
-  newStockNum === 0
-    ? "Out of Stock"
-    : newStockNum <= 5
-    ? "Low Stock"
-    : "In Stock";
-
-const selectedBrand = availableBrands.find(b => b.id === selectedBrandId);
-
-if (isEditMode && editingProduct) {
-  const updatedProducts = products.map(p =>
-    p.id === editingProduct.id
-      ? {
-          ...p,
-          name: productName,
-          price: productPrice,
-          stock: `${newStockNum} available`,
-          status: newStatus as "In Stock" | "Low Stock" | "Out of Stock",
-          emoji: selectedBrand?.emoji || p.emoji,
-          brandId: selectedBrandId,
-        }
-      : p
-  );
-  setProducts(updatedProducts);
-  Alert.alert("Success", "Product updated successfully");
-}
-
+    try {
+      if (isEditMode && editingProduct) {
+        const updated = await productsApi.update(editingProduct._id, base);
+        setProducts(products.map(p => (p._id === editingProduct._id ? updated : p)));
+        Alert.alert('Success', 'Product updated successfully');
+      } else {
+        const created = await brandsApi.createProduct(brand.id, base);
+        setProducts([created, ...products]);
+        Alert.alert('Success', 'Product created successfully');
+      }
+      setIsProductModalVisible(false);
+    } catch {
+      Alert.alert('Error', isEditMode ? 'Failed to update product' : 'Failed to create product');
+    }
   };
 
   return (
@@ -238,7 +243,7 @@ if (isEditMode && editingProduct) {
       {/* Product List */}
       <FlatList
         data={products}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={styles.productCard}>
             <TouchableOpacity
@@ -249,27 +254,20 @@ if (isEditMode && editingProduct) {
               }}
             >
               <View style={styles.productInfo}>
-                <Text style={styles.emoji}>{item.emoji}</Text>
+                <Text style={styles.emoji}>📦</Text>
                 <View>
                   <Text style={styles.productName}>{item.name}</Text>
                   <Text style={styles.productPrice}>💰 {item.price}</Text>
-                  <Text style={styles.productStock}>📦 {item.stock}</Text>
-                  <Text style={styles.productStock}>
-                    🛒 Sold: {item.sold ? item.sold[activeFilter] : 0}
-                  </Text>
+                  <Text style={styles.productStock}>📦 {item.stock} available</Text>
                 </View>
               </View>
               <View
                 style={[
                   styles.badge,
-                  item.status === "In Stock"
-                    ? styles.inStock
-                    : item.status === "Low Stock"
-                    ? styles.lowStock
-                    : styles.outOfStock,
+                  item.stock > 0 ? (item.stock < 5 ? styles.lowStock : styles.inStock) : styles.outOfStock,
                 ]}
               >
-                <Text style={styles.badgeText}>{item.status}</Text>
+                <Text style={styles.badgeText}>{item.stock > 0 ? (item.stock < 5 ? 'Low Stock' : 'In Stock') : 'Out of Stock'}</Text>
               </View>
             </TouchableOpacity>
             
@@ -347,33 +345,39 @@ if (isEditMode && editingProduct) {
 
               <TouchableOpacity
                 style={styles.dropdownButton}
-                onPress={() => setShowBrandDropdown(!showBrandDropdown)}
+                onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
               >
                 <Text style={styles.dropdownText}>
-                  {availableBrands.find(b => b.id === selectedBrandId)?.emoji} {availableBrands.find(b => b.id === selectedBrandId)?.name}
+                  {categories.find(c => c._id === selectedCategoryId)?.name || 'Select Category *'}
                 </Text>
-                <Text style={styles.dropdownArrow}>{showBrandDropdown ? "▲" : "▼"}</Text>
+                <Text style={styles.dropdownArrow}>{showCategoryDropdown ? "▲" : "▼"}</Text>
               </TouchableOpacity>
 
-              {showBrandDropdown && (
+              {showCategoryDropdown && (
                 <View style={styles.dropdownList}>
-                  {availableBrands.map((brand) => (
+                  {categories.map((c) => (
                     <TouchableOpacity
-                      key={brand.id}
+                      key={c._id}
                       style={[
                         styles.dropdownItem,
-                        selectedBrandId === brand.id && styles.selectedDropdownItem
+                        selectedCategoryId === c._id && styles.selectedDropdownItem
                       ]}
                       onPress={() => {
-                        setSelectedBrandId(brand.id);
-                        setShowBrandDropdown(false);
+                        setSelectedCategoryId(c._id);
+                        setShowCategoryDropdown(false);
                       }}
                     >
                       <Text style={styles.dropdownItemText}>
-                        {brand.emoji} {brand.name}
+                        {c.name}
                       </Text>
                     </TouchableOpacity>
                   ))}
+                  <TouchableOpacity
+                    style={[styles.dropdownItem, { alignItems: 'center' }]}
+                    onPress={() => setIsCategoryModalVisible(true)}
+                  >
+                    <Text style={{ color: '#007AFF', fontWeight: '600' }}>+ Create Category</Text>
+                  </TouchableOpacity>
                 </View>
               )}
               
@@ -396,8 +400,8 @@ if (isEditMode && editingProduct) {
                     setProductPrice("");
                     setProductStock("");
                     setProductDetails("");
-                    setSelectedBrandId(brand.id);
-                    setShowBrandDropdown(false);
+                    setSelectedCategoryId("");
+                    setShowCategoryDropdown(false);
                     setIsEditMode(false);
                     setEditingProduct(null);
                   }}
@@ -414,6 +418,54 @@ if (isEditMode && editingProduct) {
                 </TouchableOpacity>
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Create Category Modal */}
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isCategoryModalVisible}
+        onRequestClose={() => setIsCategoryModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Create Category</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Category Name *"
+              value={newCategoryName}
+              onChangeText={setNewCategoryName}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => setIsCategoryModalVisible(false)}
+              >
+                <Text style={[styles.buttonText, { color: '#666' }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.updateButton]}
+                onPress={async () => {
+                  if (!newCategoryName.trim()) {
+                    Alert.alert('Error', 'Please enter category name');
+                    return;
+                  }
+                  try {
+                    const created = await categoriesApi.create({ name: newCategoryName.trim() });
+                    setCategories([created, ...categories]);
+                    setSelectedCategoryId(created._id);
+                    setIsCategoryModalVisible(false);
+                    setNewCategoryName('');
+                  } catch {
+                    Alert.alert('Error', 'Failed to create category');
+                  }
+                }}
+              >
+                <Text style={styles.buttonText}>Create</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
