@@ -19,6 +19,7 @@ import * as ImagePicker from 'react-native-image-picker';
 import { useAuth } from '../../hooks/useAuth';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const screens = [
@@ -89,6 +90,48 @@ const ProfileScreen = () => {
   const { profile, updateProfile,logout, isProfileLoading, isUpdatingProfile, refetchProfile } =
     useAuth();
 
+  const [hasToken, setHasToken] = useState<boolean>(false);
+  const [checkingToken, setCheckingToken] = useState<boolean>(true);
+
+  // Check token on mount and on focus
+  const checkTokenAndMaybeFetch = useCallback(async () => {
+    try {
+      setCheckingToken(true);
+      const token = await AsyncStorage.getItem('token');
+      const exists = !!token;
+      setHasToken(exists);
+      if (exists) {
+        // Ensure profile is up to date when token present
+        await refetchProfile();
+      } else {
+        Alert.alert('Please login', 'You must be logged in to view your profile.', [
+          {
+            text: 'OK',
+            onPress: () =>
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'AuthScreen' as never }],
+              }),
+          },
+        ]);
+      }
+    } finally {
+      setCheckingToken(false);
+    }
+  }, [refetchProfile, navigation]);
+
+  useEffect(() => {
+    checkTokenAndMaybeFetch();
+  }, [checkTokenAndMaybeFetch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkTokenAndMaybeFetch();
+      return () => {};
+    }, [checkTokenAndMaybeFetch])
+  );
+
+    
   useEffect(() => {
     
     if (profile) {
@@ -106,15 +149,13 @@ const ProfileScreen = () => {
     }
   }, [profile]);
 
-  useFocusEffect(
-    useCallback(() => {
-      // Refetch profile whenever screen comes into focus
-      refetchProfile();
-      return () => {};
-    }, [refetchProfile])
-  );
+  // remove unconditional refetch above; token-checking handles it
 
   const handleSave = () => {
+    if (!hasToken) {
+      Alert.alert('Please login', 'You must be logged in to update your profile.');
+      return;
+    }
     updateProfile({
       name: tempOwnerName,
       email: tempOwnerEmail,
@@ -152,6 +193,21 @@ const ProfileScreen = () => {
   const handlelogout = async () => {
    logout()
   };
+  if (checkingToken) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#0000ff" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!hasToken) {
+    return null; // Alert + navigation reset will handle UI
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />

@@ -42,7 +42,7 @@ export default function BillingScreen() {
         <TouchableOpacity style={styles.primaryBtn}>
           <Text style={styles.primaryBtnText}>📷 Scan Barcode</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryBtn}>
+        <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.navigate("Product" as never)}>
           <Text style={styles.secondaryBtnText}>🛒 Select Products</Text>
         </TouchableOpacity>
       </View>

@@ -1,7 +1,8 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import ProductsScreen from "../screens/ProductsScreen";
+import ProductsScreen from "../screens/BrandScreen";
 import CreateProductScreen from "../screens/CreateProductScreen";
 import ProductListScreen from "../screens/ProductListScreen";
+import BrandScreen from "../screens/BrandScreen";
 
 export type ProductsStackParamList = {
   Products: undefined;
@@ -14,7 +15,7 @@ const Stack = createNativeStackNavigator<ProductsStackParamList>();
 export default function ProductsStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Products" component={ProductsScreen}
+      <Stack.Screen name="Products" component={BrandScreen}
     options={{
           headerShown: false, // 👈 hide default header
         }}

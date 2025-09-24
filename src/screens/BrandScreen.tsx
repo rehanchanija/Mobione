@@ -141,7 +141,7 @@ const initialProducts: Product[] = [
   },
 ];
 
-export default function ProductsScreen() {
+export default function BrandScreen() {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
   const [products] = useState<Product[]>(initialProducts);
   const [brands, setBrands] = useState<Brand[]>(initialBrands);
