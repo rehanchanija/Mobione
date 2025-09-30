@@ -11,9 +11,12 @@ export const useAuth = () => {
   const { initialize } = useAuthContext();
 
   const loginMutation = useMutation<AuthResponse, Error, LoginData>({
-    mutationFn: authApi.login,
-  onSuccess: async (data) => {
-  console.log('Login Success:', data);
+    mutationFn: async (loginData) => {
+      console.log('Attempting login with:', { email: loginData.email });
+      return authApi.login(loginData);
+    },
+    onSuccess: async (data) => {
+      console.log('Login Success:', data);
 
   if (data?.token) {
     await AsyncStorage.setItem('token', String(data.token));
@@ -35,7 +38,12 @@ export const useAuth = () => {
 },
 
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Login failed. Please try again.';
+      console.error('Login Error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      const message = error.response?.data?.message || error.message || 'Login failed. Please try again.';
       Alert.alert('Error', message);
     }
   });

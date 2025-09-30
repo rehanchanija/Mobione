@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,32 +11,34 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BillingStackParamList } from "../navigation/BillingStack";
+import { billsApi, customersApi } from "../services/api";
 
 type BillDetailsProps = NativeStackScreenProps<BillingStackParamList, "BillDetails">;
 
-export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
+export default function BillDetailsScreen({ navigation, route }: BillDetailsProps) {
   const [discountEnabled, setDiscountEnabled] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("0");
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [name, setName] = useState("Jane Doe");
-  const [phone, setPhone] = useState("+1 (555) 123-4567");
-  const [address, setAddress] = useState("123 Main St, Anytown, CA");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
 
-  const subtotal = 44.0;
+  const items = route.params?.items || [];
+  const subtotal = useMemo(() => items.reduce((s: number, it: any) => s + it.unitPrice * it.quantity, 0), [items]);
   const discount = parseFloat(discountAmount) || 0;
-  const total = subtotal - discount;
+  const total = Math.max(0, subtotal - discount);
 
   return (
     <ScrollView style={styles.container}>
       {/* Bill Summary */}
       <View style={styles.card}>
         <Text style={styles.title}>📋 Bill Summary</Text>
-        <Text style={styles.item}>☕ Premium Coffee Beans (250g) - $12.50</Text>
-        <Text style={styles.item}>🍞 Artisan Bread Loaf (x2) - $8.00</Text>
-        <Text style={styles.item}>🍯 Organic Honey (500g) - $9.75</Text>
-        <Text style={styles.item}>🥐 Fresh Croissants (x3) - $6.75</Text>
-        <Text style={styles.item}>🍰 Assorted Pastries (x2) - $7.00</Text>
+        {items.map((it: any, idx: number) => (
+          <Text key={idx} style={styles.item}>
+            {it.name} (x{it.quantity}) - ₹{(it.unitPrice * it.quantity).toFixed(2)}
+          </Text>
+        ))}
       </View>
 
       {/* Discount */}
@@ -80,24 +82,36 @@ export default function BillDetailsScreen({ navigation }: BillDetailsProps) {
       <View style={styles.card}>
         <Text style={styles.title}>🧮 Total Calculation</Text>
         <View style={styles.line} />
-        <Text style={styles.item}>Subtotal: ${subtotal.toFixed(2)}</Text>
-        <Text style={[styles.item, { color: "red" }]}>
-          Discount: -${discount.toFixed(2)}
+        <Text style={styles.item}>Subtotal: ₹{subtotal.toFixed(2)}</Text>
+        <Text style={[styles.item, { color: "red" }] }>
+          Discount: -₹{discount.toFixed(2)}
         </Text>
-        <Text style={styles.total}>Total Amount: ${total.toFixed(2)}</Text>
+        <Text style={styles.total}>Total Amount: ₹{total.toFixed(2)}</Text>
       </View>
 
       {/* Buttons */}
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>⬅️ Back</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.payBtn}
-          onPress={() => navigation.navigate("PaymentScreen")}
+          onPress={async () => {
+            // Create customer if needed then create bill
+            let customerId: string | undefined;
+            if (name.trim()) {
+              const c = await customersApi.create({ name, phone, address });
+              customerId = c._id || c.id;
+            }
+            await billsApi.create({
+              customerId,
+              items: items.map((it: any) => ({ productId: it.productId, quantity: it.quantity })),
+              discount,
+              paymentMethod: 'Cash',
+              amountPaid: total, // mark as fully paid; adjust based on UI later
+            });
+            navigation.navigate("PaymentScreen");
+          }}
         >
           <Text style={styles.payText}>Next 💳</Text>
         </TouchableOpacity>

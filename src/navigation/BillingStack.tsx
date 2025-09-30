@@ -5,11 +5,11 @@ import PaymentScreen from "../screens/PaymentScreen";
 import ProductsScreen from "../screens/BrandScreen";
 
 export type BillingStackParamList = {
-  Billing: undefined;
-  BillDetails: undefined;
+  Billing: { items?: { productId: string; name: string; unitPrice: number; quantity: number }[] } | undefined;
+  BillDetails: { items: { productId: string; name: string; unitPrice: number; quantity: number }[]; discount?: number } | undefined;
   CustomerDetails: undefined;
   PaymentScreen: undefined;
-  Product: undefined;
+  Product: { selected?: { productId: string; name: string; unitPrice: number; quantity: number }[] } | undefined;
 };
 
 const Stack = createNativeStackNavigator<BillingStackParamList>();

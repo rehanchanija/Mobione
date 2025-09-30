@@ -1,4 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
@@ -10,23 +10,16 @@ import {
 } from "react-native";
 import { BillingStackParamList } from "../navigation/BillingStack";
 
-type BillingNavProp = NativeStackNavigationProp<
-  BillingStackParamList,
-  "Billing"
->;
+type BillingNavProp = any;
 
 export default function BillingScreen() {
   const navigation = useNavigation<BillingNavProp>();
+  const route = useRoute<any>();
+  const initialItems = (route.params?.items as { productId: string; name: string; unitPrice: number; quantity: number }[]) || [];
+  const [items, setItems] = useState(initialItems);
   const [filter, setFilter] = useState<"All" | "Paid" | "Pending">("All");
 
-  const orders = [
-    { id: "#1001", name: "Ravi Kumar", items: 3, total: 500, status: "Paid" },
-    { id: "#1002", name: "Priya Sharma", items: 2, total: 250, status: "Pending" },
-    { id: "#1003", name: "Amit Singh", items: 5, total: 780.5, status: "Paid" },
-    { id: "#1004", name: "Neha Gupta", items: 1, total: 120, status: "Paid" },
-    { id: "#1005", name: "Vijay Mehta", items: 4, total: 610, status: "Pending" },
-    { id: "#1006", name: "Kirti Reddy", items: 2, total: 340, status: "Paid" },
-  ];
+  const orders: any[] = [];
 
   const filteredOrders =
     filter === "All" ? orders : orders.filter((o) => o.status === filter);
@@ -42,7 +35,7 @@ export default function BillingScreen() {
         <TouchableOpacity style={styles.primaryBtn}>
           <Text style={styles.primaryBtnText}>📷 Scan Barcode</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.navigate("Product" as never)}>
+        <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.navigate("Product" as never, { allProducts: true } as never)}>
           <Text style={styles.secondaryBtnText}>🛒 Select Products</Text>
         </TouchableOpacity>
       </View>
@@ -51,30 +44,33 @@ export default function BillingScreen() {
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>🧮 Current Bill</Text>
 
-        <View style={styles.billItem}>
-          <Text style={styles.billText}>☕ Espresso Blend {"\n"}2 x ₹150</Text>
-          <Text style={styles.billAmount}>₹300.00</Text>
-        </View>
-        <View style={styles.billItem}>
-          <Text style={styles.billText}>🥐 Croissant {"\n"}1 x ₹80</Text>
-          <Text style={styles.billAmount}>₹80.00</Text>
-        </View>
-        <View style={styles.billItem}>
-          <Text style={styles.billText}>🍊 Orange Juice {"\n"}1 x ₹120</Text>
-          <Text style={styles.billAmount}>₹120.00</Text>
-        </View>
+        {items.length === 0 ? (
+          <Text style={{ color: "#6b7280" }}>No items selected yet.</Text>
+        ) : (
+          <>
+            {items.map((it, idx) => (
+              <View style={styles.billItem} key={`${it.productId}-${idx}`}>
+                <Text style={styles.billText}>
+                  {it.name} {"\n"}
+                  {it.quantity} x ₹{it.unitPrice}
+                </Text>
+                <Text style={styles.billAmount}>₹{(it.unitPrice * it.quantity).toFixed(2)}</Text>
+              </View>
+            ))}
 
-        <View style={styles.billTotal}>
-          <Text style={styles.billTotalText}>Subtotal</Text>
-          <Text style={styles.billTotalText}>₹500.00</Text>
-        </View>
+            <View style={styles.billTotal}>
+              <Text style={styles.billTotalText}>Subtotal</Text>
+              <Text style={styles.billTotalText}>₹{items.reduce((s, it) => s + it.unitPrice * it.quantity, 0).toFixed(2)}</Text>
+            </View>
 
-        <TouchableOpacity
-          style={[styles.primaryBtn, { marginTop: 15 }]}
-          onPress={() => navigation.navigate("BillDetails")}
-        >
-          <Text style={styles.primaryBtnText}>💳 Proceed to Payment</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.primaryBtn, { marginTop: 15 }]}
+              onPress={() => navigation.navigate("BillDetails", { items })}
+            >
+              <Text style={styles.primaryBtnText}>💳 Proceed to Payment</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {/* Recent Orders */}

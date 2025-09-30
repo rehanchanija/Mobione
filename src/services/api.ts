@@ -5,8 +5,8 @@ import { Platform } from 'react-native';
 // ✅ Safer BASE_URL handling
 const BASE_URL =
   Platform.OS === 'android'
-    ? 'http://10.155.160.71:3000'
-    : 'http://10.155.160.71:3000';
+    ? 'http://172.18.71.71:3000'
+    : 'http://172.18.71.71:3000';
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -188,6 +188,10 @@ export const brandsApi = {
 
 // ---------------- PRODUCTS ----------------
 export const productsApi = {
+  list: async (q?: string): Promise<any[]> => {
+    const res = await api.get<any[]>(`/products`, { params: { q } });
+    return res.data;
+  },
   getById: async (id: string): Promise<any> => {
     const res = await api.get<any>(`/products/${id}`);
     return res.data;
@@ -218,6 +222,49 @@ export const categoriesApi = {
   },
   create: async (data: { name: string }): Promise<CategoryDto> => {
     const res = await api.post<CategoryDto>(`/categories`, data);
+    return res.data;
+  },
+};
+
+// ---------------- CUSTOMERS & BILLS ----------------
+export interface CreateCustomerDto {
+  name: string;
+  phone?: string;
+  address?: string;
+}
+
+export interface BillItemInput { productId: string; quantity: number }
+export interface CreateBillDto {
+  customerId?: string;
+  customer?: CreateCustomerDto;
+  items: BillItemInput[];
+  discount?: number;
+  paymentMethod: 'Cash' | 'Online';
+  amountPaid: number;
+}
+
+export const customersApi = {
+  create: async (data: CreateCustomerDto) => {
+    const res = await api.post(`/bills/customers`, data);
+    return res.data;
+  },
+  list: async () => {
+    const res = await api.get(`/bills/customers`);
+    return res.data;
+  },
+};
+
+export const billsApi = {
+  create: async (data: CreateBillDto) => {
+    const res = await api.post(`/bills`, data);
+    return res.data;
+  },
+  get: async (id: string) => {
+    const res = await api.get(`/bills/${id}`);
+    return res.data;
+  },
+  list: async () => {
+    const res = await api.get(`/bills`);
     return res.data;
   },
 };

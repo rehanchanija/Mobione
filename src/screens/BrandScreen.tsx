@@ -10,11 +10,12 @@ import {
   TextInput,
   Alert,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
-import { brandsApi } from "../services/api";
+import { brandsApi, productsApi } from "../services/api";
 
 type ProductsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,6 +29,7 @@ interface Product {
   id: string;
   name: string;
   price: string;
+  unitPrice: number;
   stock: string;
   status: "In Stock" | "Low Stock" | "Out of Stock";
   image: any;
@@ -38,118 +40,21 @@ interface Product {
 
 const initialBrands: Brand[] = [];
 
-const initialProducts: Product[] = [
-  {
-    id: "1",
-    name: "iPhone 14 Pro",
-    price: "₹1,20,000",
-    brandId: "1",
-    stock: "15 available",
-    status: "In Stock",
-    image: require("../assets/iphone.jpg"),
-    emoji: "📱",
-  },
-  {
-    id: "2",
-    name: "iPhone 13",
-    price: "₹70,000",
-    brandId: "1",
-    stock: "20 available",
-    status: "In Stock",
-    image: require("../assets/iphone.jpg"),
-    emoji: "📱",
-  },
-  {
-    id: "3",
-    name: "Samsung Galaxy S23",
-    price: "₹95,000",
-    brandId: "2",
-    stock: "8 available",
-    status: "Low Stock",
-    image: require("../assets/iphone.jpg"),
-    emoji: "📱",
-  },
-  {
-    id: "4",
-    name: "Samsung Galaxy Z Fold 5",
-    price: "₹1,55,000",
-    brandId: "2",
-    stock: "5 available",
-    status: "Low Stock",
-    image: require("../assets/iphone.jpg"),
-    emoji: "📱",
-  },
-  {
-    id: "5",
-    name: "OnePlus 11",
-    price: "₹62,000",
-    brandId: "3",
-    stock: "0 available",
-    status: "Out of Stock",
-    image: require("../assets/iphone.jpg"),
-    emoji: "📱",
-  },
-  {
-    id: "6",
-    name: "OnePlus Nord 3",
-    price: "₹35,000",
-    brandId: "3",
-    stock: "12 available",
-    status: "In Stock",
-    image: require("../assets/iphone.jpg"),
-    emoji: "📱",
-  },
-  {
-    id: "11",
-    name: "OnePlus 18",
-    price: "₹62,000",
-    brandId: "3",
-    stock: "0 available",
-    status: "Out of Stock",
-    image: require("../assets/iphone.jpg"),
-    emoji: "📱",
-  },
-  {
-    id: "7",
-    name: "Xiaomi 13 Pro",
-    price: "₹55,000",
-    brandId: "4",
-    stock: "22 available",
-    status: "In Stock",
-    image: require("../assets/phone.png"),
-    emoji: "📱",
-  },
-  {
-    id: "8",
-    name: "Google Pixel 7 Pro",
-    price: "₹85,000",
-    brandId: "5",
-    stock: "7 available",
-    status: "Low Stock",
-    image: require("../assets/phone.png"),
-    emoji: "🤖",
-  },
-  {
-    id: "9",
-    name: "Nothing Phone (2)",
-    price: "₹45,000",
-    brandId: "6",
-    stock: "15 available",
-    status: "In Stock",
-    image: require("../assets/phone.png"),
-    emoji: "💡",
-  },
-];
+const initialProducts: Product[] = [];
 
 export default function BrandScreen() {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
-  const [products] = useState<Product[]>(initialProducts);
+  const route = useRoute<any>();
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [brands, setBrands] = useState<Brand[]>(initialBrands);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [brandName, setBrandName] = useState("");
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Record<string, { id: string; name: string; unitPrice: number; quantity: number }>>({});
 
   const loadBrands = async () => {
     try {
@@ -183,9 +88,43 @@ export default function BrandScreen() {
     }
   };
 
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const list = await productsApi.list();
+      const mapped: Product[] = list.map((p: any) => ({
+        id: p._id,
+        name: p.name,
+        price: `₹${p.price}`,
+        unitPrice: Number(p.price) || 0,
+        brandId: p.brand?._id || '',
+        stock: `${p.stock} available`,
+        status: p.stock > 10 ? 'In Stock' : p.stock > 0 ? 'Low Stock' : 'Out of Stock',
+        image: require('../assets/phone.png'),
+        emoji: '📱',
+      }));
+      setProducts(mapped);
+    } catch (e) {
+      Alert.alert("Error", "Failed to load products");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    // default to All Products when explicitly requested
+    if (route.params?.allProducts) setShowAll(true);
+    if (route.params?.selectForBill) { setSelectMode(true); setShowAll(true); }
     loadBrands();
+    loadProducts();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadProducts();
+      return () => {};
+    }, [])
+  );
 
   const handleBrandPress = (brand: Brand) => {
     navigation.navigate("ProductList", {
@@ -285,23 +224,98 @@ export default function BrandScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Brands</Text>
-        <Text style={styles.totalCount}>{brands.length} Total Brands</Text>
+        <Text style={styles.headerTitle}>{showAll ? 'All Products' : 'Brands'}</Text>
+        <TouchableOpacity onPress={() => { const next = !showAll; setShowAll(next); if (next) { loadProducts(); } else { loadBrands(); } }}>
+          <Text style={styles.totalCount}>{showAll ? 'Show Brands' : 'See All Products'}</Text>
+        </TouchableOpacity>
       </View>
-      <FlatList
-        data={brands}
-        numColumns={2}
-        keyExtractor={(item) => item._id}
-        renderItem={renderBrandCard}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      />
+      {showAll ? (
+        loading ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator size="large" color="#007AFF" />
+          </View>
+        ) : (
+        <FlatList
+          key={showAll ? 'products-list' : 'brands-grid'}
+          data={products}
+          numColumns={1}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Image source={item.image} style={styles.image} />
+              <View style={styles.details}>
+                <Text>{item.name}</Text>
+                <Text style={styles.price}>{item.price}</Text>
+                <Text style={styles.stock}>{item.stock}</Text>
+              </View>
+              {selectMode ? (
+                <View style={{ alignItems: 'center' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity onPress={() => {
+                      const prev = selected[item.id]?.quantity || 0;
+                      const next = Math.max(0, prev - 1);
+                      const copy = { ...selected } as any;
+                      if (next <= 0) delete copy[item.id]; else copy[item.id] = { id: item.id, name: item.name, unitPrice: item.unitPrice, quantity: next };
+                      setSelected(copy);
+                    }}>
+                      <Text style={{ fontSize: 20, paddingHorizontal: 8 }}>－</Text>
+                    </TouchableOpacity>
+                    <Text style={{ minWidth: 22, textAlign: 'center' }}>{selected[item.id]?.quantity || 0}</Text>
+                    <TouchableOpacity onPress={() => {
+                      const prev = selected[item.id]?.quantity || 0;
+                      const next = prev + 1;
+                      setSelected({ ...selected, [item.id]: { id: item.id, name: item.name, unitPrice: item.unitPrice, quantity: next } });
+                    }}>
+                      <Text style={{ fontSize: 20, paddingHorizontal: 8 }}>＋</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity onPress={() => navigation.navigate('Products' as never)}>
+                  <Text>➕</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListEmptyComponent={!loading ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#6b7280' }}>No products found.</Text>
+            </View>
+          ) : null}
+        />
+        )
+      ) : (
+        <FlatList
+          key={showAll ? 'products-list' : 'brands-grid'}
+          data={brands}
+          numColumns={2}
+          keyExtractor={(item) => item._id}
+          renderItem={renderBrandCard}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        />
+      )}
 
+      {!selectMode && (
       <TouchableOpacity
         style={styles.addButton}
         onPress={handleCreateBrand}
       >
         <Text style={styles.addButtonText}>➕</Text>
       </TouchableOpacity>
+      )}
+
+      {selectMode && showAll && (
+        <TouchableOpacity
+          style={{ position: 'absolute', bottom: 20, left: 20, right: 20, backgroundColor: '#007AFF', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+          onPress={() => {
+            const items = Object.values(selected).map(it => ({ productId: it.id, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity }));
+            (navigation as any).navigate('Billing' as never, { items } as never);
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Next • Add to Current Bill</Text>
+        </TouchableOpacity>
+      )}
 
       <Modal
         animationType="slide"
