@@ -3,6 +3,7 @@ import BillingScreen from "../screens/CreateBillScreen";
 import BillDetailsScreen from "../screens/BillDetailsScreen";
 import PaymentScreen from "../screens/PaymentScreen";
 import ProductsScreen from "../screens/BrandScreen";
+import ProductListScreen from "../screens/ProductListScreen";
 
 export type BillingStackParamList = {
   Billing: { items?: { productId: string; name: string; unitPrice: number; quantity: number }[] } | undefined;
@@ -10,6 +11,7 @@ export type BillingStackParamList = {
   CustomerDetails: undefined;
   PaymentScreen: undefined;
   Product: { selected?: { productId: string; name: string; unitPrice: number; quantity: number }[] } | undefined;
+  ProductList: { brand: { id: string; name: string }; allProducts?: boolean } | undefined;
 };
 
 const Stack = createNativeStackNavigator<BillingStackParamList>();
@@ -21,6 +23,7 @@ export default function BillingStack() {
       <Stack.Screen name="BillDetails" component={BillDetailsScreen} />
       <Stack.Screen name="PaymentScreen" component={PaymentScreen}/>
       <Stack.Screen name="Product" component={ProductsScreen}/>
+      <Stack.Screen name="ProductList" component={ProductListScreen}/>
     </Stack.Navigator>
   );
 }

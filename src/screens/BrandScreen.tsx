@@ -14,10 +14,11 @@ import {
 } from "react-native";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/types";
+import { BillingStackParamList } from "../navigation/BillingStack";
 import { brandsApi, productsApi } from "../services/api";
+import { RootStackParamList } from "../navigation/types";
 
-type ProductsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type ProductsScreenNavigationProp = NativeStackNavigationProp<BillingStackParamList>;
 
 interface Brand {
   _id: string;
@@ -43,6 +44,10 @@ const initialBrands: Brand[] = [];
 const initialProducts: Product[] = [];
 
 export default function BrandScreen() {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter products based on searchQuery
+ 
   const navigation = useNavigation<ProductsScreenNavigationProp>();
   const route = useRoute<any>();
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -125,13 +130,16 @@ export default function BrandScreen() {
       return () => {};
     }, [])
   );
+   const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleBrandPress = (brand: Brand) => {
-    navigation.navigate("ProductList", {
-      brand: { id: brand._id, name: brand.name, emoji: "" },
-      products: [],
-    });
+       navigation.navigate("ProductList", {
+        brand: { id: brand._id, name: brand.name }
+  })
   };
+  
 
   const handleCreateBrand = () => {
     setEditingBrand(null);
@@ -228,7 +236,17 @@ export default function BrandScreen() {
         <TouchableOpacity onPress={() => { const next = !showAll; setShowAll(next); if (next) { loadProducts(); } else { loadBrands(); } }}>
           <Text style={styles.totalCount}>{showAll ? 'Show Brands' : 'See All Products'}</Text>
         </TouchableOpacity>
+     
+     
       </View>
+       {showAll && (
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search products..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      )}  
       {showAll ? (
         loading ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -237,7 +255,7 @@ export default function BrandScreen() {
         ) : (
         <FlatList
           key={showAll ? 'products-list' : 'brands-grid'}
-          data={products}
+          data={filteredProducts}
           numColumns={1}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
@@ -271,7 +289,10 @@ export default function BrandScreen() {
                   </View>
                 </View>
               ) : (
-                <TouchableOpacity onPress={() => navigation.navigate('Products' as never)}>
+                <TouchableOpacity onPress={() => navigation.navigate('ProductList', { 
+                    brand: { id: '', name: 'All Products' },
+                    allProducts: true 
+                  })}>
                   <Text>➕</Text>
                 </TouchableOpacity>
               )}
@@ -309,8 +330,9 @@ export default function BrandScreen() {
         <TouchableOpacity
           style={{ position: 'absolute', bottom: 20, left: 20, right: 20, backgroundColor: '#007AFF', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
           onPress={() => {
-            const items = Object.values(selected).map(it => ({ productId: it.id, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity }));
-            (navigation as any).navigate('Billing' as never, { items } as never);
+            const items = Object.values(selected).map(it => ({  productId: it.id, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity}));
+            console.log('Selected items:', items);
+            navigation.navigate('Billing', { items });
           }}
         >
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Next • Add to Current Bill</Text>
@@ -556,4 +578,15 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 2,
   },
+  searchInput: {
+  backgroundColor: "#fff",
+  borderRadius: 10,
+  borderWidth: 1,
+  borderColor: "#E5E5E5",
+  paddingHorizontal: 15,
+  paddingVertical: 10,
+  fontSize: 16,
+  marginBottom: 10,
+},
+
 });
