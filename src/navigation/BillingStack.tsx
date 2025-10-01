@@ -1,7 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import BillingScreen from "../screens/CreateBillScreen";
 import BillDetailsScreen from "../screens/BillDetailsScreen";
-import PaymentScreen from "../screens/PaymentScreen";
 import ProductsScreen from "../screens/BrandScreen";
 import ProductListScreen from "../screens/ProductListScreen";
 
@@ -21,7 +20,6 @@ export default function BillingStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Billing" component={BillingScreen} />
       <Stack.Screen name="BillDetails" component={BillDetailsScreen} />
-      <Stack.Screen name="PaymentScreen" component={PaymentScreen}/>
       <Stack.Screen name="Product" component={ProductsScreen}/>
       <Stack.Screen name="ProductList" component={ProductListScreen}/>
     </Stack.Navigator>

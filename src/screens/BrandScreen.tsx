@@ -12,8 +12,8 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from "react-native";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";    
+          import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BillingStackParamList } from "../navigation/BillingStack";
 import { brandsApi, productsApi } from "../services/api";
 import { RootStackParamList } from "../navigation/types";
@@ -22,7 +22,7 @@ type ProductsScreenNavigationProp = NativeStackNavigationProp<BillingStackParamL
 
 interface Brand {
   _id: string;
-  name: string;
+  name: string; 
   productCount?: number;
 }
 
@@ -231,9 +231,20 @@ export default function BrandScreen() {
 
   return (
     <View style={styles.container}>
+      
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{showAll ? 'All Products' : 'Brands'}</Text>
-        <TouchableOpacity onPress={() => { const next = !showAll; setShowAll(next); if (next) { loadProducts(); } else { loadBrands(); } }}>
+        <TouchableOpacity 
+          onPress={() => { 
+            const next = !showAll; 
+            setShowAll(next); 
+            if (next) { 
+              loadProducts(); 
+            } else { 
+              loadBrands(); 
+            } 
+          }}
+        >
           <Text style={styles.totalCount}>{showAll ? 'Show Brands' : 'See All Products'}</Text>
         </TouchableOpacity>
      
@@ -267,6 +278,7 @@ export default function BrandScreen() {
                 <Text style={styles.stock}>{item.stock}</Text>
               </View>
               {selectMode ? (
+                // Create Bill Mode - Show increment/decrement
                 <View style={{ alignItems: 'center' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity onPress={() => {
@@ -288,12 +300,32 @@ export default function BrandScreen() {
                     </TouchableOpacity>
                   </View>
                 </View>
+              ) : route.params?.fromBilling ? (
+                // Normal Product View - Show Sold button
+                <TouchableOpacity 
+                  style={styles.soldButton}
+                  onPress={() => {
+                    setSelected({ [item.id]: { id: item.id, name: item.name, unitPrice: item.unitPrice, quantity: 1 } });
+                    setSelectMode(true);
+                  }}
+                >
+                  <Text style={styles.soldButtonText}>Sold</Text>
+                </TouchableOpacity>
               ) : (
-                <TouchableOpacity onPress={() => navigation.navigate('ProductList', { 
-                    brand: { id: '', name: 'All Products' },
-                    allProducts: true 
-                  })}>
-                  <Text>➕</Text>
+                // Default View - Show Edit button
+                <TouchableOpacity 
+                  style={styles.addProductButton}
+                  onPress={() => {
+                    const selectedItem = {
+                      productId: item.id,
+                      name: item.name,
+                      unitPrice: item.unitPrice,
+                      quantity: 1
+                    };
+                    navigation.navigate('Billing', { items: [selectedItem] });
+                  }}
+                >
+                  <Text style={styles.addProductButtonText}>Add</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -326,16 +358,18 @@ export default function BrandScreen() {
       </TouchableOpacity>
       )}
 
-      {selectMode && showAll && (
+      {selectMode && (
         <TouchableOpacity
-          style={{ position: 'absolute', bottom: 20, left: 20, right: 20, backgroundColor: '#007AFF', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}
+          style={styles.bottomButton}
           onPress={() => {
             const items = Object.values(selected).map(it => ({  productId: it.id, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity}));
             console.log('Selected items:', items);
             navigation.navigate('Billing', { items });
           }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Next • Add to Current Bill</Text>
+          <Text style={styles.bottomButtonText}>
+            {route.params?.fromBilling ? 'Next • Create Bill' : 'Next • Add to Current Bill'}
+          </Text>
         </TouchableOpacity>
       )}
 
@@ -388,6 +422,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F7F9FC",
     padding: 15,
+  },
+  soldButton: {
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  soldButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  bottomButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: '#007AFF',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center'
+  },
+  bottomButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16
+  },
+  addProductButton: {
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  addProductButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
   },
   header: {
           flexDirection: "row",

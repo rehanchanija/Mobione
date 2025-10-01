@@ -8,9 +8,7 @@ export type RootStackParamList = {
         brand: { id: string; name: string; emoji: string };
         products: any[];
       };
-      CustomerDetailsScreen: undefined;
       BillDetailsScreen: undefined;
-      PaymentScreen: undefined;
       SalesAnalytics: { updatedBill?: any };
       SalesDetail: { bill: { id: string; customerName: string; amount: number; status: 'Paid' | 'Pending'; date: string; paymentMethod: 'Cash' | 'Online'; advanceAmount?: number; pendingAmount?: number; } };
       Profile: undefined;

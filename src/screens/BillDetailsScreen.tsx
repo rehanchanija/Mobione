@@ -8,6 +8,7 @@ import {
   ScrollView,
   TextInput,
   Modal,
+  Alert,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BillingStackParamList } from "../navigation/BillingStack";
@@ -18,6 +19,8 @@ type BillDetailsProps = NativeStackScreenProps<BillingStackParamList, "BillDetai
 export default function BillDetailsScreen({ navigation, route }: BillDetailsProps) {
   const [discountEnabled, setDiscountEnabled] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("0");
+const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
+  const [amountPaid, setAmountPaid] = useState("");
 
   const [modalVisible, setModalVisible] = useState(false);
   const [name, setName] = useState("");
@@ -28,10 +31,63 @@ export default function BillDetailsScreen({ navigation, route }: BillDetailsProp
   const subtotal = useMemo(() => items.reduce((s: number, it: any) => s + it.unitPrice * it.quantity, 0), [items]);
   const discount = parseFloat(discountAmount) || 0;
   const total = Math.max(0, subtotal - discount);
+  const paidAmount = parseFloat(amountPaid) || 0;
+  const paymentStatus = paidAmount >= total ? "Paid" : "Pending";
+
+  const validatePayment = () => {
+    if (!amountPaid) {
+      Alert.alert('Error', 'Please enter the amount paid');
+      return false;
+    }
+    if (parseFloat(amountPaid) <= 0) {
+      Alert.alert('Error', 'Amount paid must be greater than 0');
+      return false;
+    }
+    if (parseFloat(amountPaid) > total) {
+      Alert.alert('Error', 'Amount paid cannot be greater than total amount');
+      return false;
+    }
+    return true;
+  };
+
+  const handleCreateBill = async () => {
+    try {
+      if (!validatePayment()) return;
+
+      // Create customer if details are provided
+      let customerId;
+      if (name || phone || address) {
+        const customer = await customersApi.create({
+          name,
+          phone,
+          address,
+        });
+        customerId = customer.id;
+      }
+
+      // Create bill
+      const billData = {
+        customerId,
+        items: items.map(it => ({
+          productId: it.productId,
+          quantity: it.quantity
+        })),
+        discount: discountEnabled ? discount : 0,
+        paymentMethod,
+        amountPaid: parseFloat(amountPaid)
+      };
+
+      await billsApi.create(billData);
+      navigation.replace('Billing');
+    } catch (error) {
+      console.error('Error creating bill:', error);
+      Alert.alert('Error', 'Failed to create bill. Please try again.');
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
-      {/* Bill Summary */}
+      {/* Bill Summary */} 
       <View style={styles.card}>
         <Text style={styles.title}>📋 Bill Summary</Text>
         {items.map((it: any, idx: number) => (
@@ -79,16 +135,100 @@ export default function BillDetailsScreen({ navigation, route }: BillDetailsProp
       </View>
 
       {/* Total */}
+          {/* Total */}
       <View style={styles.card}>
         <Text style={styles.title}>🧮 Total Calculation</Text>
         <View style={styles.line} />
         <Text style={styles.item}>Subtotal: ₹{subtotal.toFixed(2)}</Text>
-        <Text style={[styles.item, { color: "red" }] }>
-          Discount: -₹{discount.toFixed(2)}
+        {discountEnabled && (
+          <Text style={[styles.item, { color: "red" }]}>
+            Discount: -₹{discount.toFixed(2)}
+          </Text>
+        )}
+        <Text style={[styles.total, paidAmount < total ? { color: "#dc3545" } : { color: "#28a745" }]}>
+          Total Amount: ₹{total.toFixed(2)}
         </Text>
-        <Text style={styles.total}>Total Amount: ₹{total.toFixed(2)}</Text>
+
+        {/* Amount Paid */}
+        <View style={styles.amountPaidContainer}>
+          <View style={styles.row}>
+            <Text style={styles.label}>Amount Paid:</Text>
+            <Text style={[styles.label, { color: paidAmount >= total ? '#28a745' : '#dc3545' }]}>
+              {paidAmount 
+                ? paidAmount >= total 
+                  ? '(Fully Paid)' 
+                  : `(${((paidAmount / total) * 100).toFixed(0)}% Paid)`
+                : '(Not Paid)'}
+            </Text>
+          </View>
+          <TextInput
+            style={[
+              styles.amountInput,
+              paidAmount > 0 && {
+                borderColor: paidAmount >= total ? "#28a745" : "#dc3545",
+                backgroundColor: paidAmount >= total ? "#f8fff8" : "#fff8f8"
+              }
+            ]}
+            placeholder="Enter amount paid"
+            keyboardType="numeric"
+            value={amountPaid}
+            onChangeText={text => {
+              const num = parseFloat(text) || 0;
+              if (num <= total) {
+                setAmountPaid(text);
+              }
+            }}
+          />
+          {amountPaid && paidAmount < total && (
+            <Text style={styles.pendingAmount}>
+              Remaining to be paid: ₹{(total - paidAmount).toFixed(2)}
+            </Text>
+          )}
+        </View>
+
+        {/* Payment Method */}
+        <View style={[styles.amountPaidContainer, { marginTop: 15 }]}>
+          <Text style={styles.label}>Payment Method:</Text>
+          <View style={[styles.row, { marginTop: 8 }]}>
+            <TouchableOpacity
+              style={[
+                styles.methodBtn,
+                paymentMethod === "Cash" && styles.methodSelected,
+              ]}
+              onPress={() => setPaymentMethod("Cash")}
+            >
+              <Text
+                style={[
+                  styles.methodText,
+                  paymentMethod === "Cash" && styles.methodTextSelected,
+                ]}
+              >
+                💵 Cash
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.methodBtn,
+                paymentMethod === "Online" && styles.methodSelected,
+              ]}
+              onPress={() => setPaymentMethod("Online")}
+            >
+              <Text
+                style={[
+                  styles.methodText,
+                  paymentMethod === "Online" && styles.methodTextSelected,
+                ]}
+              >
+                💳 Online
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
+      {/* Buttons */}
+    
       {/* Buttons */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
@@ -107,15 +247,36 @@ export default function BillDetailsScreen({ navigation, route }: BillDetailsProp
               customerId,
               items: items.map((it: any) => ({ productId: it.productId, quantity: it.quantity })),
               discount,
-              paymentMethod: 'Cash',
-              amountPaid: total, // mark as fully paid; adjust based on UI later
+              paymentMethod,
+              amountPaid: parseFloat(amountPaid) || 0
             });
-            navigation.navigate("PaymentScreen");
+            navigation.replace("Billing");
           }}
         >
-          <Text style={styles.payText}>Next 💳</Text>
+          <Text style={styles.payText}>
+            {paidAmount >= total ? `Create Bill - Paid ✓` : `Create Bill - ${((paidAmount / total) * 100).toFixed(0)}% Paid`}
+          </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Show Payment Status */}
+      {amountPaid && (
+        <View style={[styles.card, { marginTop: 15 }]}>
+          <Text style={styles.title}>💰 Payment Status</Text>
+          <View style={styles.line} />
+          <Text style={[styles.item, { color: paidAmount >= total ? "#28a745" : "#dc3545" }]}>
+            {paidAmount >= total ? "Fully Paid" : "Partially Paid"}
+          </Text>
+          <Text style={styles.item}>
+            Amount Paid: ₹{paidAmount.toFixed(2)}
+          </Text>
+          {paidAmount < total && (
+            <Text style={styles.item}>
+              Remaining: ₹{(total - paidAmount).toFixed(2)}
+            </Text>
+          )}
+        </View>
+      )}
 
       {/* Customer Details Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -237,4 +398,51 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   saveText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  methodBtn: {
+  flex: 1,
+  padding: 12,
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 10,
+  alignItems: "center",
+  marginHorizontal: 4,
+},
+methodSelected: {
+  backgroundColor: "#4A90E2",
+  borderColor: "#4A90E2",
+},
+methodText: {
+  fontSize: 16,
+  fontWeight: "600",
+  color: "#333",
+},
+methodTextSelected: {
+  color: "#fff",
+},
+amountPaidContainer: {
+  marginTop: 10,
+  marginBottom: 10,
+},
+label: {
+  fontSize: 16,
+  color: "#333",
+  marginBottom: 5,
+},
+amountInput: {
+  borderWidth: 1,
+  borderColor: "#ddd",
+  borderRadius: 8,
+  padding: 10,
+  fontSize: 16,
+  backgroundColor: "#fff",
+},
+amountInputPaid: {
+  borderColor: "#28a745",
+  backgroundColor: "#f8fff8",
+},
+pendingAmount: {
+  color: "#dc3545",
+  fontSize: 14,
+  marginTop: 5,
+},
 });

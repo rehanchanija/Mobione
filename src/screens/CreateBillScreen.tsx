@@ -69,7 +69,7 @@ export default function BillingScreen() {
               style={[styles.primaryBtn, { marginTop: 15 }]}
               onPress={() => navigation.navigate("BillDetails", { items })}
             >
-              <Text style={styles.primaryBtnText}>💳 Proceed to Payment</Text>
+              <Text style={styles.primaryBtnText}>💳 Proceed to Bill</Text>
             </TouchableOpacity>
           </>
         )}
