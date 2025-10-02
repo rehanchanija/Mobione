@@ -13,7 +13,8 @@ import {
 import { RNCamera } from 'react-native-camera';
 import { PermissionsAndroid, Platform, Linking } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { brandsApi, categoriesApi, productsApi } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
+
 
 interface Product {
   _id: string;
@@ -69,6 +70,7 @@ export default function ProductListScreen() {
   const navigation = useNavigation();
   const route = useRoute<ProductListScreenRouteProp>();
   const { brand } = route.params;
+  const { brandsApi, productsApi, categoriesApi } = useAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [brandStockTotal, setBrandStockTotal] = useState<number>(0);

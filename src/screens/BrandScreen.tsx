@@ -15,8 +15,9 @@ import {
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";    
           import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BillingStackParamList } from "../navigation/BillingStack";
-import { brandsApi, productsApi } from "../services/api";
+
 import { RootStackParamList } from "../navigation/types";
+import { useAuth } from "../hooks/useAuth";
 
 type ProductsScreenNavigationProp = NativeStackNavigationProp<BillingStackParamList>;
 
@@ -61,6 +62,8 @@ export default function BrandScreen() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Record<string, { id: string; name: string; unitPrice: number; quantity: number }>>({});
 
+  const { brandsApi, productsApi } = useAuth();
+  
   const loadBrands = async () => {
     try {
       setLoading(true);

@@ -12,11 +12,12 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BillingStackParamList } from "../navigation/BillingStack";
-import { billsApi, customersApi } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 
 type BillDetailsProps = NativeStackScreenProps<BillingStackParamList, "BillDetails">;
 
 export default function BillDetailsScreen({ navigation, route }: BillDetailsProps) {
+  const { billsApi, customersApi } = useAuth();
   const [discountEnabled, setDiscountEnabled] = useState(false);
   const [discountAmount, setDiscountAmount] = useState("0");
 const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");

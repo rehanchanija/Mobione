@@ -1,10 +1,159 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authApi, LoginData, RegisterData, AuthResponse, profileApi, Profile, UpdateProfileData } from '../services/api';
+import { 
+  authApi, 
+  LoginData, 
+  RegisterData, 
+  AuthResponse, 
+  profileApi, 
+  Profile, 
+  UpdateProfileData,
+  brandsApi,
+  BrandDto,
+  productsApi,
+  categoriesApi,
+  CategoryDto,
+  customersApi,
+  CreateCustomerDto,
+  billsApi,
+  CreateBillDto,
+  BillItemInput,
+  api
+} from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
+
+// Brand hooks implementation
+const useBrands = () => {
+  return useQuery({
+    queryKey: ['brands'],
+    queryFn: () => brandsApi.list(),
+  });
+};
+
+const useBrandTotal = () => {
+  return useQuery({
+    queryKey: ['brands', 'total'],
+    queryFn: () => brandsApi.total(),
+  });
+};
+
+const useBrandProducts = (brandId: string) => {
+  return useQuery({
+    queryKey: ['brands', brandId, 'products'],
+    queryFn: () => brandsApi.products(brandId),
+    enabled: !!brandId,
+  });
+};
+
+const useBrandStock = (brandId: string) => {
+  return useQuery({
+    queryKey: ['brands', brandId, 'stock'],
+    queryFn: () => brandsApi.stockTotal(brandId),
+    enabled: !!brandId,
+  });
+};
+
+const useBrandProductCount = (brandId: string) => {
+  return useQuery({
+    queryKey: ['brands', brandId, 'productCount'],
+    queryFn: () => brandsApi.productCount(brandId),
+    enabled: !!brandId,
+  });
+};
+
+// Brand mutation hooks
+const createBrandMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => brandsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brands'] });
+    },
+  });
+};
+
+const updateBrandMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => 
+      brandsApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brands'] });
+    },
+  });
+};
+
+const deleteBrandMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => brandsApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brands'] });
+    },
+  });
+};
+
+const createBrandProductMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ brandId, productData }: { brandId: string; productData: any }) => {
+      // Use api.post directly since productsApi doesn't have a create method
+      const res = await api.post('/products', { ...productData, brandId });
+      return res.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['brands', variables.brandId, 'products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
+// Product hooks implementation
+const useProducts = (params?: any) => {
+  return useQuery({
+    queryKey: ['products', params],
+    queryFn: () => productsApi.list(params),
+  });
+};
+
+const useProduct = (id: string) => {
+  return useQuery({
+    queryKey: ['products', id],
+    queryFn: () => productsApi.getById(id),
+    enabled: !!id,
+  });
+};
+
+const updateProductMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => 
+      productsApi.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['products', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      // Also invalidate brand products if the product has a brandId
+      if (variables.data.brandId) {
+        queryClient.invalidateQueries({ queryKey: ['brands', variables.data.brandId, 'products'] });
+      }
+    },
+  });
+};
+
+const deleteProductMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => productsApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      // We don't know which brand this product belonged to, so invalidate all brand products
+      queryClient.invalidateQueries({ queryKey: ['brands'] });
+    },
+  });
+};
 
 export const useAuth = () => {
   const navigation = useNavigation();
@@ -109,15 +258,42 @@ export const useAuth = () => {
   };
 
   return {
+    // Auth
     login: loginMutation.mutate,
     logout,
     profile,
     refetchProfile,
     updateProfile: updateProfileMutation.mutate,
-    isLoading: loginMutation.isPending ,
+    isLoading: loginMutation.isPending,
     isProfileLoading,
     isUpdatingProfile: updateProfileMutation.isPending,
-    error: loginMutation.error ,
+    error: loginMutation.error,
     profileError: profileQueryError,
+    
+    // Expose all APIs directly
+    authApi,
+    profileApi,
+    brandsApi,
+    productsApi,
+    categoriesApi,
+    customersApi,
+    billsApi,
+    
+    // React Query hooks for brands
+    useBrands,
+    useBrandTotal,
+    useBrandProducts,
+    useBrandStock,
+    useBrandProductCount,
+    createBrandMutation,
+    updateBrandMutation,
+    deleteBrandMutation,
+    createBrandProductMutation,
+    
+    // React Query hooks for products
+    useProducts,
+    useProduct,
+    updateProductMutation,
+    deleteProductMutation,
   };
 };
