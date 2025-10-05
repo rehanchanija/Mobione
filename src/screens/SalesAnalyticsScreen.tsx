@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import {
   View,
   Text,
@@ -13,28 +14,69 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 
-interface Bill {
-  id: string;
-  customerName: string;
-  amount: number;
-  status: 'Paid' | 'Pending';
-  date: string;
-  paymentMethod: 'Cash' | 'Online';
+interface BillItem {
+  productId: string;
+  quantity: number;
+  price: number;
 }
 
-const bills: Bill[] = [
-  { id: 'FPT001', customerName: 'Alice Johnson', amount: 150.75, status: 'Paid', date: '2024-07-20', paymentMethod: 'Online' },
-  { id: 'FPT002', customerName: 'Bob Williams', amount: 89.90, status: 'Pending', date: '2024-07-19', paymentMethod: 'Cash' },
-  { id: 'FPT003', customerName: 'Charlie Davis', amount: 230.00, status: 'Paid', date: '2024-07-18', paymentMethod: 'Online' },
-  { id: 'FPT005', customerName: 'Ethan White', amount: 320.40, status: 'Paid', date: '2024-07-17', paymentMethod: 'Online' },
-  { id: 'FPT006', customerName: 'Fiona Green', amount: 112.30, status: 'Pending', date: '2024-07-16', paymentMethod: 'Cash' },
-];
+interface Bill {
+  _id: string;
+  billNumber: string;
+  customerId?: string;
+  customer?: {
+    name: string;
+    phone?: string;
+    address?: string;
+  };
+  items: BillItem[];
+  subtotal: number;
+  total: number;
+  discount?: number;
+  paymentMethod: 'Cash' | 'Online';
+  amountPaid: number;
+  createdAt: string;
+}
+  
+
+
+interface ProductInfo {
+  _id: string;
+  name: string;
+  price: number;
+}
 
 export default function SalesAnalyticsScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const { useBills, useProduct } = useAuth();
   
-  // Initialize bills state with the sample data
-  const [billsData, setBillsData] = useState<Bill[]>(bills);
+  // Fetch all bills
+  const { data: bills, isLoading: isLoadingBills } = useBills();
+  
+  // Transform bills data to include status
+  const transformedBills = useMemo(() => {
+    if (!bills) return [];
+    
+    return bills.map((bill: Bill) => {
+      // Calculate subtotal from items if not provided
+      const subtotal = bill.subtotal || bill.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      return {
+        ...bill,
+        subtotal,
+        status: bill.amountPaid >= bill.total ? 'Paid' as const : 'Pending' as const,
+        customerName: bill.customer?.name || 'Unknown',
+      };
+    });
+  }, [bills]);
+  
+  // Set bills data
+  const [billsData, setBillsData] = useState<Bill[]>([]);
+  
+  // Update bills data when transformed bills change
+  React.useEffect(() => {
+    setBillsData(transformedBills);
+  }, [transformedBills]);
   
   // Check if we have an updated bill from the detail screen
   React.useEffect(() => {
@@ -43,7 +85,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
       // Update the bills array with the updated bill
       setBillsData(prevBills => {
         return prevBills.map(bill => 
-          bill.id === updatedBill.id ? updatedBill : bill
+          bill._id === updatedBill.id ? updatedBill : bill
         );
       });
       // Clear the route params to prevent re-updating on re-renders
@@ -111,13 +153,16 @@ export default function SalesAnalyticsScreen({ route }: any) {
     if (searchQuery.trim()) {
       filtered = filtered.filter(
         (bill) =>
-          bill.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          bill.id.toLowerCase().includes(searchQuery.toLowerCase())
+          bill?.customer?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          bill._id.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     // Filter by selected statuses
-    filtered = filtered.filter(bill => selectedStatuses.includes(bill.status));
+    filtered = filtered.filter(bill => {
+      const status = bill.amountPaid >= bill.total ? 'Paid' : 'Pending';
+      return selectedStatuses.includes(status);
+    });
 
     // Filter by selected payment methods
     filtered = filtered.filter(bill => selectedPaymentMethods.includes(bill.paymentMethod));
@@ -127,13 +172,13 @@ export default function SalesAnalyticsScreen({ route }: any) {
       filtered = filtered.filter(bill => {
         const min = amountRange.min ? parseFloat(amountRange.min) : 0;
         const max = amountRange.max ? parseFloat(amountRange.max) : Infinity;
-        return bill.amount >= min && bill.amount <= max;
+        return bill.total >= min && bill.total <= max;
       });
     }
 
     if (dateRange.start || dateRange.end) {
       filtered = filtered.filter(bill => {
-        const billDate = new Date(bill.date);
+        const billDate = new Date(bill.createdAt);
         const startDate = dateRange.start ? new Date(dateRange.start) : new Date('1900-01-01');
         const endDate = dateRange.end ? new Date(dateRange.end) : new Date('2100-12-31');
         return billDate >= startDate && billDate <= endDate;
@@ -143,17 +188,21 @@ export default function SalesAnalyticsScreen({ route }: any) {
     // Sort based on active filter
     switch (activeFilter) {
       case 'Date':
-        filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       case 'Customer':
-        filtered.sort((a, b) => a.customerName.localeCompare(b.customerName));
+        filtered.sort((a, b) => +(a.customer?.name || '').localeCompare(b.customer?.name || ''));
         break;
       case 'Status':
         const statusOrder = { Paid: 1, Pending: 2 };
-        filtered.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+        filtered.sort((a, b) => {
+          const aStatus = a.amountPaid >= a.total ? 'Paid' : 'Pending';
+          const bStatus = b.amountPaid >= b.total ? 'Paid' : 'Pending';
+          return statusOrder[aStatus] - statusOrder[bStatus];
+        });
         break;
       case 'Amount':
-        filtered.sort((a, b) => b.amount - a.amount);
+        filtered.sort((a, b) => b.total - a.total);
         break;
       case 'Payment':
         filtered.sort((a, b) => a.paymentMethod.localeCompare(b.paymentMethod));
@@ -183,14 +232,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* <View style={styles.header}>
-        <Text style={styles.headerTitle}>Sales Analytics 📊</Text>
-        <Text style={styles.resultsCount}>
-          {processedBills.length} bills found
-        </Text>
-      </View> */}
-
-      {/* Enhanced Filter Section */}
+    
       <View style={styles.filterSection}>
         <View style={styles.filterHeader}>
           <Text style={styles.filterTitle}>Filter & Bills</Text>
@@ -267,44 +309,62 @@ export default function SalesAnalyticsScreen({ route }: any) {
         <Text style={styles.sectionTitle}>Bill History</Text>
         <ScrollView style={styles.billList}>
           {processedBills.length > 0 ? (
-            processedBills.map((bill) => (
-              <TouchableOpacity
-                key={bill.id}
-                style={styles.billItem}
-                onPress={() => navigation.navigate('SalesDetail', { bill })}
-              >
-                <View style={styles.billHeader}>
-                  <Text style={styles.billId}>Bill ID: {bill.id}</Text>
-                  <Text style={styles.billDate}>{bill.date}</Text>
-                </View>
+            processedBills.map((bill) => {
+              const status = bill.amountPaid >= bill.total ? 'Paid' : 'Pending';
+              const navigationBill = {
+                id: bill._id,
+                customerName: bill.customer?.name || 'Unknown',
+                customeradress: bill.customer?.address || 'N/A',
+                amount: bill.subtotal,
+                status: status as 'Paid' | 'Pending',
+                date: new Date(bill.createdAt).toLocaleDateString(),
+                paymentMethod: bill.paymentMethod,
+                advanceAmount: bill.amountPaid,
+                pendingAmount: Math.max(0, bill.total - bill.amountPaid),
+                items: bill?.items[0]?.productId ? bill.items : [],
 
-                <View style={styles.billContent}>
-                <View>
-                  <Text style={styles.customerName}>{bill.customerName}</Text>
-                  <View style={styles.badgeContainer}>
-                    <View style={[styles.statusBadge, getStatusBadgeStyle(bill.status)]}>
-                      <Text style={getStatusTextStyle(bill.status)}>
-                        {getStatusEmoji(bill.status)} {bill.status}
-                      </Text>
-                    </View>
-                    <View style={[styles.paymentBadge, bill.paymentMethod === 'Cash' ? styles.cashBadge : styles.onlineBadge]}>
-                      <Text style={bill.paymentMethod === 'Cash' ? styles.cashText : styles.onlineText}>
-                        {bill.paymentMethod === 'Cash' ? '💵' : '💳'} {bill.paymentMethod}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                <Text style={styles.amount}>₹{bill.amount.toFixed(2)}</Text>
-              </View>
-
-                <TouchableOpacity 
-                  style={styles.viewDetails}
-                  onPress={() => navigation.navigate('SalesDetail', { bill })}
+                discount: bill.discount || 0,
+                subTotal: bill.subtotal
+              };
+              return (
+                <TouchableOpacity
+                  key={bill._id}
+                  style={styles.billItem}
+                  onPress={() => navigation.navigate('SalesDetail', { bill: navigationBill })}
                 >
-                  <Text style={styles.viewDetailsText}>View Details 👉</Text>
+                  <View style={styles.billHeader}>
+                    <Text style={styles.billId}>Bill #{bill.billNumber}</Text>
+                    <Text style={styles.billDate}>{new Date(bill.createdAt).toLocaleDateString()}</Text>
+                  </View>
+
+                  <View style={styles.billContent}>
+                    <View>
+                      <Text style={styles.customerName}>{bill.customer?.name || 'Unknown'}</Text>
+                      <View style={styles.badgeContainer}>
+                        <View style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
+                          <Text style={getStatusTextStyle(status)}>
+                            {getStatusEmoji(status)} {status}
+                          </Text>
+                        </View>
+                        <View style={[styles.paymentBadge, bill.paymentMethod === 'Cash' ? styles.cashBadge : styles.onlineBadge]}>
+                          <Text style={bill.paymentMethod === 'Cash' ? styles.cashText : styles.onlineText}>
+                            {bill.paymentMethod === 'Cash' ? '💵' : '💳'} {bill.paymentMethod}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    <Text style={styles.amount}>₹{bill.subtotal.toFixed(2)}</Text>
+                  </View>
+
+                  <TouchableOpacity 
+                    style={styles.viewDetails}
+                    onPress={() => navigation.navigate('SalesDetail', { bill: navigationBill })}
+                  >
+                    <Text style={styles.viewDetailsText}>View Details 👉</Text>
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
-            ))
+              );
+            })
           ) : (
             <View style={styles.noResultsContainer}>
               <Text style={styles.noResults}>No bills found 😕</Text>

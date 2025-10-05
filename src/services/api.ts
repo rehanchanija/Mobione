@@ -5,8 +5,8 @@ import { Platform } from 'react-native';
 // ✅ Safer BASE_URL handling
 const BASE_URL =
   Platform.OS === 'android'
-    ? 'http://172.18.71.71:3000'
-    : 'http://172.18.71.71:3000';
+    ? 'http://10.28.98.71:3000'
+    : 'http://10.28.98.71:3000';
 
 export const api = axios.create({
   baseURL: BASE_URL,

@@ -8,15 +8,10 @@ import {
   Profile, 
   UpdateProfileData,
   brandsApi,
-  BrandDto,
   productsApi,
   categoriesApi,
-  CategoryDto,
   customersApi,
-  CreateCustomerDto,
   billsApi,
-  CreateBillDto,
-  BillItemInput,
   api
 } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,6 +19,15 @@ import { useNavigation } from '@react-navigation/native';
 import { Alert, Platform } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
+
+// Bill hooks implementation
+const useBill = (billId: string) => {
+  return useQuery({
+    queryKey: ['bills', billId],
+    queryFn: () => billsApi.get(billId),
+    enabled: !!billId,
+  });
+};
 
 // Brand hooks implementation
 const useBrands = () => {
@@ -245,6 +249,14 @@ export const useAuth = () => {
     },
   });
 
+  // Bills hooks implementation
+  const useBills = () => {
+    return useQuery({
+      queryKey: ['bills'],
+      queryFn: () => billsApi.list()
+    });
+  };
+
   const logout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
@@ -266,6 +278,9 @@ export const useAuth = () => {
     updateProfile: updateProfileMutation.mutate,
     isLoading: loginMutation.isPending,
     isProfileLoading,
+
+    // Bills
+    useBill,
     isUpdatingProfile: updateProfileMutation.isPending,
     error: loginMutation.error,
     profileError: profileQueryError,
@@ -295,5 +310,8 @@ export const useAuth = () => {
     useProduct,
     updateProductMutation,
     deleteProductMutation,
+
+    // React Query hooks for bills
+    useBills,
   };
 };

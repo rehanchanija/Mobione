@@ -16,7 +16,6 @@ import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/nativ
           import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BillingStackParamList } from "../navigation/BillingStack";
 
-import { RootStackParamList } from "../navigation/types";
 import { useAuth } from "../hooks/useAuth";
 
 type ProductsScreenNavigationProp = NativeStackNavigationProp<BillingStackParamList>;

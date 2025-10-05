@@ -1,28 +1,43 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
+  TextInput,
 } from "react-native";
-import { BillingStackParamList } from "../navigation/BillingStack";
+import { useAuth } from '../hooks/useAuth';
 
 type BillingNavProp = any;
+
+interface Bill {
+  _id: string;
+  billNumber: string;
+  total: number;
+  amountPaid: number;
+  createdAt: string;
+  items: any[];
+}
 
 export default function BillingScreen() {
   const navigation = useNavigation<BillingNavProp>();
   const route = useRoute<any>();
   const initialItems = (route.params?.items as { productId: string; name: string; unitPrice: number; quantity: number }[]) || [];
   const [items, setItems] = useState(initialItems);
-  const [filter, setFilter] = useState<"All" | "Paid" | "Pending">("All");
+  const [customerName, setCustomerName] = useState('');
+  const [amountPaid, setAmountPaid] = useState(0);
+  
+  // Use bills API from useAuth
+  const { useBills } = useAuth();
+  const { data: bills, isLoading } = useBills();
+  console.log("Fetched bills:", bills);
 
-  const orders: any[] = [];
-
-  const filteredOrders =
-    filter === "All" ? orders : orders.filter((o) => o.status === filter);
+  // Get last 5 bills
+  const recentBills = bills?.slice(0, 5) || [];
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -41,9 +56,7 @@ export default function BillingScreen() {
           <Text style={styles.secondaryBtnText}>🛒 Select Products</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Current Bill */}
-      <View style={styles.card}>
+<View style={styles.card}>
         <Text style={styles.sectionTitle}>🧮 Current Bill</Text>
 
         {items.length === 0 ? (
@@ -51,12 +64,12 @@ export default function BillingScreen() {
         ) : (
           <>
             {items.map((it, idx) => (
-              <View style={styles.billItem} key={`${it.productId}-${idx}`}>
+              <View style={styles.currentBillItem} key={`${it.productId}-${idx}`}>
                 <Text style={styles.billText}>
                   {it.name} {"\n"}
                   {it.quantity} x ₹{it.unitPrice}
                 </Text>
-                <Text style={styles.billAmount}>₹{(it.unitPrice * it.quantity).toFixed(2)}</Text>
+                <Text style={styles.currentBillAmount}>₹{(it.unitPrice * it.quantity).toFixed(2)}</Text>
               </View>
             ))}
 
@@ -74,65 +87,172 @@ export default function BillingScreen() {
           </>
         )}
       </View>
-
       {/* Recent Orders */}
-      <Text style={[styles.sectionTitle, { marginTop: 5 }]}>📋 Recent Orders</Text>
-      <View style={styles.filterRow}>
-        {["All", "Paid", "Pending"].map((f) => (
-          <TouchableOpacity
-            key={f}
-            style={[
-              styles.filterBtn,
-              filter === f && styles.filterBtnActive,
-            ]}
-            onPress={() => setFilter(f as "All" | "Paid" | "Pending")}
-          >
-            <Text
-              style={[
-                styles.filterBtnText,
-                filter === f && { color: "#fff" },
-              ]}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>📋 Recent Orders</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#4A90E2" />
+        ) : recentBills.length > 0 ? (
+          recentBills.map((bill: Bill) => (
+            <TouchableOpacity
+              key={bill._id}
+              style={styles.billItem}
             >
-              {f}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <View style={styles.billHeader}>
+                <Text style={styles.billTitle}>Order #{bill.billNumber}</Text>
+                <Text style={[styles.billStatus, { color: bill.amountPaid >= bill.total ? '#34D399' : '#F59E0B' }]}>
+                  {bill.amountPaid >= bill.total ? 'Paid' : `₹${(bill.total - bill.amountPaid).toFixed(2)} Pending`}
+                </Text>
+              </View>
+              
+              <View style={styles.productsList}>
+                {bill?.items.map((item: any, index: number) => (
+                  <Text key={index} style={styles.productItem} numberOfLines={1}>
+                    • {item[0]?.name} ({item.quantity}x)
+                  </Text>
+                ))}
+              </View>
+
+              <View style={styles.billInfo}>
+                <View>
+                  <Text style={styles.billTotalAmount}>Total: ₹{bill.total?.toFixed(2)}</Text>
+                  {bill.amountPaid > 0 && (
+                    <Text style={styles.paidAmount}>Paid: ₹{bill.amountPaid?.toFixed(2)}</Text>
+                  )}
+                </View>
+                <Text style={styles.billDate}>{new Date(bill.createdAt).toLocaleDateString()}</Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={{ color: "#6b7280" }}>No recent bills found</Text>
+        )}
       </View>
 
-      {filteredOrders.map((order, index) => (
-        <TouchableOpacity
-          key={order.id}
-          style={[
-            styles.orderItem,
-            index === filteredOrders.length - 1 && { borderBottomWidth: 0 },
-          ]}
-        >
-          <View>
-            <Text style={styles.orderName}>👤 {order.name}</Text>
-            <Text style={styles.orderDetails}>
-              🧾 Bill {order.id} • {order.items} items
-            </Text>
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={styles.orderTotal}>₹{order.total}</Text>
-            <Text
-              style={[
-                styles.orderStatus,
-                {
-                  color: order.status === "Paid" ? "#16a34a" : "#f59e0b",
-                },
-              ]}
-            >
-              {order.status}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      ))}
+      {/* Current Bill */}
+      
+
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  inputContainer: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4b5563',
+    marginBottom: 4,
+  },
+  input: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#1f2937',
+  },
+  productInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  quantityText: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  billSummary: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  billRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  billLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#4b5563',
+  },
+  billValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#059669',
+  },
+  amountInput: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 6,
+    padding: 8,
+    width: 120,
+    textAlign: 'right',
+    fontSize: 16,
+    color: '#1f2937',
+  },
+  billItem: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 6,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  billHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  billTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  billStatus: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  billInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  billAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#059669',
+  },
+  billDate: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  productsList: {
+    marginVertical: 8,
+  },
+  productItem: {
+    fontSize: 14,
+    color: '#4b5563',
+    marginVertical: 2,
+  },
+  paidAmount: {
+    fontSize: 14,
+    color: '#34D399',
+    fontWeight: '500',
+  },
+  billTotalAmount: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
   container: { flex: 1, backgroundColor: "#f9f9f9", padding: 15 },
   header: {
     flexDirection: "row",
@@ -168,13 +288,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryBtnText: { color: "#333", fontWeight: "700", fontSize: 18 },
-  billItem: {
+  currentBillItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 10,
   },
   billText: { fontSize: 16 },
-  billAmount: { fontWeight: "600", fontSize: 16 },
+  currentBillAmount: { fontWeight: "600", fontSize: 16 },
   billTotal: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -184,21 +304,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   billTotalText: { fontWeight: "700", fontSize: 17 },
-  filterRow: {
-    flexDirection: "row",
-    marginBottom: 15,
-    marginTop: 5,
-  },
-  filterBtn: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 25,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    marginRight: 10,
-  },
-  filterBtnActive: { backgroundColor: "#4A90E2", borderColor: "#0066FF" },
-  filterBtnText: { fontWeight: "600", color: "#333", fontSize: 15 },
+
   orderItem: {
     flexDirection: "row",
     justifyContent: "space-between",
