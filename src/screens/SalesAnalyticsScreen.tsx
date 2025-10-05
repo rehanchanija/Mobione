@@ -321,7 +321,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
                 paymentMethod: bill.paymentMethod,
                 advanceAmount: bill.amountPaid,
                 pendingAmount: Math.max(0, bill.total - bill.amountPaid),
-                items: bill?.items[0]?.productId ? bill.items : [],
+                items: bill?.items,
 
                 discount: bill.discount || 0,
                 subTotal: bill.subtotal

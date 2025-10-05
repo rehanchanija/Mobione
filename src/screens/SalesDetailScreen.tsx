@@ -154,14 +154,19 @@ export default function SalesDetailScreen() {
           {/* Product Information */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Product Information</Text>
-            {bill?.items.map((item, index) => (
-              <View key={index} style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{item?.name}</Text>
-                <Text style={styles.infoValue}>
-                  ₹{item.price} x {item.quantity}
+            {/* {bill.items.map((item, index) => (
+              <View key={index} style={styles.productItem}>
+                <View style={styles.productInfo}>
+                  <Text style={styles.productName}>{item.name}aaaaaaaaaaaaa</Text>
+                  <Text style={styles.productQuantity}>
+                    {item.quantity} x ₹{item.price.toFixed(2)}
+                  </Text>
+                </View>
+                <Text style={styles.productTotal}>
+                  ₹{(item.price * item.quantity).toFixed(2)}
                 </Text>
               </View>
-            ))}
+            ))} */}
           </View>
 
           <View style={styles.divider} />
@@ -285,6 +290,33 @@ const styles = StyleSheet.create({
   infoValue: { fontSize: 14, color: '#1A1A1A', fontWeight: '600' },
  
   divider: { height: 1, backgroundColor: '#E5E5E5', marginVertical: 16 },
+  productItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  productInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  productName: {
+    fontSize: 16,
+    color: '#1A1A1A',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  productQuantity: {
+    fontSize: 14,
+    color: '#666666',
+  },
+  productTotal: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+  },
   statusBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
   paidBadge: { backgroundColor: '#E8F5E9' },
   pendingBadge: { backgroundColor: '#FFF3E0' },
