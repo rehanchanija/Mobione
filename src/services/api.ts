@@ -5,8 +5,48 @@ import { Platform } from 'react-native';
 // ✅ Safer BASE_URL handling
 const BASE_URL =
   Platform.OS === 'android'
-    ? 'http://10.28.98.71:3000'
-    : 'http://10.28.98.71:3000';
+    ? 'http://192.168.29.69:3000'
+    : 'http://192.168.29.69:3000';
+
+export type TimeFilterType = 'day' | 'week' | 'month' | 'all';
+
+export interface SalesReportData {
+  totalSales: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  totalCustomers: number;
+  dailyStats: {
+    date: string;
+    sales: number;
+    orders: number;
+  }[];
+  topProducts: {
+    productId: string;
+    name: string;
+    quantity: number;
+    revenue: number;
+  }[];
+  timeFilter: TimeFilterType;
+}
+
+// Transaction interfaces
+export interface Transaction {
+  _id: string;
+  billId: string;
+  amount: number;
+  type: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTransactionDto {
+  billId: string;
+  amount: number;
+  type: string;
+  description?: string;
+}
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -15,6 +55,46 @@ export const api = axios.create({
   },
   timeout: 10000,
 });
+
+// ---------------- TRANSACTIONS ----------------
+export const transactionApi = {
+  getAll: async (): Promise<Transaction[]> => {
+    try {
+      console.log('Fetching transactions...');
+      const token = await AsyncStorage.getItem('token');
+      console.log('Auth token:', token);
+      
+      const response = await api.get('/transactions', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      console.log('Transaction API response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Transaction API error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      throw error;
+    }
+  },
+
+  getById: async (id: string): Promise<Transaction> => {
+    const response = await api.get(`/transactions/${id}`);
+    return response.data;
+  },
+
+  create: async (data: CreateTransactionDto): Promise<Transaction> => {
+    const response = await api.post('/transactions', data);
+    return response.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/transactions/${id}`);
+  },
+};
 
 // ✅ Attach token automatically
 api.interceptors.request.use(async (config) => {
@@ -267,4 +347,8 @@ export const billsApi = {
     const res = await api.get(`/bills`);
     return res.data;
   },
+};
+export const getSalesReport = async (timeFilter: TimeFilterType = 'all'): Promise<SalesReportData> => {
+  const response = await api.get(`/bills/sales-report?timeFilter=${timeFilter}`);
+  return response.data;
 };
