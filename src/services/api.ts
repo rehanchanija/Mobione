@@ -86,10 +86,7 @@ export const transactionApi = {
     return response.data;
   },
 
-  create: async (data: CreateTransactionDto): Promise<Transaction> => {
-    const response = await api.post('/transactions', data);
-    return response.data;
-  },
+ 
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/transactions/${id}`);

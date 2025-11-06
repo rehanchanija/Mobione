@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   authApi, 
   LoginData, 
-  RegisterData, 
   AuthResponse, 
   profileApi, 
   Profile, 
@@ -12,13 +11,31 @@ import {
   categoriesApi,
   customersApi,
   billsApi,
-  api
+  api,
+  
+  transactionApi
 } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { Alert, Platform } from 'react-native';
+import { Alert } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
+
+// Transaction hooks implementation
+export const useTransactions = () => {
+  return useQuery({
+    queryKey: ['transactions'],
+    queryFn: () => transactionApi.getAll(),
+  });
+};
+
+const useTransaction = (id: string) => {
+  return useQuery({
+    queryKey: ['transactions', id],
+    queryFn: () => transactionApi.getById(id),
+    enabled: !!id,
+  });
+};
 
 // Bill hooks implementation
 const useBill = (billId: string) => {
@@ -313,5 +330,9 @@ export const useAuth = () => {
 
     // React Query hooks for bills
     useBills,
+
+    // React Query hooks for transactions
+    useTransactions,
+    useTransaction,
   };
 };

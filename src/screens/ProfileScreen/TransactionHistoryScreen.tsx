@@ -3,56 +3,41 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  Platform,
+  ActivityIndicator,
   FlatList,
+  RefreshControl,
+  SafeAreaView,
+  TouchableOpacity,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
-interface Transaction {
-  id: string;
-  date: string;
-  amount: number;
-  type: string;
-  customer: string;
-  status: 'Completed' | 'Pending';
-}
-
-// Mock data
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    date: '10 Sep 2025',
-    amount: 4500,
-    type: 'Sale',
-    customer: 'John Doe',
-    status: 'Completed',
-  },
-  {
-    id: '2',
-    date: '10 Sep 2025',
-    amount: 3200,
-    type: 'Sale',
-    customer: 'Jane Smith',
-    status: 'Pending',
-  },
-  // Add more transactions as needed
-];
+import { format } from 'date-fns';
+import { Transaction } from '../../services/api';
+import { useTransactions } from '../../hooks/useAuth';
 
 const TransactionHistoryScreen = () => {
-  const navigation = useNavigation<any>();  // You can replace 'any' with your specific navigation type if available
+  const navigation = useNavigation<any>();
+  const { data: transactions, isLoading, refetch } = useTransactions();
 
   const handleBack = () => {
     navigation.goBack();
   };
 
+  if (isLoading && !transactions) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#0066cc" />
+      </View>
+    );
+  };
+
   const renderTransaction = ({ item }: { item: Transaction }) => (
     <View style={styles.transactionCard}>
       <View style={styles.transactionHeader}>
-        <Text style={styles.transactionDate}>{item.date}</Text>
+        <Text style={styles.transactionDate}>
+          {format(new Date(item.createdAt), 'dd MMM yyyy')}
+        </Text>
         <Text style={[
           styles.transactionStatus,
           item.status === 'Completed' ? styles.statusCompleted : styles.statusPending
@@ -60,11 +45,13 @@ const TransactionHistoryScreen = () => {
           {item.status}
         </Text>
       </View>
-      <Text style={styles.customerName}>{item.customer}</Text>
       <View style={styles.transactionFooter}>
         <Text style={styles.transactionType}>{item.type}</Text>
-        <Text style={styles.transactionAmount}>₹{item.amount}</Text>
+        <Text style={styles.transactionAmount}>₹{item.amount.toFixed(2)}</Text>
       </View>
+      {item.description && (
+        <Text >{item.description}</Text>
+      )}
     </View>
   );
 
@@ -83,17 +70,25 @@ const TransactionHistoryScreen = () => {
       </View>
 
       <FlatList
-        data={mockTransactions}
+        data={transactions}
         renderItem={renderTransaction}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item._id}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={refetch} />
+        }
       />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#F9FAFB',
@@ -198,4 +193,6 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TransactionHistoryScreen;
+
+
+export default TransactionHistoryScreen
