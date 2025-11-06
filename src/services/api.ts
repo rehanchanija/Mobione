@@ -29,10 +29,29 @@ export interface SalesReportData {
   timeFilter: TimeFilterType;
 }
 
+export interface Bill {
+  _id: string;
+  customer: string; // Assuming customer is just an ID for now
+  userId: string;
+  items: {
+    product: string;
+    quantity: number;
+    price: number;
+  }[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  paymentMethod: 'Cash' | 'Online';
+  amountPaid: number;
+  status: 'Paid' | 'Pending';
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Transaction interfaces
 export interface Transaction {
   _id: string;
-  billId: string;
+  billId: Bill;
   amount: number;
   type: string;
   description: string;

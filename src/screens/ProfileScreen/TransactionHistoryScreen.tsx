@@ -40,13 +40,13 @@ const TransactionHistoryScreen = () => {
         </Text>
         <Text style={[
           styles.transactionStatus,
-          item.status === 'Completed' ? styles.statusCompleted : styles.statusPending
+          item.billId.status === 'Paid' ? styles.statusCompleted : styles.statusPending
         ]}>
-          {item.status}
+          {item.billId.status}
         </Text>
       </View>
       <View style={styles.transactionFooter}>
-        <Text style={styles.transactionType}>{item.type}</Text>
+        <Text style={styles.transactionType}>{item.billId.paymentMethod}</Text>
         <Text style={styles.transactionAmount}>₹{item.amount.toFixed(2)}</Text>
       </View>
       {item.description && (
