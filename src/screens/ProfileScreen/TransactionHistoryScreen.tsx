@@ -3,9 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
   SafeAreaView,
   TouchableOpacity,
   Platform,
@@ -13,47 +10,30 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { format } from 'date-fns';
-import { Transaction } from '../../services/api';
-import { useTransactions } from '../../hooks/useAuth';
 
 const TransactionHistoryScreen = () => {
   const navigation = useNavigation<any>();
-  const { data: transactions, isLoading, refetch } = useTransactions();
+  // Transaction functionality removed - this screen will be updated to show bills instead
 
   const handleBack = () => {
     navigation.goBack();
   };
-
-  if (isLoading && !transactions) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#0066cc" />
-      </View>
-    );
+  const item={
+    id: 1,
+      createdAt: '2023-10-15T10:30:00Z',
+      amount: 120.75,
+    billId: {
+      status: 'Paid',
+      paymentMethod: 'Credit Card',
+      amount: 120.75,
+      createdAt: '2023-10-15T10:30:00Z',
+    },
+    description: 'Purchase of 2 items at ₹60.38 each',
   };
 
-  const renderTransaction = ({ item }: { item: Transaction }) => (
-    <View style={styles.transactionCard}>
-      <View style={styles.transactionHeader}>
-        <Text style={styles.transactionDate}>
-          {format(new Date(item.createdAt), 'dd MMM yyyy')}
-        </Text>
-        <Text style={[
-          styles.transactionStatus,
-          item.billId.status === 'Paid' ? styles.statusCompleted : styles.statusPending
-        ]}>
-          {item.billId.status}
-        </Text>
-      </View>
-      <View style={styles.transactionFooter}>
-        <Text style={styles.transactionType}>{item.billId.paymentMethod}</Text>
-        <Text style={styles.transactionAmount}>₹{item.amount.toFixed(2)}</Text>
-      </View>
-      {item.description && (
-        <Text >{item.description}</Text>
-      )}
-    </View>
-  );
+  // Loading state removed - screen will be updated to show bills instead
+ 
+  
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -69,16 +49,7 @@ const TransactionHistoryScreen = () => {
         </View>
       </View>
 
-      <FlatList
-        data={transactions}
-        renderItem={renderTransaction}
-        keyExtractor={item => item._id}
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={refetch} />
-        }
-      />
+      {/* Transaction list removed - screen will be updated to show bills instead */}
     </SafeAreaView>
   );
 };

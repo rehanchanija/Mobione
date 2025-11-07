@@ -48,25 +48,6 @@ export interface Bill {
   updatedAt: string;
 }
 
-// Transaction interfaces
-export interface Transaction {
-  _id: string;
-  billId: Bill;
-  amount: number;
-  type: string;
-  description: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateTransactionDto {
-  billId: string;
-  amount: number;
-  type: string;
-  description?: string;
-}
-
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -74,43 +55,6 @@ export const api = axios.create({
   },
   timeout: 10000,
 });
-
-// ---------------- TRANSACTIONS ----------------
-export const transactionApi = {
-  getAll: async (): Promise<Transaction[]> => {
-    try {
-      console.log('Fetching transactions...');
-      const token = await AsyncStorage.getItem('token');
-      console.log('Auth token:', token);
-      
-      const response = await api.get('/transactions', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      console.log('Transaction API response:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('Transaction API error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      throw error;
-    }
-  },
-
-  getById: async (id: string): Promise<Transaction> => {
-    const response = await api.get(`/transactions/${id}`);
-    return response.data;
-  },
-
- 
-
-  delete: async (id: string): Promise<void> => {
-    await api.delete(`/transactions/${id}`);
-  },
-};
 
 // ✅ Attach token automatically
 api.interceptors.request.use(async (config) => {
