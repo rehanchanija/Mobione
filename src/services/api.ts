@@ -29,14 +29,26 @@ export interface SalesReportData {
   timeFilter: TimeFilterType;
 }
 
+export interface CustomerDto {
+  _id: string;
+  name: string;
+  phone?: string;
+  address?: string;
+}
+
+export interface ProductDto {
+  _id: string;
+  name: string;
+}
+
 export interface Bill {
   _id: string;
-  customer: string; // Assuming customer is just an ID for now
+  customer: CustomerDto; // Populated customer
   userId: string;
   items: {
-    product: string;
+    product: ProductDto; // Populated product
     quantity: number;
-    price: number;
+    price?: number;
   }[];
   subtotal: number;
   discount: number;

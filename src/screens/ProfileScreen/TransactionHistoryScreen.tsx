@@ -7,33 +7,95 @@ import {
   TouchableOpacity,
   Platform,
   StatusBar,
+  FlatList,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { billsApi, Bill } from '../../services/api';
 
 const TransactionHistoryScreen = () => {
   const navigation = useNavigation<any>();
-  // Transaction functionality removed - this screen will be updated to show bills instead
 
   const handleBack = () => {
     navigation.goBack();
   };
-  const item={
-    id: 1,
-      createdAt: '2023-10-15T10:30:00Z',
-      amount: 120.75,
-    billId: {
-      status: 'Paid',
-      paymentMethod: 'Credit Card',
-      amount: 120.75,
-      createdAt: '2023-10-15T10:30:00Z',
-    },
-    description: 'Purchase of 2 items at ₹60.38 each',
-  };
 
-  // Loading state removed - screen will be updated to show bills instead
- 
-  
+  const { data: bills, isLoading, refetch, error } = useQuery<Bill[]>({
+    queryKey: ['bills', 'list'],
+    queryFn: async () => {
+      try {
+        return await billsApi.list();
+      } catch (e) {
+        throw e;
+      }
+    },
+    staleTime: 30_000,
+    retry: 1,
+  });
+
+  const renderBill = ({ item }: { item: Bill }) => (
+    <View style={styles.transactionCard}>
+      <View style={styles.transactionHeader}>
+        <Text style={styles.transactionDate}>{format(new Date(item.createdAt), 'dd MMM yyyy')}</Text>
+        <Text
+          style={[
+            styles.transactionStatus,
+            item.status === 'Paid' ? styles.statusCompleted : styles.statusPending,
+          ]}
+        >
+          {item.status}
+        </Text>
+      </View>
+
+      {/* Customer Name */}
+      <Text style={styles.customerName}>{item.customer?.name || 'Unknown Customer'}</Text>
+
+      {/* Items */}
+      <View style={{ marginBottom: 8 }}>
+        {item.items?.map((it, idx) => (
+          <Text key={`${item._id}-it-${idx}`} style={{ color: '#374151' }}>
+            {it.product?.name || 'Unknown Product'} x {it.quantity}
+          </Text>
+        ))}
+      </View>
+
+      {/* Footer */}
+      <View style={styles.transactionFooter}>
+        <Text style={styles.transactionType}>{item.paymentMethod}</Text>
+        <Text style={styles.transactionAmount}>₹{(item.total ?? 0).toFixed(2)}</Text>
+      </View>
+    </View>
+  );
+
+  if (isLoading && !bills) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#0066cc" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+        <View style={styles.container}>
+          <View style={[styles.transactionCard, { alignItems: 'center' }]}>
+            <Text style={{ color: '#B91C1C', fontWeight: '700', marginBottom: 8 }}>Failed to load data</Text>
+            <Text style={{ color: '#6B7280', textAlign: 'center', marginBottom: 12 }}>
+              Please ensure you are logged in and the server is reachable.
+            </Text>
+            <TouchableOpacity onPress={() => refetch()} style={[styles.backButton, { width: 120 }]}>
+              <Text style={styles.backArrow}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </View> 
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -49,7 +111,23 @@ const TransactionHistoryScreen = () => {
         </View>
       </View>
 
-      {/* Transaction list removed - screen will be updated to show bills instead */}
+      {(!bills || bills.length === 0) ? (
+        <View style={[styles.container, { alignItems: 'center' }]}>
+          <View style={[styles.transactionCard, { width: '100%', alignItems: 'center' }]}>
+            <Text style={{ color: '#6B7280' }}>No bills found.</Text>
+            <Text style={{ color: '#6B7280' }}>Create a bill to see it here.</Text>
+          </View>
+        </View>
+      ) : (
+        <FlatList
+          data={bills || []}
+          renderItem={renderBill}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={!!isLoading} onRefresh={refetch} />}
+        />
+      )}
     </SafeAreaView>
   );
 };
