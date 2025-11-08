@@ -12,9 +12,19 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../hooks/useAuth';
 import { format } from 'date-fns';
-import { billsApi, Bill } from '../../services/api';
+
+// Define minimal Bill type used in this screen
+interface Bill {
+  _id: string;
+  createdAt: string;
+  status: 'Paid' | 'Pending';
+  customer?: { name?: string };
+  items?: { product?: { name?: string }; quantity: number }[];
+  paymentMethod: 'Cash' | 'Online';
+  total?: number;
+}
 
 const TransactionHistoryScreen = () => {
   const navigation = useNavigation<any>();
@@ -23,18 +33,9 @@ const TransactionHistoryScreen = () => {
     navigation.goBack();
   };
 
-  const { data: bills, isLoading, refetch, error } = useQuery<Bill[]>({
-    queryKey: ['bills', 'list'],
-    queryFn: async () => {
-      try {
-        return await billsApi.list();
-      } catch (e) {
-        throw e;
-      }
-    },
-    staleTime: 30_000,
-    retry: 1,
-  });
+  // Use bills hook from useAuth instead of direct api
+  const { useBills } = useAuth();
+  const { data: bills, isLoading, refetch, error } = useBills();
 
   const renderBill = ({ item }: { item: Bill }) => (
     <View style={styles.transactionCard}>
@@ -241,7 +242,5 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
 });
-
-
 
 export default TransactionHistoryScreen
