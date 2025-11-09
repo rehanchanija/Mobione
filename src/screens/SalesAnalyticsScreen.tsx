@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import {
   View,
@@ -9,10 +9,12 @@ import {
   SafeAreaView,
   TextInput,
   Modal,
+  Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface BillItem {
   productId: string;
@@ -51,7 +53,13 @@ export default function SalesAnalyticsScreen({ route }: any) {
   const { useBills, useProduct } = useAuth();
   
   // Fetch all bills
-  const { data: bills, isLoading: isLoadingBills } = useBills();
+  const { data: bills, isLoading: isLoadingBills, refetch } = useBills();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
   
   // Transform bills data to include status
   const transformedBills = useMemo(() => {
@@ -95,13 +103,13 @@ export default function SalesAnalyticsScreen({ route }: any) {
   
   const [activeFilter, setActiveFilter] = useState<'Date' | 'Customer' | 'Status' | 'Amount' | 'Payment'>('Date');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['Paid', 'Pending']);
   const [showAmountFilter, setShowAmountFilter] = useState(false);
   const [amountRange, setAmountRange] = useState({ min: '', max: '' });
-  const [showDateFilter, setShowDateFilter] = useState(false);
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [showPaymentFilter, setShowPaymentFilter] = useState(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>(['Cash', 'Online']);
 
   const getStatusBadgeStyle = (status: string) => {
@@ -137,14 +145,6 @@ export default function SalesAnalyticsScreen({ route }: any) {
     }
   };
 
-  const toggleStatusFilter = (status: string) => {
-    setSelectedStatuses(prev => 
-      prev.includes(status) 
-        ? prev.filter(s => s !== status)
-        : [...prev, status]
-    );
-  };
-
   // Enhanced filtering and sorting logic
   const processedBills = useMemo(() => {
     let filtered = [...billsData];
@@ -176,12 +176,13 @@ export default function SalesAnalyticsScreen({ route }: any) {
       });
     }
 
-    if (dateRange.start || dateRange.end) {
+    // Filter by date range
+    if (startDate || endDate) {
       filtered = filtered.filter(bill => {
         const billDate = new Date(bill.createdAt);
-        const startDate = dateRange.start ? new Date(dateRange.start) : new Date('1900-01-01');
-        const endDate = dateRange.end ? new Date(dateRange.end) : new Date('2100-12-31');
-        return billDate >= startDate && billDate <= endDate;
+        const matchesStartDate = !startDate || billDate >= startDate;
+        const matchesEndDate = !endDate || billDate <= endDate;
+        return matchesStartDate && matchesEndDate;
       });
     }
 
@@ -210,13 +211,14 @@ export default function SalesAnalyticsScreen({ route }: any) {
     }
 
     return filtered;
-  }, [activeFilter, searchQuery, selectedStatuses, amountRange, dateRange,selectedPaymentMethods]);
+  }, [activeFilter, searchQuery, selectedStatuses, amountRange, startDate, endDate, selectedPaymentMethods, billsData]);
 
   const clearAllFilters = () => {
     setSearchQuery('');
     setSelectedStatuses(['Paid', 'Pending']);
     setAmountRange({ min: '', max: '' });
-    setDateRange({ start: '', end: '' });
+    setStartDate(null);
+    setEndDate(null);
     setSelectedPaymentMethods(['Cash', 'Online']);
   };
 
@@ -226,7 +228,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
     if (selectedStatuses.length < 2) count++;
     if (selectedPaymentMethods.length < 2) count++;
     if (amountRange.min || amountRange.max) count++;
-    if (dateRange.start || dateRange.end) count++;
+    if (startDate || endDate) count++;
     return count;
   };
 
@@ -244,40 +246,52 @@ export default function SalesAnalyticsScreen({ route }: any) {
         </View>
 
 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-  {/* Date → opens Date modal */}
+  {/* Date → opens Date picker */}
   <TouchableOpacity
     style={[styles.filterButton, activeFilter === 'Date' && styles.filterButtonActive]}
     onPress={() => {
       setActiveFilter('Date');
-      setShowDateFilter(true); // 👈 open date filter modal
+      setShowStartPicker(true);
     }}
   >
     <Text style={[styles.filterText, activeFilter === 'Date' && styles.filterTextActive]}>
-      📅 Date {(dateRange.start || dateRange.end) ? '✓' : ''}
+      📅 Date {(startDate || endDate) ? '✓' : ''}
     </Text>
   </TouchableOpacity>
   <TouchableOpacity
     style={[styles.filterButton, activeFilter === 'Status' && styles.filterButtonActive]}
     onPress={() => {
+      if (selectedStatuses.length === 2) {
+        setSelectedStatuses(['Paid']);
+      } else if (selectedStatuses.includes('Paid')) {
+        setSelectedStatuses(['Pending']);
+      } else {
+        setSelectedStatuses(['Paid', 'Pending']);
+      }
       setActiveFilter('Status');
-      setShowStatusFilter(true); // 👈 open status filter modal
     }}
   >
     <Text style={[styles.filterText, activeFilter === 'Status' && styles.filterTextActive]}>
-      🔄 Status ({selectedStatuses.length}/2)
+      🔄 {selectedStatuses.length === 2 ? 'All Status' : selectedStatuses[0]}
     </Text>
   </TouchableOpacity>
 
-  {/* Payment Method → opens Payment modal */}
+  {/* Payment Method → toggle on tap */}
   <TouchableOpacity
     style={[styles.filterButton, activeFilter === 'Payment' && styles.filterButtonActive]}
     onPress={() => {
+      if (selectedPaymentMethods.length === 2) {
+        setSelectedPaymentMethods(['Cash']);
+      } else if (selectedPaymentMethods.includes('Cash')) {
+        setSelectedPaymentMethods(['Online']);
+      } else {
+        setSelectedPaymentMethods(['Cash', 'Online']);
+      }
       setActiveFilter('Payment');
-      setShowPaymentFilter(true); // 👈 open payment filter modal
     }}
   >
     <Text style={[styles.filterText, activeFilter === 'Payment' && styles.filterTextActive]}>
-      💳 Payment ({selectedPaymentMethods.length}/2)
+      💳 {selectedPaymentMethods.length === 2 ? 'All Payment' : selectedPaymentMethods[0]}
     </Text>
   </TouchableOpacity>
 
@@ -286,7 +300,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
     style={[styles.filterButton, activeFilter === 'Amount' && styles.filterButtonActive]}
     onPress={() => {
       setActiveFilter('Amount');
-      setShowAmountFilter(true); // 👈 open amount filter modal
+      setShowAmountFilter(true);
     }}
   >
     <Text style={[styles.filterText, activeFilter === 'Amount' && styles.filterTextActive]}>
@@ -303,6 +317,44 @@ export default function SalesAnalyticsScreen({ route }: any) {
         />
 
       </View>
+
+      {/* Date Pickers */}
+      {showStartPicker && (
+        <DateTimePicker
+          value={startDate || new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+          onChange={(event, selectedDate) => {
+            if (Platform.OS === 'android') {
+              setShowStartPicker(false);
+            }
+            if (selectedDate && event.type === 'set') {
+              setStartDate(selectedDate);
+              if (Platform.OS === 'ios') {
+                setShowStartPicker(false);
+              }
+              setTimeout(() => setShowEndPicker(true), 300);
+            } else if (event.type === 'dismissed') {
+              setShowStartPicker(false);
+            }
+          }}
+        />
+      )}
+
+      {showEndPicker && (
+        <DateTimePicker
+          value={endDate || startDate || new Date()}
+          mode="date"
+          minimumDate={startDate || undefined}
+          display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+          onChange={(event, selectedDate) => {
+            setShowEndPicker(false);
+            if (selectedDate && event.type === 'set') {
+              setEndDate(selectedDate);
+            }
+          }}
+        />
+      )}
 
       {/* Bill History */}
       <View style={styles.billSection}>
@@ -374,40 +426,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
         </ScrollView>
       </View>
 
-      {/* Status Filter Modal */}
-      <Modal visible={showStatusFilter} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Filter by Status</Text>
-            
-            {['Paid', 'Pending'].map(status => (
-              <TouchableOpacity
-                key={status}
-                style={styles.checkboxItem}
-                onPress={() => toggleStatusFilter(status)}
-              >
-                <View style={styles.checkbox}>
-                  {selectedStatuses.includes(status) && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </View>
-                <Text style={styles.checkboxLabel}>
-                  {getStatusEmoji(status)} {status}
-                </Text>
-              </TouchableOpacity>
-            ))}
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setShowStatusFilter(false)}
-              >
-                <Text style={styles.modalButtonText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Amount Filter Modal */}
       <Modal visible={showAmountFilter} transparent animationType="slide">
@@ -451,86 +470,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
         </View>
       </Modal>
 
-      {/* Date Range Filter Modal */}
-      <Modal visible={showDateFilter} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Filter by Date Range</Text>
-            
-            <Text style={styles.inputLabel}>Start Date (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="2024-07-01"
-              value={dateRange.start}
-              onChangeText={(text) => setDateRange(prev => ({ ...prev, start: text }))}
-            />
 
-            <Text style={styles.inputLabel}>End Date (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="2024-07-31"
-              value={dateRange.end}
-              onChangeText={(text) => setDateRange(prev => ({ ...prev, end: text }))}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.clearModalButton]}
-                onPress={() => setDateRange({ start: '', end: '' })}
-              >
-                <Text style={styles.clearModalButtonText}>Clear</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setShowDateFilter(false)}
-              >
-                <Text style={styles.modalButtonText}>Apply</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Payment Method Filter Modal */}
-      <Modal visible={showPaymentFilter} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Filter by Payment Method</Text>
-            
-            {['Cash', 'Online'].map(method => (
-              <TouchableOpacity
-                key={method}
-                style={styles.checkboxItem}
-                onPress={() => {
-                  setSelectedPaymentMethods(prev => 
-                    prev.includes(method) 
-                      ? prev.filter(m => m !== method)
-                      : [...prev, method]
-                  );
-                }}
-              >
-                <View style={styles.checkbox}>
-                  {selectedPaymentMethods.includes(method) && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </View>
-                <Text style={styles.checkboxLabel}>
-                  {method === 'Cash' ? '💵' : '💳'} {method}
-                </Text>
-              </TouchableOpacity>
-            ))}
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setShowPaymentFilter(false)}
-              >
-                <Text style={styles.modalButtonText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -590,38 +530,104 @@ const styles = StyleSheet.create({
   billList: { flex: 1 },
   billItem: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: '#E8E8E8',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   
-  billHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  billId: { fontSize: 16, color: '#666666', fontWeight: '500' },
-  billDate: { fontSize: 14, color: '#666666' },
-  billContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  customerName: { fontSize: 18, fontWeight: '600', color: '#1A1A1A', marginBottom: 4 },
-  statusBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
-  paidBadge: { backgroundColor: '#E8F5E9' },
-  pendingBadge: { backgroundColor: '#FFF3E0' },
-  cashBadge: { backgroundColor: '#E3F2FD' },
-  onlineBadge: { backgroundColor: '#E8F5E9' },
-  paidText: { fontSize: 12, fontWeight: '600', color: '#2E7D32' },
-  pendingText: { fontSize: 12, fontWeight: '600', color: '#EF6C00' },
-  cashText: { fontSize: 12, fontWeight: '600', color: '#1565C0' },
-  onlineText: { fontSize: 12, fontWeight: '600', color: '#2E7D32' },
-  badgeContainer: { flexDirection: 'row', gap: 8 },
-  paymentBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
-  amount: { fontSize: 18, fontWeight: '700', color: '#0066FF' },
-  viewDetails: { alignSelf: 'flex-end' },
-  viewDetailsText: { color: '#0066FF', fontSize: 14, fontWeight: '600' },
-  
+  billHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  billId: { 
+    fontSize: 15, 
+    color: '#0066FF', 
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  billDate: { 
+    fontSize: 13, 
+    color: '#888888',
+    fontWeight: '500',
+  },
+  billContent: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-start', 
+    marginBottom: 14,
+  },
+  customerName: { 
+    fontSize: 19, 
+    fontWeight: '700', 
+    color: '#1A1A1A', 
+    marginBottom: 8,
+    letterSpacing: 0.2,
+  },
+  statusBadge: { 
+    borderRadius: 16, 
+    paddingHorizontal: 10, 
+    paddingVertical: 5, 
+    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  paidBadge: { backgroundColor: '#D4EDDA', borderWidth: 1, borderColor: '#C3E6CB' },
+  pendingBadge: { backgroundColor: '#FFF3CD', borderWidth: 1, borderColor: '#FFE5A1' },
+  cashBadge: { backgroundColor: '#D1ECF1', borderWidth: 1, borderColor: '#BEE5EB' },
+  onlineBadge: { backgroundColor: '#D4EDDA', borderWidth: 1, borderColor: '#C3E6CB' },
+  paidText: { fontSize: 12, fontWeight: '700', color: '#155724' },
+  pendingText: { fontSize: 12, fontWeight: '700', color: '#856404' },
+  cashText: { fontSize: 12, fontWeight: '700', color: '#0C5460' },
+  onlineText: { fontSize: 12, fontWeight: '700', color: '#155724' },
+  badgeContainer: { flexDirection: 'row', gap: 6, marginTop: 2 },
+  paymentBadge: { 
+    borderRadius: 16, 
+    paddingHorizontal: 10, 
+    paddingVertical: 5, 
+    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  amount: { 
+    fontSize: 22, 
+    fontWeight: '800', 
+    color: '#0066FF',
+    letterSpacing: 0.3,
+    textAlign: 'right',
+  },
+  viewDetails: { 
+    alignSelf: 'flex-end',
+    backgroundColor: '#F0F7FF',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#D6E9FF',
+  },
+  viewDetailsText: { 
+    color: '#0066FF', 
+    fontSize: 13, 
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
   noResultsContainer: { alignItems: 'center', marginTop: 40 },
   noResults: { textAlign: 'center', color: '#999999', fontSize: 18, fontWeight: '600' },
   noResultsSubtext: { textAlign: 'center', color: '#CCCCCC', fontSize: 14, marginTop: 8 },
@@ -676,4 +682,5 @@ const styles = StyleSheet.create({
   modalButtonText: { color: '#FFFFFF', textAlign: 'center', fontWeight: '600', fontSize: 16 },
   clearModalButton: { backgroundColor: '#F5F5F5' },
   clearModalButtonText: { color: '#666666', textAlign: 'center', fontWeight: '600', fontSize: 16 },
+
 });

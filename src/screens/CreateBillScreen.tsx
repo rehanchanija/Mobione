@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  TextInput,
 } from "react-native";
 import { useAuth } from '../hooks/useAuth';
 
@@ -28,8 +27,6 @@ export default function BillingScreen() {
   const route = useRoute<any>();
   const initialItems = (route.params?.items as { productId: string; name: string; unitPrice: number; quantity: number }[]) || [];
   const [items, setItems] = useState(initialItems);
-  const [customerName, setCustomerName] = useState('');
-  const [amountPaid, setAmountPaid] = useState(0);
   
   // Use bills API from useAuth
   const { useBills } = useAuth();
@@ -41,9 +38,6 @@ export default function BillingScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-     
-      
-
       {/* Start New Bill */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>🚀 Start New Bill</Text>

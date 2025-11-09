@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
   FlatList,
   RefreshControl,
   ActivityIndicator,
+  TextInput,
+  ScrollView,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
 import { format } from 'date-fns';
 
-// Define minimal Bill type used in this screen
 interface Bill {
   _id: string;
   createdAt: string;
@@ -28,45 +30,104 @@ interface Bill {
 
 const TransactionHistoryScreen = () => {
   const navigation = useNavigation<any>();
-
-  const handleBack = () => {
-    navigation.goBack();
-  };
-
-  // Use bills hook from useAuth instead of direct api
   const { useBills } = useAuth();
   const { data: bills, isLoading, refetch, error } = useBills();
 
+  const [searchCustomer, setSearchCustomer] = useState('');
+  const [searchProduct, setSearchProduct] = useState('');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+
+  const filteredBills = useMemo(() => {
+    const normalize = (s?: string) => (s || '').toLowerCase();
+
+    return (bills || []).filter((b: Bill) => {
+      const billDate = new Date(b.createdAt);
+
+      const matchesDateRange =
+        (!startDate || billDate >= startDate) &&
+        (!endDate || billDate <= endDate);
+
+      const matchesCustomer = !searchCustomer || 
+        normalize(b.customer?.name).includes(normalize(searchCustomer));
+      
+      const matchesProduct = !searchProduct || 
+        (b.items || []).some(it => 
+          normalize(it.product?.name).includes(normalize(searchProduct))
+        );
+
+      return matchesDateRange && matchesCustomer && matchesProduct;
+    });
+  }, [bills, startDate, endDate, searchCustomer, searchProduct]);
+
+  const clearFilters = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setSearchCustomer('');
+    setSearchProduct('');
+  };
+
+  const hasActiveFilters = startDate || endDate || searchCustomer || searchProduct;
+
   const renderBill = ({ item }: { item: Bill }) => (
-    <View style={styles.transactionCard}>
-      <View style={styles.transactionHeader}>
-        <Text style={styles.transactionDate}>{format(new Date(item.createdAt), 'dd MMM yyyy')}</Text>
-        <Text
+    <View style={styles.billCard}>
+      {/* Header with Date and Status */}
+      <View style={styles.billHeader}>
+        <View style={styles.billDateContainer}>
+          <Text style={styles.billDateEmoji}>📅</Text>
+          <Text style={styles.billDate}>
+            {format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm')}
+          </Text>
+        </View>
+        <View
           style={[
-            styles.transactionStatus,
-            item.status === 'Paid' ? styles.statusCompleted : styles.statusPending,
+            styles.statusBadge,
+            item.status === 'Paid' ? styles.statusPaid : styles.statusPending,
           ]}
         >
-          {item.status}
+          <Text style={styles.statusText}>
+            {item.status === 'Paid' ? '✓' : '⏱'} {item.status}
+          </Text>
+        </View>
+      </View>
+
+      {/* Customer Info */}
+      <View style={styles.billSection}>
+        <Text style={styles.sectionEmoji}>👤</Text>
+        <Text style={styles.customerName}>
+          {item.customer?.name || 'Unknown Customer'}
         </Text>
       </View>
 
-      {/* Customer Name */}
-      <Text style={styles.customerName}>{item.customer?.name || 'Unknown Customer'}</Text>
-
-      {/* Items */}
-      <View style={{ marginBottom: 8 }}>
-        {item.items?.map((it, idx) => (
-          <Text key={`${item._id}-it-${idx}`} style={{ color: '#374151' }}>
-            {it.product?.name || 'Unknown Product'} x {it.quantity}
-          </Text>
-        ))}
+      {/* Items List */}
+      <View style={styles.billSection}>
+        <Text style={styles.sectionEmoji}>📦</Text>
+        <View style={styles.itemsList}>
+          {item.items?.map((it, idx) => (
+            <View key={`${item._id}-it-${idx}`} style={styles.itemRow}>
+              <Text style={styles.itemName}>
+                {it.product?.name || 'Unknown Product'}
+              </Text>
+              <Text style={styles.itemQuantity}>× {it.quantity}</Text>
+            </View>
+          ))}
+        </View>
       </View>
 
-      {/* Footer */}
-      <View style={styles.transactionFooter}>
-        <Text style={styles.transactionType}>{item.paymentMethod}</Text>
-        <Text style={styles.transactionAmount}>₹{(item.total ?? 0).toFixed(2)}</Text>
+      {/* Footer with Payment Method and Total */}
+      <View style={styles.billFooter}>
+        <View style={styles.paymentMethod}>
+          <Text style={styles.paymentEmoji}>
+            {item.paymentMethod === 'Cash' ? '💵' : '💳'}
+          </Text>
+          <Text style={styles.paymentText}>{item.paymentMethod}</Text>
+        </View>
+        <View style={styles.totalContainer}>
+          <Text style={styles.totalLabel}>Total</Text>
+          <Text style={styles.totalAmount}>₹{(item.total ?? 0).toFixed(2)}</Text>
+        </View>
       </View>
     </View>
   );
@@ -74,7 +135,7 @@ const TransactionHistoryScreen = () => {
   if (isLoading && !bills) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#0066cc" />
+        <ActivityIndicator size="large" color="#6366F1" />
       </View>
     );
   }
@@ -84,16 +145,17 @@ const TransactionHistoryScreen = () => {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
         <View style={styles.container}>
-          <View style={[styles.transactionCard, { alignItems: 'center' }]}>
-            <Text style={{ color: '#B91C1C', fontWeight: '700', marginBottom: 8 }}>Failed to load data</Text>
-            <Text style={{ color: '#6B7280', textAlign: 'center', marginBottom: 12 }}>
+          <View style={styles.errorCard}>
+            <Text style={styles.errorEmoji}>⚠️</Text>
+            <Text style={styles.errorTitle}>Failed to load data</Text>
+            <Text style={styles.errorMessage}>
               Please ensure you are logged in and the server is reachable.
             </Text>
-            <TouchableOpacity onPress={() => refetch()} style={[styles.backButton, { width: 120 }]}>
-              <Text style={styles.backArrow}>Retry</Text>
+            <TouchableOpacity onPress={() => refetch()} style={styles.retryButton}>
+              <Text style={styles.retryButtonText}>🔄 Retry</Text>
             </TouchableOpacity>
           </View>
-        </View> 
+        </View>
       </SafeAreaView>
     );
   }
@@ -102,31 +164,167 @@ const TransactionHistoryScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
       
-      {/* Custom Header */}
-      <View style={styles.customHeader}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backArrow}>←</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backEmoji}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Transaction History</Text>
+          <Text style={styles.headerTitle}>Transactions</Text>
+          <Text style={styles.headerSubtitle}>
+            {filteredBills.length} {filteredBills.length === 1 ? 'bill' : 'bills'}
+          </Text>
         </View>
+        <View style={styles.backButton} />
       </View>
 
+      {/* Horizontal Scrollable Filters */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filtersScrollContainer}
+        style={styles.filtersScroll}
+      >
+        {/* Date Range Filter */}
+        <TouchableOpacity
+          style={[
+            styles.filterChip,
+            (startDate || endDate) && styles.filterChipActive
+          ]}
+          onPress={() => setShowStartPicker(true)}
+        >
+          <Text style={styles.filterEmoji}>📅</Text>
+          <Text style={[
+            styles.filterText,
+            (startDate || endDate) && styles.filterTextActive
+          ]}>
+            {startDate && endDate
+              ? `${format(startDate, 'dd MMM')} - ${format(endDate, 'dd MMM')}`
+              : startDate
+              ? `From ${format(startDate, 'dd MMM')}`
+              : endDate
+              ? `To ${format(endDate, 'dd MMM')}`
+              : 'Date'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Customer Filter */}
+        <View style={[
+          styles.filterChip,
+          searchCustomer && styles.filterChipActive
+        ]}>
+          <Text style={styles.filterEmoji}>👤</Text>
+          <TextInput
+            style={[
+              styles.filterInput,
+              searchCustomer && styles.filterInputActive
+            ]}
+            placeholder="Customer"
+            value={searchCustomer}
+            onChangeText={setSearchCustomer}
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+
+        {/* Product Filter */}
+        <View style={[
+          styles.filterChip,
+          searchProduct && styles.filterChipActive
+        ]}>
+          <Text style={styles.filterEmoji}>📦</Text>
+          <TextInput
+            style={[
+              styles.filterInput,
+              searchProduct && styles.filterInputActive
+            ]}
+            placeholder="Product"
+            value={searchProduct}
+            onChangeText={setSearchProduct}
+            placeholderTextColor="#9CA3AF"
+          />
+        </View>
+
+        {/* Clear Filters */}
+        {hasActiveFilters && (
+          <TouchableOpacity
+            onPress={clearFilters}
+            style={styles.clearFilterChip}
+          >
+            <Text style={styles.clearFilterText}>✕ Clear</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+
+      {/* Date Pickers */}
+      {showStartPicker && (
+        <DateTimePicker
+          value={startDate || new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+          onChange={(event, selectedDate) => {
+            if (Platform.OS === 'android') {
+              setShowStartPicker(false);
+            }
+            if (selectedDate && event.type === 'set') {
+              setStartDate(selectedDate);
+              if (Platform.OS === 'ios') {
+                setShowStartPicker(false);
+              }
+              setTimeout(() => setShowEndPicker(true), 300);
+            } else if (event.type === 'dismissed') {
+              setShowStartPicker(false);
+            }
+          }}
+        />
+      )}
+
+      {showEndPicker && (
+        <DateTimePicker
+          value={endDate || startDate || new Date()}
+          mode="date"
+          minimumDate={startDate || undefined}
+          display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
+          onChange={(event, selectedDate) => {
+            setShowEndPicker(false);
+            if (selectedDate && event.type === 'set') {
+              setEndDate(selectedDate);
+            }
+          }}
+        />
+      )}
+
+      {/* Bills List */}
       {(!bills || bills.length === 0) ? (
-        <View style={[styles.container, { alignItems: 'center' }]}>
-          <View style={[styles.transactionCard, { width: '100%', alignItems: 'center' }]}>
-            <Text style={{ color: '#6B7280' }}>No bills found.</Text>
-            <Text style={{ color: '#6B7280' }}>Create a bill to see it here.</Text>
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyEmoji}>📋</Text>
+            <Text style={styles.emptyTitle}>No transactions yet</Text>
+            <Text style={styles.emptyMessage}>Create your first bill to see it here</Text>
+          </View>
+        </View>
+      ) : filteredBills.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyEmoji}>🔍</Text>
+            <Text style={styles.emptyTitle}>No matching transactions</Text>
+            <Text style={styles.emptyMessage}>Try adjusting your filters</Text>
           </View>
         </View>
       ) : (
         <FlatList
-          data={bills || []}
+          data={filteredBills}
           renderItem={renderBill}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.container}
+          contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={!!isLoading} onRefresh={refetch} />}
+          refreshControl={
+            <RefreshControl 
+              refreshing={!!isLoading} 
+              onRefresh={refetch}
+              tintColor="#6366F1"
+              colors={['#6366F1']}
+            />
+          }
         />
       )}
     </SafeAreaView>
@@ -138,27 +336,29 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F9FAFB',
   },
   safeArea: {
     flex: 1,
     backgroundColor: '#F9FAFB',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
-  customHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 18,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#fff',
-    marginHorizontal: 24,
-    marginTop: 20,
-    marginBottom: 15,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
     borderRadius: 16,
-    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   backButton: {
     width: 40,
@@ -168,10 +368,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backArrow: {
+  backEmoji: {
     fontSize: 20,
     color: '#374151',
-    fontWeight: 'bold',
   },
   headerCenter: {
     flex: 1,
@@ -182,65 +381,285 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
   },
-  container: {
-    padding: 24,
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
   },
-  transactionCard: {
+  filtersScroll: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+ filtersScrollContainer: {
+  paddingHorizontal: 12,
+  paddingVertical: 14,
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+filterChip: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#F9FAFB',
+  borderRadius: 10,
+  paddingHorizontal: 6, // ⬆️ increased padding
+  paddingVertical: 10,   // ⬆️ increased padding
+  borderWidth: 1.5,
+  borderColor: '#E5E7EB',
+  marginRight: 12,       // ⬆️ more gap between filters
+  height: 42,            // ⬆️ taller filter chip
+},
+
+  filterChipActive: {
+    backgroundColor: '#EEF2FF',
+    borderColor: '#818CF8',
+  },
+  filterEmoji: {
+    fontSize: 16,
+    marginRight: 4,
+  },
+  filterText: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '500',
+    maxWidth: 120,
+  },
+  filterTextActive: {
+    color: '#4F46E5',
+    fontWeight: '600',
+  },
+  filterInput: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '500',
+    width: 80,
+    padding: 0,
+  },
+  filterInputActive: {
+    color: '#4F46E5',
+    fontWeight: '600',
+  },
+  clearFilterChip: {
+    backgroundColor: '#FEE2E2',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1.5,
+    borderColor: '#FCA5A5',
+    height: 36,
+    justifyContent: 'center',
+  },
+  clearFilterText: {
+    fontSize: 13,
+    color: '#DC2626',
+    fontWeight: '600',
+  },
+  
+  listContainer: {
+    padding: 16,
+  },
+  billCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
   },
-  transactionHeader: {
+  billHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  transactionDate: {
+  billDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  billDateEmoji: {
     fontSize: 14,
-    color: '#6B7280',
+    marginRight: 6,
   },
-  transactionStatus: {
-    paddingHorizontal: 8,
+  billDate: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
-    fontSize: 12,
-    fontWeight: '600',
   },
-  statusCompleted: {
-    backgroundColor: '#DEF7EC',
-    color: '#03543F',
+  statusPaid: {
+    backgroundColor: '#D1FAE5',
   },
   statusPending: {
     backgroundColor: '#FEF3C7',
-    color: '#92400E',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#065F46',
+  },
+  billSection: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  sectionEmoji: {
+    fontSize: 16,
+    marginRight: 8,
+    marginTop: 2,
   },
   customerName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#111827',
-    marginBottom: 8,
+    flex: 1,
   },
-  transactionFooter: {
+  itemsList: {
+    flex: 1,
+  },
+  itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 4,
   },
-  transactionType: {
+  itemName: {
+    fontSize: 14,
+    color: '#374151',
+    flex: 1,
+  },
+  itemQuantity: {
     fontSize: 14,
     color: '#6B7280',
+    fontWeight: '600',
+    marginLeft: 8,
   },
-  transactionAmount: {
-    fontSize: 16,
+  billFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  paymentMethod: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  paymentEmoji: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  paymentText: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+  totalContainer: {
+    alignItems: 'flex-end',
+  },
+  totalLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  totalAmount: {
+    fontSize: 20,
     fontWeight: '700',
     color: '#111827',
   },
+  emptyContainer: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  emptyCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 40,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  errorCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  errorEmoji: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  errorTitle: {
+    color: '#DC2626',
+    fontWeight: '700',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  errorMessage: {
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontSize: 14,
+  },
+  retryButton: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    color: '#4F46E5',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  container: {
+    flex: 1,
+    padding: 20,
+  },
 });
 
-export default TransactionHistoryScreen
+export default TransactionHistoryScreen;
