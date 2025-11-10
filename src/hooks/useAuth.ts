@@ -178,6 +178,14 @@ export const useAuth = () => {
     console.warn('No token found in response');
   }
 
+  if (data?.refreshToken) {
+    if (data?.refreshToken) {
+    await AsyncStorage.setItem('refreshToken', String((data as any).refreshToken));
+  } else {
+  
+    console.warn('No refresh token found in response');
+  }
+
   if (data?.user) {
     await AsyncStorage.setItem('user', JSON.stringify(data.user));
   } else {
@@ -189,18 +197,8 @@ export const useAuth = () => {
     index: 0,
     routes: [{ name: 'MainTabs' as never }],
   });
-},
-
-    onError: (error: any) => {
-      console.error('Login Error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      const message = error.response?.data?.message || error.message || 'Login failed. Please try again.';
-      Alert.alert('Error', message);
-    }
-  });
+  }
+  }}); 
 
   
 
@@ -251,15 +249,16 @@ export const useAuth = () => {
   });
 
   // Bills hooks implementation
-  const useBills = () => {
+  const useBills = (page: number, limit: number) => {
     return useQuery({
-      queryKey: ['bills'],
-      queryFn: () => billsApi.list()
+      queryKey: ['bills', page, limit],
+      queryFn: () => billsApi.listPaged(page, limit)
     });
   };
 
   const logout = async () => {
     await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('refreshToken');
     await AsyncStorage.removeItem('user');
     // Clear all queries from cache on logout
     queryClient.clear();

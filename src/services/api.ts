@@ -77,6 +77,48 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Refresh token on 401 responses
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const status = error?.response?.status;
+
+    // Do not handle if no response, non-401, already retried, or calling refresh itself
+    if (!status || status !== 401 || originalRequest?.__isRetryRequest || (originalRequest?.url || '').includes('/auth/refresh')) {
+      return Promise.reject(error);
+    }
+
+    try {
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        return Promise.reject(error);
+      }
+
+      const refreshResponse = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
+      const raw = refreshResponse.data || {};
+      const newToken = raw?.token || raw?.access_token;
+      const newRefreshToken = raw?.refreshToken || raw?.refresh_token;
+
+      if (newToken) {
+        await AsyncStorage.setItem('token', String(newToken));
+      }
+      if (newRefreshToken) {
+        await AsyncStorage.setItem('refreshToken', String(newRefreshToken));
+      }
+
+      originalRequest.headers = originalRequest.headers || {};
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+      (originalRequest as any).__isRetryRequest = true;
+
+      return api.request(originalRequest);
+    } catch (refreshErr) {
+      await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
+      return Promise.reject(refreshErr);
+    }
+  }
+);
+
 // ---------------- AUTH ----------------
 export interface LoginData {
   email: string;
@@ -99,7 +141,8 @@ export interface AuthResponse {
     shopName?: string;
     shopDetails?: string;
   };
-  token: string; // normalized token (could be backend access_token)
+  token: string;
+  refreshToken?: string;
 }
 
 export const authApi = {
@@ -113,9 +156,11 @@ export const authApi = {
         console.warn('Login succeeded but token is missing in response');
       }
 
+      const refreshToken = raw?.refreshToken || raw?.refresh_token;
       return {
         user: raw?.user,
         token,
+        refreshToken,
       } as AuthResponse;
     } catch (error: any) {
       console.error('Login error details:', {
@@ -126,6 +171,15 @@ export const authApi = {
       });
       throw error;
     }
+  },
+
+  refresh: async (refreshToken: string): Promise<{ token: string; refreshToken?: string }> => {
+    const response = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
+    const raw = response.data || {};
+    return {
+      token: raw?.token || raw?.access_token,
+      refreshToken: raw?.refreshToken || raw?.refresh_token,
+    };
   },
 };
 
@@ -313,6 +367,10 @@ export const billsApi = {
   list: async () => {
     const res = await api.get(`/bills`);
     return res.data;
+  },
+  listPaged: async (page: number, limit: number) => {
+    const res = await api.get(`/bills`, { params: { page, limit } });
+    return res.data; // { bills, total }
   },
 };
 export const getSalesReport = async (timeFilter: TimeFilterType = 'all'): Promise<SalesReportData> => {
