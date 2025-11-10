@@ -48,9 +48,8 @@ const AuthScreen = () => {
     login(loginData);
   };
 
-  const handleSkip = () => {
-    navigation.navigate('MainTabs' as never);
-  };
+ 
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -65,10 +64,7 @@ const AuthScreen = () => {
               contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
               showsVerticalScrollIndicator={false}
             >
-              {/* Skip Button */}
-              <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-                <Text style={styles.skipButtonText}>Skip</Text>
-              </TouchableOpacity>
+              
 
               {/* Logo Section */}
               <View style={styles.logoSection}>
@@ -154,21 +150,7 @@ const styles = StyleSheet.create({
   },
   container: { flex: 1 },
   gradient: { flex: 1 },
-  skipButton: {
-    alignSelf: 'flex-end',
-    marginTop: 50,
-    marginRight: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  skipButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
+ 
   logoSection: { alignItems: 'center', marginTop: 20, marginBottom: 40 },
   logoContainer: {
     width: 80,

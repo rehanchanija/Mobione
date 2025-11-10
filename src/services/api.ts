@@ -159,12 +159,7 @@ export const profileApi = {
 
       return response.data;
     } catch (error: any) {
-      console.error('❌ Get profile error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        url: error.config?.url,
-      });
+     
       throw error;
     }
   },
