@@ -28,13 +28,13 @@ export default function BillingScreen() {
   const initialItems = (route.params?.items as { productId: string; name: string; unitPrice: number; quantity: number }[]) || [];
   const [items, setItems] = useState(initialItems);
   
-  // Use bills API from useAuth
+  // Use bills API from useAuth with pagination (first page, 5 items)
   const { useBills } = useAuth();
-  const { data: bills, isLoading } = useBills();
-  console.log("Fetched bills:", bills);
+  const { data: billsResponse, isLoading } = useBills(1, 5);
+  console.log("Fetched bills response:", billsResponse);
 
-  // Get last 5 bills
-  const recentBills = bills?.slice(0, 5) || [];
+  // Get recent bills from paginated response
+  const recentBills = billsResponse?.bills || [];
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -100,9 +100,9 @@ export default function BillingScreen() {
               </View>
               
               <View style={styles.productsList}>
-                {bill?.items.map((item: any, index: number) => (
+                {bill?.items?.map((item: any, index: number) => (
                   <Text key={index} style={styles.productItem} numberOfLines={1}>
-                    • {item[0]?.name} ({item.quantity}x)
+                    • {item.product?.name || 'Unknown Product'} (Qty: {item.quantity})
                   </Text>
                 ))}
               </View>

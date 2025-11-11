@@ -10,6 +10,7 @@ import {
   TextInput,
   Modal,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -50,47 +51,74 @@ interface ProductInfo {
 
 export default function SalesAnalyticsScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const { useBills, useProduct } = useAuth();
+  const { billsApi } = useAuth();
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [allBills, setAllBills] = useState<Bill[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
-  // Fetch bills with pagination
-  const { data: billsResponse, isLoading: isLoadingBills, refetch } = useBills(currentPage, pageSize);
+  const [isLoadingBills, setIsLoadingBills] = useState(false);
+  const [billsError, setBillsError] = useState<any>(null);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Fetch bills directly
+  const fetchBills = async (page: number) => {
+    try {
+      setIsLoadingBills(page === 1);
+      console.log(`� Fetching bills - page: ${page}, pageSize: ${pageSize}`);
+      
+      const response = await billsApi.listPaged(page, pageSize);
+      console.log('📦 Bills response:', response);
+      
+      if (response?.bills && response.bills.length > 0) {
+        if (page === 1) {
+          setAllBills(response.bills);
+          console.log('✅ Set allBills to new data:', response.bills.length);
+        } else {
+          setAllBills(prevBills => {
+            const existingIds = new Set(prevBills.map((b: Bill) => b._id));
+            const newBills = response.bills.filter((b: Bill) => !existingIds.has(b._id));
+            console.log('➕ Appending new bills:', newBills.length);
+            return [...prevBills, ...newBills];
+          });
+        }
+        setTotalPages(response.totalPages || 1);
+        setBillsError(null);
+      } else {
+        console.log('⚠️ No bills in response');
+        if (page === 1) {
+          setAllBills([]);
+        }
+      }
+      
+      setIsLoadingMore(false);
+    } catch (error: any) {
+      console.error('❌ Error fetching bills:', error);
+      setBillsError(error?.response?.data?.message || error.message);
+      setIsLoadingMore(false);
+      if (currentPage === 1) {
+        setIsLoadingBills(false);
+      }
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
-      // Reset to first page on screen focus
+      console.log('🔄 Screen focused - fetching bills');
       setCurrentPage(1);
       setAllBills([]);
-      refetch();
-    }, [refetch])
+      fetchBills(1);
+    }, [])
   );
-  
-  // Extract bills from paginated response
-  const bills = billsResponse?.bills || [];
-  const totalPages = billsResponse?.totalPages || 1;
-  
-  // Update allBills when new data comes in
+
+  // Fetch more bills when page changes (for infinite scroll)
   React.useEffect(() => {
-    if (bills && bills.length > 0) {
-      if (currentPage === 1) {
-        // First page - replace all data
-        setAllBills(bills);
-      } else {
-        // Subsequent pages - append data
-        setAllBills(prevBills => {
-          const existingIds = new Set(prevBills.map((b: Bill) => b._id));
-          const newBills = bills.filter((b: Bill) => !existingIds.has(b._id));
-          return [...prevBills, ...newBills];
-        });
-      }
-      setIsLoadingMore(false);
+    if (currentPage > 1) {
+      console.log('📄 Fetching next page:', currentPage);
+      fetchBills(currentPage);
     }
-  }, [bills, currentPage]);
+  }, [currentPage]);
   
   // Transform bills data to include status
   const transformedBills = useMemo(() => {
@@ -113,6 +141,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
   
   // Update bills data when transformed bills change
   React.useEffect(() => {
+    console.log('📊 Updating billsData with transformedBills:', transformedBills.length);
     setBillsData(transformedBills);
   }, [transformedBills]);
   
@@ -389,6 +418,18 @@ export default function SalesAnalyticsScreen({ route }: any) {
       {/* Bill History */}
       <View style={styles.billSection}>
         <Text style={styles.sectionTitle}>Bill History</Text>
+        {billsError && (
+          <View style={{ padding: 20, alignItems: 'center', backgroundColor: '#FFE5E5', borderRadius: 8 }}>
+            <Text style={{ color: '#C00', fontSize: 14, fontWeight: '600' }}>❌ Error loading bills</Text>
+            <Text style={{ color: '#666', fontSize: 12, marginTop: 5 }}>{billsError?.message || 'Unknown error'}</Text>
+          </View>
+        )}
+        {isLoadingBills && allBills.length === 0 ? (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <Text style={{ color: '#666', fontSize: 16, marginBottom: 10 }}>Loading bills...</Text>
+            <ActivityIndicator size="large" color="#0066FF" />
+          </View>
+        ) : (
         <ScrollView 
           style={styles.billList}
           onScroll={({ nativeEvent }) => {
@@ -432,8 +473,30 @@ export default function SalesAnalyticsScreen({ route }: any) {
                   </View>
 
                   <View style={styles.billContent}>
-                    <View>
+                    <View style={{ flex: 1 }}>
                       <Text style={styles.customerName}>{bill.customer?.name || 'Unknown'}</Text>
+                      
+                      {/* Product Details */}
+                      {bill.items && bill.items.length > 0 && (
+                        <View style={styles.productsContainer}>
+                          {bill.items.map((item: any, index: number) => (
+                            <View key={index} style={styles.productItem}>
+                              <Text style={styles.productName}>
+                                📦 {item.product?.name || 'Unknown Product'}
+                              </Text>
+                              {item.product?.description && (
+                                <Text style={styles.productDescription} numberOfLines={1}>
+                                  {item.product.description}
+                                </Text>
+                              )}
+                              <Text style={styles.productQuantity}>
+                                Qty: {item.quantity} × ₹{item.price?.toFixed(2) || '0.00'}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                      
                       <View style={styles.badgeContainer}>
                         <View style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
                           <Text style={getStatusTextStyle(status)}>
@@ -466,6 +529,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
             </View>
           )}
         </ScrollView>
+        )}
       </View>
 
       {/* Loading indicator for infinite scroll */}
@@ -644,6 +708,36 @@ const styles = StyleSheet.create({
   cashText: { fontSize: 12, fontWeight: '700', color: '#0C5460' },
   onlineText: { fontSize: 12, fontWeight: '700', color: '#155724' },
   badgeContainer: { flexDirection: 'row', gap: 6, marginTop: 2 },
+  
+  // Product Details Styles
+  productsContainer: {
+    marginVertical: 10,
+    paddingVertical: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0066FF',
+    paddingLeft: 12,
+  },
+  productItem: {
+    marginBottom: 8,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 2,
+  },
+  productDescription: {
+    fontSize: 12,
+    color: '#666666',
+    marginBottom: 2,
+    fontStyle: 'italic',
+  },
+  productQuantity: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#0066FF',
+  },
+  
   paymentBadge: { 
     borderRadius: 16, 
     paddingHorizontal: 10, 
