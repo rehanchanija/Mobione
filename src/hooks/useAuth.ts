@@ -11,6 +11,9 @@ import {
   categoriesApi,
   customersApi,
   billsApi,
+  notificationsApi,
+  Notification,
+  NotificationsResponse,
   api
 } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -204,6 +207,67 @@ export const useAuth = () => {
 
   const queryClient = useQueryClient();
 
+  // Notification hooks implementation
+  const useNotifications = (page: number = 1, limit: number = 10, isRead?: boolean) => {
+    return useQuery({
+      queryKey: ['notifications', page, limit, isRead],
+      queryFn: () => notificationsApi.list(page, limit, isRead),
+    });
+  };
+
+  const useUnreadCount = () => {
+    return useQuery({
+      queryKey: ['notifications', 'unread-count'],
+      queryFn: () => notificationsApi.getUnreadCount(),
+      refetchInterval: 30000, // Refetch every 30 seconds
+    });
+  };
+
+  const useNotificationsByType = (type: string, page: number = 1, limit: number = 10) => {
+    return useQuery({
+      queryKey: ['notifications', 'type', type, page, limit],
+      queryFn: () => notificationsApi.getByType(type, page, limit),
+    });
+  };
+
+  const markNotificationAsReadMutation = () => {
+    return useMutation({
+      mutationFn: (notificationId: string) => notificationsApi.markAsRead(notificationId),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      },
+    });
+  };
+
+  const markAllAsReadMutation = () => {
+    return useMutation({
+      mutationFn: () => notificationsApi.markAllAsRead(),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      },
+    });
+  };
+
+  const deleteNotificationMutation = () => {
+    return useMutation({
+      mutationFn: (notificationId: string) => notificationsApi.delete(notificationId),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      },
+    });
+  };
+
+  const deleteAllNotificationsMutation = () => {
+    return useMutation({
+      mutationFn: () => notificationsApi.deleteAll(),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      },
+    });
+  };
+
   // Profile query
   const [isTokenAvailable, setIsTokenAvailable] = useState(false);
 
@@ -293,6 +357,7 @@ export const useAuth = () => {
     categoriesApi,
     customersApi,
     billsApi,
+    notificationsApi,
     
     // React Query hooks for brands
     useBrands,
@@ -314,6 +379,14 @@ export const useAuth = () => {
     // React Query hooks for bills
     useBills,
 
+    // React Query hooks for notifications
+    useNotifications,
+    useUnreadCount,
+    useNotificationsByType,
+    markNotificationAsReadMutation,
+    markAllAsReadMutation,
+    deleteNotificationMutation,
+    deleteAllNotificationsMutation,
 
   };
 };

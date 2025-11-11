@@ -5,7 +5,6 @@ import StaffManagementScreen from "../screens/ProfileScreen/StaffManagementScree
 import TransactionHistoryScreen from "../screens/ProfileScreen/TransactionHistoryScreen";
 import AppSettingsScreen from "../screens/ProfileScreen/AppSettingsScreen";
 import HelpSupportScreen from "../screens/ProfileScreen/HelpSupportScreen";
-import NotificationScreen from "../screens/ProfileScreen/NotificationScreen";
 
 export type RootStackParamList = {
   Profile: undefined;

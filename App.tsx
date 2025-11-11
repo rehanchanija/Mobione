@@ -8,8 +8,8 @@ import SplashScreen from './src/screens/SplashScreen';
 import TabNavigator from './src/navigation/TabNavigator';
 import { RootStackParamList } from './src/navigation/types';
 import ProfileStack from './src/navigation/ProfileStack';
-import NotificationScreen from './src/screens/ProfileScreen/NotificationScreen';
 import AuthScreen from './src/screens/AuthScreen';
+import NotificationScreen from './src/screens/ProfileScreen/NotificationScreen';
 
 const queryClient = new QueryClient();
 
