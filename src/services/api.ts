@@ -289,8 +289,8 @@ export const brandsApi = {
 
 // ---------------- PRODUCTS ----------------
 export const productsApi = {
-  list: async (q?: string): Promise<any[]> => {
-    const res = await api.get<any[]>(`/products`, { params: { q } });
+  list: async (q?: string, page?: number, limit?: number): Promise<any[]> => {
+    const res = await api.get<any[]>(`/products`, { params: { q, page, limit } });
     return res.data;
   },
   getById: async (id: string): Promise<any> => {
@@ -370,7 +370,7 @@ export const billsApi = {
   },
   listPaged: async (page: number, limit: number) => {
     const res = await api.get(`/bills`, { params: { page, limit } });
-    return res.data; // { bills, total }
+    return res.data; // { bills, total, page, limit, totalPages }
   },
 };
 export const getSalesReport = async (timeFilter: TimeFilterType = 'all'): Promise<SalesReportData> => {

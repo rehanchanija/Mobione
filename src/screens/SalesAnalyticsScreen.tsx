@@ -52,21 +52,51 @@ export default function SalesAnalyticsScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { useBills, useProduct } = useAuth();
   
-  // Fetch all bills
-  const { data: bills, isLoading: isLoadingBills, refetch } = useBills();
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [allBills, setAllBills] = useState<Bill[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  // Fetch bills with pagination
+  const { data: billsResponse, isLoading: isLoadingBills, refetch } = useBills(currentPage, pageSize);
 
   useFocusEffect(
     React.useCallback(() => {
+      // Reset to first page on screen focus
+      setCurrentPage(1);
+      setAllBills([]);
       refetch();
     }, [refetch])
   );
   
+  // Extract bills from paginated response
+  const bills = billsResponse?.bills || [];
+  const totalPages = billsResponse?.totalPages || 1;
+  
+  // Update allBills when new data comes in
+  React.useEffect(() => {
+    if (bills && bills.length > 0) {
+      if (currentPage === 1) {
+        // First page - replace all data
+        setAllBills(bills);
+      } else {
+        // Subsequent pages - append data
+        setAllBills(prevBills => {
+          const existingIds = new Set(prevBills.map((b: Bill) => b._id));
+          const newBills = bills.filter((b: Bill) => !existingIds.has(b._id));
+          return [...prevBills, ...newBills];
+        });
+      }
+      setIsLoadingMore(false);
+    }
+  }, [bills, currentPage]);
+  
   // Transform bills data to include status
   const transformedBills = useMemo(() => {
-    if (!bills) return [];
+    if (!allBills) return [];
     
-    return bills.map((bill: Bill) => {
-      // Calculate subtotal from items if not provided
+    return allBills.map((bill: Bill) => {
       const subtotal = bill.subtotal || bill.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
       return {
@@ -76,7 +106,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
         customerName: bill.customer?.name || 'Unknown',
       };
     });
-  }, [bills]);
+  }, [allBills]);
   
   // Set bills data
   const [billsData, setBillsData] = useState<Bill[]>([]);
@@ -359,7 +389,19 @@ export default function SalesAnalyticsScreen({ route }: any) {
       {/* Bill History */}
       <View style={styles.billSection}>
         <Text style={styles.sectionTitle}>Bill History</Text>
-        <ScrollView style={styles.billList}>
+        <ScrollView 
+          style={styles.billList}
+          onScroll={({ nativeEvent }) => {
+            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+            const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
+            
+            if (isCloseToBottom && !isLoadingMore && currentPage < totalPages) {
+              setIsLoadingMore(true);
+              setCurrentPage(prev => prev + 1);
+            }
+          }}
+          scrollEventThrottle={16}
+        >
           {processedBills.length > 0 ? (
             processedBills.map((bill) => {
               const status = bill.amountPaid >= bill.total ? 'Paid' : 'Pending';
@@ -425,6 +467,13 @@ export default function SalesAnalyticsScreen({ route }: any) {
           )}
         </ScrollView>
       </View>
+
+      {/* Loading indicator for infinite scroll */}
+      {isLoadingMore && (
+        <View style={styles.loadingMoreContainer}>
+          <Text style={styles.loadingMoreText}>Loading more bills...</Text>
+        </View>
+      )}
 
 
 
@@ -682,5 +731,17 @@ const styles = StyleSheet.create({
   modalButtonText: { color: '#FFFFFF', textAlign: 'center', fontWeight: '600', fontSize: 16 },
   clearModalButton: { backgroundColor: '#F5F5F5' },
   clearModalButtonText: { color: '#666666', textAlign: 'center', fontWeight: '600', fontSize: 16 },
+
+  // Infinite scroll loading indicator
+  loadingMoreContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingMoreText: {
+    fontSize: 14,
+    color: '#666666',
+    fontWeight: '500',
+  },
 
 });
