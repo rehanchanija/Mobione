@@ -418,12 +418,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
       {/* Bill History */}
       <View style={styles.billSection}>
         <Text style={styles.sectionTitle}>Bill History</Text>
-        {billsError && (
-          <View style={{ padding: 20, alignItems: 'center', backgroundColor: '#FFE5E5', borderRadius: 8 }}>
-            <Text style={{ color: '#C00', fontSize: 14, fontWeight: '600' }}>❌ Error loading bills</Text>
-            <Text style={{ color: '#666', fontSize: 12, marginTop: 5 }}>{billsError?.message || 'Unknown error'}</Text>
-          </View>
-        )}
+        
         {isLoadingBills && allBills.length === 0 ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
             <Text style={{ color: '#666', fontSize: 16, marginBottom: 10 }}>Loading bills...</Text>
