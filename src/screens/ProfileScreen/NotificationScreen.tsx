@@ -103,8 +103,6 @@ const NotificationScreen = () => {
 
    const handleRefresh = () => {
     setPage(1);
-    // Don't clear all notifications - let them persist
-    // Only refetch to sync with server
     refetchNotifications();
   };
 
@@ -238,20 +236,23 @@ export default NotificationScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#F5F7FA",
     paddingHorizontal: 16,
     paddingVertical: 20,
   },
   card: {
     flexDirection: "row",
     backgroundColor: "#fff",
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 10,
     shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
   },
   emoji: {
     fontSize: 28,

@@ -2,11 +2,12 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootTabParamList } from "./types";
 import HomeScreen from "../screens/HomeScreen";
-import { Alert, Text, View, TouchableOpacity, Platform, StatusBar } from "react-native";
+import { Alert, Text, View, TouchableOpacity, Platform, StatusBar, StyleSheet } from "react-native";
 import BillingStack from "./BillingStack";
 import BillsStack from "./BillsStack";
 import { useNavigation } from "@react-navigation/native";
 import ProductsStack from "./ProductsStack";
+import { useAuth } from "../hooks/useAuth";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -44,6 +45,11 @@ const getHeaderTitle = (route: keyof RootTabParamList) => {
 
 const TabNavigator = () => {
   const navigation = useNavigation();
+  const { useUnreadCount } = useAuth();
+  const { data: unreadData } = useUnreadCount();
+  
+  const unreadCount = unreadData?.unreadCount || 0;
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -62,12 +68,16 @@ const TabNavigator = () => {
         headerRight: () => (
           <View style={{ flexDirection: "row", marginRight: 10 }}>
             <TouchableOpacity
-              onPress={() =>navigation.navigate("Notification" as never)}            >
+              onPress={() => navigation.navigate("Notification" as never)}
+              style={{ position: "relative" }}
+            >
               <Text style={{ fontSize: 30, marginRight: 18 }}>🔔</Text>
+              {unreadCount > 0 && (
+                <View style={styles.badge} />
+              )}
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() =>navigation.navigate("Profile" as never)}
-
+              onPress={() => navigation.navigate("Profile" as never)}
             >
               <Text style={{ fontSize: 32 }}>👤</Text>
             </TouchableOpacity>
@@ -97,5 +107,20 @@ const TabNavigator = () => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  badge: {
+    position: "absolute",
+    top: 4,
+    right: 20,
+    backgroundColor: "#ff3b30",
+    borderRadius: 8,
+    width: 16,
+    height: 14,
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+});
+
 
 export default TabNavigator;
