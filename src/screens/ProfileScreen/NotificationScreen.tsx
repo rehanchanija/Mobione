@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../../hooks/useAuth";
 import { Notification } from "../../services/api";
+import { THEME } from "../../theme";
 
 const NotificationScreen = () => {
   const navigation = useNavigation();
@@ -108,7 +109,7 @@ const NotificationScreen = () => {
 
   const renderItem = ({ item }: { item: Notification }) => (
     <TouchableOpacity
-      style={[styles.card, !item.read && { backgroundColor: "#eef4ff" }]}
+      style={[styles.card, !item.read && { backgroundColor: THEME.colors.infoLight }]}
       onPress={() => handleMarkAsRead(item._id)}
     >
       <Text style={styles.emoji}>
@@ -138,7 +139,7 @@ const NotificationScreen = () => {
         onPress={() => handleDelete(item._id)}
         style={{ marginLeft: 10 }}
       >
-        <Text style={{ fontSize: 16, color: "#999" }}>✕</Text>
+        <Text style={{ fontSize: 16, color: THEME.colors.textTertiary }}>✕</Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -146,7 +147,7 @@ const NotificationScreen = () => {
   if (isLoadingNotifications && page === 1) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#2196F3" />
+        <ActivityIndicator size="large" color={THEME.colors.primary} />
       </SafeAreaView>
     );
   }
@@ -154,20 +155,20 @@ const NotificationScreen = () => {
   if (notificationsError) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={{ textAlign: "center", color: "red" }}>
+        <Text style={{ textAlign: "center", color: THEME.colors.error }}>
           Error loading notifications
         </Text>
         <TouchableOpacity
           onPress={handleRefresh}
           style={{
-            backgroundColor: "#2196F3",
+            backgroundColor: THEME.colors.primary,
             padding: 10,
-            borderRadius: 8,
+            borderRadius: THEME.spacing.borderRadius.md,
             marginTop: 10,
             alignSelf: "center",
           }}
         >
-          <Text style={{ color: "#fff" }}>Retry</Text>
+          <Text style={{ color: THEME.colors.white }}>Retry</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -188,7 +189,7 @@ const NotificationScreen = () => {
         </View>
         {unreadData && unreadData.unreadCount > 0 && (
           <TouchableOpacity onPress={handleMarkAllAsRead}>
-            <Text style={{ color: "#2196F3", fontWeight: "600" }}>Mark all</Text>
+            <Text style={{ color: THEME.colors.primary, fontWeight: "600" }}>Mark all</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -203,7 +204,7 @@ const NotificationScreen = () => {
           <RefreshControl
             refreshing={isLoadingNotifications && page === 1}
             onRefresh={handleRefresh}
-            colors={["#2196F3"]}
+            colors={[THEME.colors.primary]}
           />
         }
         onEndReached={handleLoadMore}
@@ -211,7 +212,7 @@ const NotificationScreen = () => {
         ListFooterComponent={
           isLoadingMore ? (
             <View style={{ padding: 10 }}>
-              <ActivityIndicator size="small" color="#2196F3" />
+              <ActivityIndicator size="small" color={THEME.colors.primary} />
             </View>
           ) : null
         }
@@ -236,72 +237,64 @@ export default NotificationScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+    backgroundColor: THEME.colors.backgroundAlt,
+    paddingHorizontal: THEME.spacing.lg,
+    paddingVertical: THEME.spacing.xl,
   },
   card: {
     flexDirection: "row",
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+    backgroundColor: THEME.colors.white,
+    padding: THEME.spacing.lg,
+    borderRadius: THEME.spacing.borderRadius.xl,
+    marginBottom: THEME.spacing.md,
+    ...THEME.shadows.md,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: THEME.colors.border,
   },
   emoji: {
     fontSize: 28,
-    marginRight: 12,
+    marginRight: THEME.spacing.md,
   },
   textContainer: {
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: THEME.typography.fontSizes.base,
     fontWeight: "600",
-    color: "#111827",
+    color: THEME.colors.textPrimary,
   },
   message: {
-    fontSize: 14,
-    color: "#4B5563",
-    marginVertical: 4,
+    fontSize: THEME.typography.fontSizes.sm,
+    color: THEME.colors.textSecondary,
+    marginVertical: THEME.spacing.xs,
   },
   time: {
-    fontSize: 12,
-    color: "#9CA3AF",
+    fontSize: THEME.typography.fontSizes.xs,
+    color: THEME.colors.textTertiary,
   },
   customHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 18,
-    backgroundColor: "#fff",
-    marginHorizontal: 24,
-    marginTop: 20,
-    marginBottom: 15,
-    borderRadius: 16,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    paddingHorizontal: THEME.spacing["2xl"],
+    paddingVertical: THEME.spacing.lg,
+    backgroundColor: THEME.colors.white,
+    marginHorizontal: THEME.spacing["2xl"],
+    marginTop: THEME.spacing.xl,
+    marginBottom: THEME.spacing.lg,
+    borderRadius: THEME.spacing.borderRadius.xl,
+    ...THEME.shadows.md,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: "#f3f4f6b2",
+    borderRadius: THEME.spacing.borderRadius.md,
+    backgroundColor: THEME.colors.gray100,
     justifyContent: "center",
     alignItems: "center",
   },
   backArrow: {
     fontSize: 24,
-    color: "#374151",
+    color: THEME.colors.gray700,
     fontWeight: "bold",
   },
   headerCenter: {
@@ -309,8 +302,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: THEME.typography.fontSizes["2xl"],
     fontWeight: "700",
-    color: "#111827",
+    color: THEME.colors.textPrimary,
   },
 });

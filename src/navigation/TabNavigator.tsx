@@ -8,6 +8,7 @@ import BillsStack from "./BillsStack";
 import { useNavigation } from "@react-navigation/native";
 import ProductsStack from "./ProductsStack";
 import { useAuth } from "../hooks/useAuth";
+import { THEME } from "../theme";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -55,15 +56,19 @@ const TabNavigator = () => {
       screenOptions={({ route }) => ({
         headerTitle: getHeaderTitle(route.name),
         headerTitleStyle: {
-          fontSize: 24,
+          fontSize: THEME.typography.fontSizes["2xl"],
           fontWeight: "700",
+          color: THEME.colors.textPrimary,
         },
         headerStyle: {
-          backgroundColor: "#fff",
-          height: 110, // overall header height
-          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 25, // space from top
-          paddingBottom: 15, // ✅ extra bottom space
-          paddingHorizontal: 20, // ✅ space on sides
+          backgroundColor: THEME.colors.white,
+          height: 110,
+          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 25,
+          paddingBottom: THEME.spacing.lg,
+          paddingHorizontal: THEME.spacing.xl,
+          borderBottomWidth: 1,
+          borderBottomColor: THEME.colors.border,
+          ...THEME.shadows.md,
         },
         headerRight: () => (
           <View style={{ flexDirection: "row", marginRight: 10 }}>
@@ -86,16 +91,17 @@ const TabNavigator = () => {
         tabBarIcon: () => (
           <Text style={{ fontSize: 22 }}>{getEmojiIcon(route.name)}</Text>
         ),
-        tabBarActiveTintColor: "#007AFF",
-        tabBarInactiveTintColor: "#8e8e93",
+        tabBarActiveTintColor: THEME.colors.primary,
+        tabBarInactiveTintColor: THEME.colors.gray400,
         tabBarStyle: {
-          backgroundColor: "#ffffff",
-          borderTopWidth: 0,
-          elevation: 8,
+          backgroundColor: THEME.colors.white,
+          borderTopWidth: 1,
+          borderTopColor: THEME.colors.border,
+          elevation: 2,
           height: 65,
         },
         tabBarLabelStyle: {
-          fontSize: 13,
+          fontSize: THEME.typography.fontSizes.sm,
           fontWeight: "600",
         },
       })}
@@ -113,12 +119,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 4,
     right: 20,
-    backgroundColor: "#ff3b30",
+    backgroundColor: THEME.colors.notification,
     borderRadius: 8,
     width: 16,
     height: 14,
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: THEME.colors.white,
   },
 });
 

@@ -654,7 +654,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   headerCenter: {
+display: "flex",
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   headerTitle: { 
     fontSize: 20, 
