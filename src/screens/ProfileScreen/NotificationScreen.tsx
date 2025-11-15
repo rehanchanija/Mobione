@@ -101,9 +101,10 @@ const NotificationScreen = () => {
     }
   };
 
-  const handleRefresh = () => {
+   const handleRefresh = () => {
     setPage(1);
-    setAllNotifications([]);
+    // Don't clear all notifications - let them persist
+    // Only refetch to sync with server
     refetchNotifications();
   };
 
