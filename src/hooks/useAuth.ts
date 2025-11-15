@@ -25,13 +25,13 @@ import { useAuthContext } from '../context/AuthContext';
 
 
 // Bill hooks implementation
-const useBill = (billId: string) => {
-  return useQuery({
-    queryKey: ['bills', billId],
-    queryFn: () => billsApi.get(billId),
-    enabled: !!billId,
-  });
-};
+// const useBill = (billId: string) => {
+//   return useQuery({
+//     queryKey: ['bills', billId],
+//     queryFn: () => billsApi.get(billId),
+//     enabled: !!billId,
+//   });
+// };
 
 // Brand hooks implementation
 const useBrands = () => {
@@ -223,12 +223,12 @@ export const useAuth = () => {
     });
   };
 
-  const useNotificationsByType = (type: string, page: number = 1, limit: number = 10) => {
-    return useQuery({
-      queryKey: ['notifications', 'type', type, page, limit],
-      queryFn: () => notificationsApi.getByType(type, page, limit),
-    });
-  };
+  // const useNotificationsByType = (type: string, page: number = 1, limit: number = 10) => {
+  //   return useQuery({
+  //     queryKey: ['notifications', 'type', type, page, limit],
+  //     queryFn: () => notificationsApi.getByType(type, page, limit),
+  //   });
+  // };
 
   const markNotificationAsReadMutation = () => {
     return useMutation({
@@ -344,7 +344,7 @@ export const useAuth = () => {
     isProfileLoading,
 
     // Bills
-    useBill,
+    // useBill,
     isUpdatingProfile: updateProfileMutation.isPending,
     error: loginMutation.error,
     profileError: profileQueryError,
@@ -382,7 +382,7 @@ export const useAuth = () => {
     // React Query hooks for notifications
     useNotifications,
     useUnreadCount,
-    useNotificationsByType,
+    // useNotificationsByType,
     markNotificationAsReadMutation,
     markAllAsReadMutation,
     deleteNotificationMutation,

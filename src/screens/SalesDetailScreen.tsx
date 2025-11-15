@@ -75,7 +75,16 @@ export default function SalesDetailScreen() {
     }, 2000);
   };
 
-  const generatePDF = async () => {
+  const generatePDF = async (): Promise<string | null> => {
+    const itemsHtml = bill.items
+      .map((item: any) => {
+        const name = item?.name ?? item?.product?.name ?? 'Unknown Product';
+        const qty = item?.quantity ?? 0;
+        const price = item?.price ?? 0;
+        return `<li>${name} - ${qty} x ₹${price}</li>`;
+      })
+      .join('');
+
     const html = `
       <h1>Bill: ${bill.id}</h1>
       <p>Customer: ${bill.customerName}</p>
@@ -84,12 +93,7 @@ export default function SalesDetailScreen() {
       <p>Status: ${status}</p>
       <h3>Items</h3>
       <ul>
-        ${bill.items
-          .map(
-            (item) =>
-              `<li>${item.name} - ${item.quantity} x ₹${item.price}</li>`
-          )
-          .join('')}
+        ${itemsHtml}
       </ul>
     `;
 
@@ -100,7 +104,9 @@ export default function SalesDetailScreen() {
     };
 
     const file = await (RNHTMLtoPDF as any).convert(options);
-    setPdfPath(file.filePath);
+    const path = file?.filePath || null;
+    setPdfPath(path);
+    return path;
   };
 
   const getStatusBadgeStyle = (status: string) => {
@@ -320,9 +326,9 @@ export default function SalesDetailScreen() {
                     Price
                   </Text>
                 </View>
-                {bill.items.map((item, index) => (
+                {bill.items.map((item: any, index) => (
                   <View key={index} style={styles.tableRow}>
-                    <Text style={[styles.tableValue, { flex: 2 }]}>{item.name}</Text>
+                    <Text style={[styles.tableValue, { flex: 2 }]}>{item?.name ?? item?.product?.name ?? 'Unknown Product'}</Text>
                     <Text style={[styles.tableValue, { flex: 1, textAlign: "center" }]}>
                       {item.quantity}
                     </Text>
@@ -371,8 +377,12 @@ export default function SalesDetailScreen() {
               <TouchableOpacity
                 style={[styles.button, styles.downloadBtn]}
                 onPress={async () => {
-                  await generatePDF();
-                  if (pdfPath) Alert.alert('Downloaded', `PDF saved at ${pdfPath}`);
+                  const path = await generatePDF();
+                  if (path) {
+                    Alert.alert('Downloaded', `PDF saved at ${path}`);
+                  } else {
+                    Alert.alert('Error', 'Failed to generate PDF');
+                  }
                 }}
               >
                 <Text style={styles.buttonText}>Download PDF</Text>
@@ -380,8 +390,12 @@ export default function SalesDetailScreen() {
               <TouchableOpacity
                 style={[styles.button, styles.shareBtn]}
                 onPress={async () => {
-                  await generatePDF();
-                  if (pdfPath) await Share.open({ url: 'file://' + pdfPath });
+                  const path = await generatePDF();
+                  if (path) {
+                    await Share.open({ url: 'file://' + path });
+                  } else {
+                    Alert.alert('Error', 'Failed to generate PDF');
+                  }
                 }}
               >
                 <Text style={styles.buttonText}>Share Bill</Text>

@@ -5,8 +5,8 @@ import { Platform } from 'react-native';
 // ✅ Safer BASE_URL handling
 const BASE_URL =
   Platform.OS === 'android'
-    ? 'http://192.168.29.69:3000'
-    : 'http://192.168.29.69:3000';
+    ? 'http://172.16.56.71:3000'
+    : 'http://172.16.56.71:3000';
 
 export type TimeFilterType = 'day' | 'week' | 'month' | 'all';
 
@@ -376,4 +376,78 @@ export const billsApi = {
 export const getSalesReport = async (timeFilter: TimeFilterType = 'all'): Promise<SalesReportData> => {
   const response = await api.get(`/bills/sales-report?timeFilter=${timeFilter}`);
   return response.data;
+};
+
+// ---------------- NOTIFICATIONS ----------------
+export type NotificationType = 
+  | 'PRODUCT_CREATED' 
+  | 'PRODUCT_UPDATED' 
+  | 'PRODUCT_DELETED' 
+  | 'LOW_STOCK' 
+  | 'PAYMENT_PENDING' 
+  | 'BILL_CREATED' 
+  | 'BRAND_CREATED' 
+  | 'BRAND_UPDATED' 
+  | 'BRAND_DELETED';
+
+export interface Notification {
+  _id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data?: Record<string, any>;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  total: number;
+  unreadCount: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export const notificationsApi = {
+  list: async (page: number = 1, limit: number = 10, isRead?: boolean): Promise<NotificationsResponse> => {
+    const params: any = { page, limit };
+    if (isRead !== undefined) {
+      params.read = isRead;
+    }
+    const res = await api.get<NotificationsResponse>('/notifications', { params });
+    return res.data;
+  },
+
+  getUnreadCount: async (): Promise<{ unreadCount: number }> => {
+    const res = await api.get<{ unreadCount: number }>('/notifications/unread/count');
+    return res.data;
+  },
+
+  getByType: async (type: NotificationType, page: number = 1, limit: number = 10): Promise<NotificationsResponse> => {
+    const res = await api.get<NotificationsResponse>(`/notifications/type/${type}`, { params: { page, limit } });
+    return res.data;
+  },
+
+  markAsRead: async (notificationId: string): Promise<Notification> => {
+    const res = await api.patch<Notification>(`/notifications/${notificationId}/read`);
+    return res.data;
+  },
+
+  markAllAsRead: async (): Promise<{ success: boolean }> => {
+    const res = await api.patch<{ success: boolean }>('/notifications/read-all');
+    return res.data;
+  },
+
+  delete: async (notificationId: string): Promise<{ success: boolean }> => {
+    const res = await api.delete<{ success: boolean }>(`/notifications/${notificationId}`);
+    return res.data;
+  },
+
+  deleteAll: async (): Promise<{ success: boolean }> => {
+    const res = await api.delete<{ success: boolean }>('/notifications');
+    return res.data;
+  },
 };
