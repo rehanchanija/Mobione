@@ -20,6 +20,7 @@ interface SalesDetailScreenProps {
     params: {
       bill: {
         id: string;
+        billNumber?: string;
         customerName: string;
         amount: number;
         status: 'Paid' | 'Pending';
@@ -30,6 +31,7 @@ interface SalesDetailScreenProps {
         discount?: number;
         items: { name: string; price: number; quantity: number }[];
         customeradress?: string;
+        customerPhone?: string;
         subTotal?: number;
       };
     };
@@ -163,8 +165,8 @@ export default function SalesDetailScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Bill Information</Text>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Bill ID:</Text>
-              <Text style={styles.infoValue}>{bill.id}</Text>
+              <Text style={styles.infoLabel}>Bill Number:</Text>
+              <Text style={styles.infoValue}>{bill.billNumber || bill.id}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Date:</Text>
@@ -189,10 +191,47 @@ export default function SalesDetailScreen() {
               <Text style={styles.infoLabel}>Name:</Text>
               <Text style={styles.infoValue}>{bill.customerName}</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Address:</Text>
-              <Text style={styles.infoValue}>{bill.customeradress}</Text>
+            {bill.customeradress && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Address:</Text>
+                <Text style={styles.infoValue}>{bill.customeradress}</Text>
+              </View>
+            )}
+            {bill.customerPhone && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Phone:</Text>
+                <Text style={styles.infoValue}>{bill.customerPhone}</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Items Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Items Purchased</Text>
+            <View style={styles.itemsHeader}>
+              <Text style={[styles.itemHeaderText, { flex: 2 }]}>Product</Text>
+              <Text style={[styles.itemHeaderText, { flex: 1, textAlign: 'center' }]}>Qty</Text>
+              <Text style={[styles.itemHeaderText, { flex: 1, textAlign: 'right' }]}>Price</Text>
             </View>
+            {bill.items && bill.items.length > 0 ? (
+              bill.items.map((item: any, index: number) => (
+                <View key={index} style={styles.itemRow}>
+                  <Text style={[styles.itemText, { flex: 2 }]}>
+                    {item?.name ?? item?.product?.name ?? 'Unknown Product'}
+                  </Text>
+                  <Text style={[styles.itemText, { flex: 1, textAlign: 'center' }]}>
+                    {item.quantity}
+                  </Text>
+                  <Text style={[styles.itemText, { flex: 1, textAlign: 'right' }]}>
+                    ₹{item.price}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noItemsText}>No items found</Text>
+            )}
           </View>
 
           <View style={styles.divider} />
@@ -204,12 +243,14 @@ export default function SalesDetailScreen() {
               <Text style={styles.paymentLabel}>Total Amount</Text>
               <Text style={styles.totalAmountValue}>₹{subtotal.toFixed(2)}</Text>
             </View>
-            <View style={[styles.infoRow, styles.paymentRow]}>
-              <Text style={styles.paymentLabel}>Discount</Text>
-              <Text style={styles.discountValue}>
-                -₹{discount.toFixed(2)} ({((discount / subtotal) * 100).toFixed(0)}%)
-              </Text>
-            </View>
+            {discount > 0 && (
+              <View style={[styles.infoRow, styles.paymentRow]}>
+                <Text style={styles.paymentLabel}>Discount</Text>
+                <Text style={styles.discountValue}>
+                  -₹{discount.toFixed(2)} ({((discount / subtotal) * 100).toFixed(0)}%)
+                </Text>
+              </View>
+            )}
             <View style={[styles.infoRow, styles.paymentRow]}>
               <Text style={styles.paymentLabel}>Amount Payable</Text>
               <Text style={styles.amountValue}>₹{afterDiscount.toFixed(2)}</Text>
@@ -224,14 +265,6 @@ export default function SalesDetailScreen() {
                 <Text style={styles.pendingValue}>₹{pendingAmount.toFixed(2)}</Text>
               </View>
             )}
-            <View style={[styles.infoRow, styles.paymentRow]}>
-              <Text style={styles.paymentLabel}>Payment Status</Text>
-              <View style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
-                <Text style={getStatusTextStyle(status)}>
-                  {getStatusEmoji(status)} {status}
-                </Text>
-              </View>
-            </View>
           </View>
         </View>
 
@@ -287,18 +320,14 @@ export default function SalesDetailScreen() {
             <ScrollView style={{ maxHeight: 400 }}>
               <View style={styles.receiptCard}>
                 {/* Shop Info */}
-                <Text style={styles.shopName}>{shop.name}</Text>
-                <Text style={styles.shopDetails}>{shop.address}</Text>
-                <Text style={styles.shopDetails}>Owner: {shop.owner}</Text>
-                <Text style={styles.shopDetails}>Contact: {shop.phone}</Text>
-
+               
                 <View style={styles.divider} />
 
                 {/* Bill Info */}
                 <Text style={styles.sectionTitle}>Bill Information</Text>
                 <View style={styles.row}>
                   <Text style={styles.label}>Bill No:</Text>
-                  <Text style={styles.value}>{bill.id}</Text>
+                  <Text style={styles.value}>{bill.billNumber || bill.id}</Text>
                 </View>
                 <View style={styles.row}>
                   <Text style={styles.label}>Date:</Text>
@@ -308,6 +337,12 @@ export default function SalesDetailScreen() {
                   <Text style={styles.label}>Customer:</Text>
                   <Text style={styles.value}>{bill.customerName}</Text>
                 </View>
+                {bill.customerPhone && (
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Phone:</Text>
+                    <Text style={styles.value}>{bill.customerPhone}</Text>
+                  </View>
+                )}
                 <View style={styles.row}>
                   <Text style={styles.label}>Payment:</Text>
                   <Text style={styles.value}>{bill.paymentMethod}</Text>
@@ -346,12 +381,14 @@ export default function SalesDetailScreen() {
                   <Text style={styles.label}>Subtotal:</Text>
                   <Text style={styles.value}>₹{subtotal.toFixed(2)}</Text>
                 </View>
-                <View style={styles.row}>
-                  <Text style={styles.label}>Discount:</Text>
-                  <Text style={[styles.value, { color: "#D32F2F" }]}>
-                    - ₹{discount.toFixed(2)}
-                  </Text>
-                </View>
+                {discount > 0 && (
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Discount:</Text>
+                    <Text style={[styles.value, { color: "#D32F2F" }]}>
+                      - ₹{discount.toFixed(2)}
+                    </Text>
+                  </View>
+                )}
                  <View style={styles.row}>
                   <Text style={styles.label}>Paid:</Text>
                   <Text style={[styles.value, { color: "#000000ff" }]}>
@@ -359,12 +396,14 @@ export default function SalesDetailScreen() {
                   </Text>
                 </View>
                
-   <View style={styles.row}>
-                  <Text style={styles.label}>Pending:</Text>
-                  <Text style={[styles.value, { color: "#D32F2F" }]}>
-                    - ₹{pendingAmount.toFixed(2)}
-                  </Text>
-                </View>
+                {pendingAmount > 0 && (
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Pending:</Text>
+                    <Text style={[styles.value, { color: "#D32F2F" }]}>
+                      - ₹{pendingAmount.toFixed(2)}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.divider} />
 
                 <Text style={styles.footerText}>Thank you for shopping with us!</Text>
@@ -452,7 +491,12 @@ const styles = StyleSheet.create({
   discountValue: { fontSize: 16, fontWeight: '700', color: '#D32F2F' },
   amountValue: { fontSize: 16, fontWeight: '700', color: '#0066FF' },
   advanceValue: { fontSize: 16, fontWeight: '700', color: '#2E7D32' },
-modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  itemsHeader: { flexDirection: 'row', paddingVertical: 8, borderBottomWidth: 2, borderBottomColor: '#E5E5E5', marginBottom: 8 },
+  itemHeaderText: { fontWeight: '700', fontSize: 13, color: '#1A1A1A' },
+  itemRow: { flexDirection: 'row', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F0F0F0', alignItems: 'center' },
+  itemText: { fontSize: 13, color: '#333', fontWeight: '500' },
+  noItemsText: { fontSize: 14, color: '#999', textAlign: 'center', marginVertical: 12, fontStyle: 'italic' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
 modalCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, width: '90%', maxHeight: '90%' },
 receiptCard: { padding: 16 },
 shopName: { fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 4 },

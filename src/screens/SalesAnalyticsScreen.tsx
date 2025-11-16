@@ -72,6 +72,12 @@ export default function SalesAnalyticsScreen({ route }: any) {
       console.log('📦 Bills response:', response);
       
       if (response?.bills && response.bills.length > 0) {
+        console.log('👥 First bill customer data:', response.bills[0]?.customer);
+        console.log('✅ Customer name:', response.bills[0]?.customer?.name);
+        console.log('📱 Customer phone:', response.bills[0]?.customer?.phone);
+        console.log('🏠 Customer address:', response.bills[0]?.customer?.address);
+        console.log('🔍 Full first bill:', JSON.stringify(response.bills[0], null, 2));
+        
         if (page === 1) {
           setAllBills(response.bills);
           console.log('✅ Set allBills to new data:', response.bills.length);
@@ -443,8 +449,10 @@ export default function SalesAnalyticsScreen({ route }: any) {
               const status = bill.amountPaid >= bill.total ? 'Paid' : 'Pending';
               const navigationBill = {
                 id: bill._id,
+                billNumber: bill.billNumber,
                 customerName: bill.customer?.name || 'Unknown',
                 customeradress: bill.customer?.address || 'N/A',
+                customerPhone: bill.customer?.phone || 'N/A',
                 amount: bill.subtotal,
                 status: status as 'Paid' | 'Pending',
                 date: new Date(bill.createdAt).toLocaleDateString(),
@@ -456,6 +464,15 @@ export default function SalesAnalyticsScreen({ route }: any) {
                 discount: bill.discount || 0,
                 subTotal: bill.subtotal
               };
+              
+              // Debug log for each bill when clicked
+              if (bill.customer) {
+                console.log(`📋 Bill ${bill.billNumber} - Customer type:`, typeof bill.customer);
+                console.log(`📋 Bill ${bill.billNumber} - Customer object:`, bill.customer);
+              } else {
+                console.log(`⚠️ Bill ${bill.billNumber} - NO customer data!`);
+              }
+              
               return (
                 <TouchableOpacity
                   key={bill._id}
