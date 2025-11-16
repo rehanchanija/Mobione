@@ -176,6 +176,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>(['Cash', 'Online']);
+  const [expandedBillId, setExpandedBillId] = useState<string | null>(null);
 
   const getStatusBadgeStyle = (status: string) => {
     switch (status) {
@@ -450,9 +451,9 @@ export default function SalesAnalyticsScreen({ route }: any) {
               const navigationBill = {
                 id: bill._id,
                 billNumber: bill.billNumber,
-                customerName: bill.customer?.name || 'Unknown',
-                customeradress: bill.customer?.address || 'N/A',
-                customerPhone: bill.customer?.phone || 'N/A',
+                customerName: bill.customer?.name || 'Cash',
+                customeradress: bill.customer?.address || '',
+                customerPhone: bill.customer?.phone || '',
                 amount: bill.subtotal,
                 status: status as 'Paid' | 'Pending',
                 date: new Date(bill.createdAt).toLocaleDateString(),
@@ -491,7 +492,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
                       {/* Product Details */}
                       {bill.items && bill.items.length > 0 && (
                         <View style={styles.productsContainer}>
-                          {bill.items.map((item: any, index: number) => (
+                          {bill.items.slice(0, expandedBillId === bill._id ? bill.items.length : 2).map((item: any, index: number) => (
                             <View key={index} style={styles.productItem}>
                               <Text style={styles.productName}>
                                 📦 {item.product?.name || 'Unknown Product'}
@@ -506,6 +507,24 @@ export default function SalesAnalyticsScreen({ route }: any) {
                               </Text>
                             </View>
                           ))}
+                          {bill.items.length > 2 && expandedBillId !== bill._id && (
+                            <TouchableOpacity 
+                              style={styles.viewMoreButton}
+                              onPress={() => setExpandedBillId(bill._id)}
+                            >
+                              <Text style={styles.viewMoreText}>
+                                📂 View More ({bill.items.length - 2} more)
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+                          {expandedBillId === bill._id && bill.items.length > 2 && (
+                            <TouchableOpacity 
+                              style={styles.viewLessButton}
+                              onPress={() => setExpandedBillId(null)}
+                            >
+                              <Text style={styles.viewLessText}>📁 Show Less</Text>
+                            </TouchableOpacity>
+                          )}
                         </View>
                       )}
                       
@@ -848,6 +867,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
     fontWeight: '500',
+  },
+
+  // View More/Less Buttons for Products
+  viewMoreButton: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#B3E5FC',
+    alignItems: 'center',
+  },
+  viewMoreText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0066FF',
+  },
+  viewLessButton: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
+  },
+  viewLessText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#666666',
   },
 
 });

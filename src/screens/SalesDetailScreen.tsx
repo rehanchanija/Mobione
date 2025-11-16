@@ -14,6 +14,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import * as RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
+import { useAuth } from '../hooks/useAuth';
 
 interface SalesDetailScreenProps {
   route: {
@@ -49,6 +50,7 @@ export default function SalesDetailScreen() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const { bill } = route.params as SalesDetailScreenProps['route']['params'];
+  const { profile } = useAuth();
 
   // Amount calculations
   const subtotal = bill.subTotal || bill.amount + (bill.pendingAmount || 0);
@@ -320,7 +322,11 @@ export default function SalesDetailScreen() {
             <ScrollView style={{ maxHeight: 400 }}>
               <View style={styles.receiptCard}>
                 {/* Shop Info */}
-               
+                <Text style={styles.shopName}>{profile?.shopName || shop.name}</Text>
+                <Text style={styles.shopDetails}>Owner: {profile?.name || shop.owner}</Text>
+                {profile?.phone && <Text style={styles.shopDetails}>Phone: {profile.phone}</Text>}
+                {profile?.shopDetails && <Text style={styles.shopDetails}>{profile.shopDetails}</Text>}
+                
                 <View style={styles.divider} />
 
                 {/* Bill Info */}
