@@ -372,6 +372,10 @@ export const billsApi = {
     const res = await api.get(`/bills`, { params: { page, limit } });
     return res.data; // { bills, total, page, limit, totalPages }
   },
+  update: async (id: string, data: Partial<any>) => {
+    const res = await api.patch(`/bills/${id}`, data);
+    return res.data;
+  },
 };
 export const getSalesReport = async (timeFilter: TimeFilterType = 'all'): Promise<SalesReportData> => {
   const response = await api.get(`/bills/sales-report?timeFilter=${timeFilter}`);

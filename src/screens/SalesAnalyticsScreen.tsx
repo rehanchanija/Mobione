@@ -72,12 +72,7 @@ export default function SalesAnalyticsScreen({ route }: any) {
       console.log('📦 Bills response:', response);
       
       if (response?.bills && response.bills.length > 0) {
-        console.log('👥 First bill customer data:', response.bills[0]?.customer);
-        console.log('✅ Customer name:', response.bills[0]?.customer?.name);
-        console.log('📱 Customer phone:', response.bills[0]?.customer?.phone);
-        console.log('🏠 Customer address:', response.bills[0]?.customer?.address);
-        console.log('🔍 Full first bill:', JSON.stringify(response.bills[0], null, 2));
-        
+   
         if (page === 1) {
           setAllBills(response.bills);
           console.log('✅ Set allBills to new data:', response.bills.length);
@@ -112,10 +107,20 @@ export default function SalesAnalyticsScreen({ route }: any) {
   useFocusEffect(
     React.useCallback(() => {
       console.log('🔄 Screen focused - fetching bills');
-      setCurrentPage(1);
-      setAllBills([]);
-      fetchBills(1);
-    }, [])
+      const shouldRefresh = route.params?.refreshBills;
+      if (shouldRefresh) {
+        console.log('🔄 Refresh flag detected - reloading all bills');
+        setCurrentPage(1);
+        setAllBills([]);
+        fetchBills(1);
+        // Clear the refresh flag
+        navigation.setParams({ refreshBills: false });
+      } else {
+        setCurrentPage(1);
+        setAllBills([]);
+        fetchBills(1);
+      }
+    }, [route.params?.refreshBills])
   );
 
   // Fetch more bills when page changes (for infinite scroll)

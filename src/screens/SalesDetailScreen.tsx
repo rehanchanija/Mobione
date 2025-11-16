@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -15,6 +16,7 @@ import { RootStackParamList } from '../navigation/types';
 import * as RNHTMLtoPDF from 'react-native-html-to-pdf';
 import Share from 'react-native-share';
 import { useAuth } from '../hooks/useAuth';
+import { billsApi } from '../services/api';
 
 interface SalesDetailScreenProps {
   route: {
@@ -64,19 +66,36 @@ export default function SalesDetailScreen() {
   const [showSettlementInfo, setShowSettlementInfo] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
+  const [isUpdatingBill, setIsUpdatingBill] = useState(false);
 
-  const handleMarkAsPaid = () => {
-    setShowSettlementInfo(true);
-    const updatedBill = {
-      ...bill,
-      status: 'Paid',
-      advanceAmount: advanceAmount + pendingAmount,
-      pendingAmount: 0,
-      subTotal: subtotal,
-    };
-    setTimeout(() => {
-      navigation.navigate('SalesAnalytics', { updatedBill });
-    }, 2000);
+  const handleMarkAsPaid = async () => {
+    try {
+      setIsUpdatingBill(true);
+      
+      // Calculate final amounts
+      const newAdvanceAmount = advanceAmount + pendingAmount;
+      
+      // Call API to update bill
+      const updateData = {
+        status: 'Paid',
+        amountPaid: newAdvanceAmount,
+      };
+      
+      const updatedBill = await billsApi.update(bill.id, updateData);
+      
+      setShowSettlementInfo(true);
+      
+      // Navigate back to SalesAnalytics with a delay for the overlay display
+      setTimeout(() => {
+        setIsUpdatingBill(false);
+        setShowSettlementInfo(false);
+        navigation.navigate('SalesAnalytics', { refreshBills: true });
+      }, 2000);
+    } catch (error) {
+      console.error('Error marking bill as paid:', error);
+      setIsUpdatingBill(false);
+      Alert.alert('Error', 'Failed to mark bill as paid. Please try again.');
+    }
   };
 
   const generatePDF = async (): Promise<string | null> => {
@@ -283,19 +302,23 @@ export default function SalesDetailScreen() {
               styles.actionButton,
               status === 'Pending' ? styles.primaryButton : styles.disabledButton,
             ]}
-            disabled={status !== 'Pending'}
+            disabled={status !== 'Pending' || isUpdatingBill}
             onPress={handleMarkAsPaid}
           >
-            <Text
-              style={[
-                styles.actionButtonText,
-                status === 'Pending'
-                  ? styles.primaryButtonText
-                  : styles.disabledButtonText,
-              ]}
-            >
-              Mark as Paid
-            </Text>
+            {isUpdatingBill ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <Text
+                style={[
+                  styles.actionButtonText,
+                  status === 'Pending'
+                    ? styles.primaryButtonText
+                    : styles.disabledButtonText,
+                ]}
+              >
+                Mark as Paid
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
