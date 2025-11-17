@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 // ✅ Safer BASE_URL handling
 const BASE_URL =
   Platform.OS === 'android'
-    ? 'http://172.16.56.71:3000'
+    ? 'http://192.168.29.69:3000'
     : 'http://172.16.56.71:3000';
 
 export type TimeFilterType = 'day' | 'week' | 'month' | 'all';
