@@ -10,7 +10,6 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import { RNCamera } from 'react-native-camera';
 import { PermissionsAndroid, Platform, Linking } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
@@ -537,16 +536,7 @@ export default function ProductListScreen() {
         onRequestClose={() => setIsScannerVisible(false)}
       >
         <View style={styles.scannerContainer}>
-          <RNCamera
-            style={styles.camera}
-            captureAudio={false}
-            onBarCodeRead={(e: { data: string }) => {
-              if (e?.data) {
-                setProductBarcode(e.data);
-                setIsScannerVisible(false);
-              }
-            }}
-          />
+        
           <TouchableOpacity
             style={styles.closeScanner}
             onPress={() => setIsScannerVisible(false)}
