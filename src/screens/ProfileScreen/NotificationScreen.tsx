@@ -91,6 +91,37 @@ const NotificationScreen = () => {
     }
   };
 
+  const handleClearAll = () => {
+    Alert.alert(
+      "Clear All Notifications",
+      "Are you sure you want to delete all notifications?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Delete all notifications
+              await Promise.all(
+                allNotifications.map((n) =>
+                  deleteNotificationMutation_mut.mutateAsync(n._id)
+                )
+              );
+              setAllNotifications([]);
+              Alert.alert("Success", "All notifications cleared");
+            } catch {
+              Alert.alert("Error", "Failed to clear notifications");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleLoadMore = () => {
     if (
       !isLoadingMore &&
@@ -176,7 +207,7 @@ const NotificationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      {/* Custom header same as your original */}
+      {/* Custom header with action buttons */}
       <View style={styles.customHeader}>
         <TouchableOpacity
           style={styles.backButton}
@@ -185,13 +216,26 @@ const NotificationScreen = () => {
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Notification</Text>
+          <Text style={styles.headerTitle}>Notifications</Text>
         </View>
-        {unreadData && unreadData.unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllAsRead}>
-            <Text style={{ color: THEME.colors.primary, fontWeight: "600" }}>Mark all</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.headerActions}>
+          {allNotifications.length > 0 && (
+            <>
+              <TouchableOpacity
+                onPress={handleMarkAllAsRead}
+                style={styles.actionButton}
+              >
+                <Text style={styles.actionButtonText}>✓ Mark All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleClearAll}
+                style={[styles.actionButton, styles.clearButton]}
+              >
+                <Text style={[styles.actionButtonText, styles.clearButtonText]}>🗑 Clear</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
       </View>
 
       <FlatList
@@ -305,5 +349,29 @@ const styles = StyleSheet.create({
     fontSize: THEME.typography.fontSizes["2xl"],
     fontWeight: "700",
     color: THEME.colors.textPrimary,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: THEME.spacing.sm,
+    alignItems: "center",
+  },
+  actionButton: {
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.sm,
+    backgroundColor: THEME.colors.primary,
+    borderRadius: THEME.spacing.borderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  clearButton: {
+    backgroundColor: THEME.colors.error,
+  },
+  actionButtonText: {
+    color: THEME.colors.white,
+    fontWeight: "600",
+    fontSize: THEME.typography.fontSizes.sm,
+  },
+  clearButtonText: {
+    color: THEME.colors.white,
   },
 });

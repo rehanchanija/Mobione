@@ -194,22 +194,37 @@ export default function ProductListScreen() {
     }
 
     const numericPrice = Number((productPrice || '').toString().replace(/[^0-9.\-]/g, ''));
-    const base = {
-      name: productName,
-      description: productDetails || undefined,
-      barcode: productBarcode || undefined,
-      price: isNaN(numericPrice) ? 0 : numericPrice,
-      stock: Math.max(0, Number(productStock) + (parseInt(addStockQuantity) || 0)),
-      categoryId: selectedCategoryId,
-    };
-
+    
     try {
       if (isEditMode && editingProduct) {
-        const updated = await productsApi.update(editingProduct._id, base);
+        // For edit mode: only include stock if user explicitly entered a value in addStockQuantity
+        const updateData: any = {
+          name: productName,
+          description: productDetails || undefined,
+          barcode: productBarcode || undefined,
+          price: isNaN(numericPrice) ? 0 : numericPrice,
+          categoryId: selectedCategoryId,
+        };
+        
+        // Only update stock if the user provided a stock change value
+        if (addStockQuantity.trim() !== '') {
+          updateData.stock = Math.max(0, Number(productStock) + (parseInt(addStockQuantity) || 0));
+        }
+        
+        const updated = await productsApi.update(editingProduct._id, updateData);
         setProducts(products.map(p => (p._id === editingProduct._id ? updated : p)));
         Alert.alert('Success', 'Product updated successfully');
       } else {
-        const created = await brandsApi.createProduct(brand.id, base);
+        // For create mode: always include stock
+        const createData = {
+          name: productName,
+          description: productDetails || undefined,
+          barcode: productBarcode || undefined,
+          price: isNaN(numericPrice) ? 0 : numericPrice,
+          stock: Math.max(0, Number(productStock) + (parseInt(addStockQuantity) || 0)),
+          categoryId: selectedCategoryId,
+        };
+        const created = await brandsApi.createProduct(brand.id, createData);
         setProducts([created, ...products]);
         Alert.alert('Success', 'Product created successfully');
       }
