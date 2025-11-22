@@ -1,8 +1,8 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import SalesAnalyticsScreen from '../screens/SalesAnalyticsScreen';
-import SalesDetailScreen from '../screens/SalesDetailScreen';
 import { RootStackParamList } from './types';
+import BillHistoryScreen from '../screens/BillHistoryScreen';
+import BillsInvoice from '../screens/BillsInvoice';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -13,8 +13,8 @@ const BillsStack = () => {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="SalesAnalytics" component={SalesAnalyticsScreen} />
-      <Stack.Screen name="SalesDetail" component={SalesDetailScreen} />
+      <Stack.Screen name="SalesAnalytics" component={BillHistoryScreen} />
+      <Stack.Screen name="SalesDetail" component={BillsInvoice} />
     </Stack.Navigator>
   );
 };

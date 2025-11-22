@@ -1,14 +1,12 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import BillingScreen from "../screens/CreateBillScreen";
-import BillDetailsScreen from "../screens/BillDetailsScreen";
+import BillDetailsScreen from "../screens/BillDetails";
 import ProductsScreen from "../screens/BrandScreen";
 import ProductListScreen from "../screens/ProductListScreen";
 
 export type BillingStackParamList = {
   Billing: { items?: { productId: string; name: string; unitPrice: number; quantity: number }[] } | undefined;
   BillDetails: { items: { productId: string; name: string; unitPrice: number; quantity: number }[]; discount?: number } | undefined;
-  CustomerDetails: undefined;
-  PaymentScreen: undefined;
   Product: { selected?: { productId: string; name: string; unitPrice: number; quantity: number }[] } | undefined;
   ProductList: { brand: { id: string; name: string }; allProducts?: boolean } | undefined;
 };

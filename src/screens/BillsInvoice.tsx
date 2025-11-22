@@ -17,11 +17,11 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import Share from 'react-native-share';
 import { useAuth } from '../hooks/useAuth';
-import { billsApi } from '../services/api';
+import { billsApi, transactionsApi } from '../services/api';
 import RNFS from 'react-native-fs';
 import RNPrint from 'react-native-print';
 
-interface SalesDetailScreenProps {
+interface BillsInvoiceProps {
   route: {
     params: {
       bill: {
@@ -51,10 +51,10 @@ const shop = {
   phone: '+91 9876543210',
 };
 
-export default function SalesDetailScreen() {
+export default function BillsInvoice() {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const route = useRoute();
-  const { bill } = route.params as SalesDetailScreenProps['route']['params'];
+  const { bill } = route.params as BillsInvoiceProps['route']['params'];
   const { profile } = useAuth();
 
   // Amount calculations
@@ -83,7 +83,42 @@ export default function SalesDetailScreen() {
         amountPaid: newAdvanceAmount,
       };
       
+      console.log('🔄 Updating bill as paid...');
       await billsApi.update(bill.id, updateData);
+      console.log('✅ Bill updated');
+
+      // Create transaction for bill update
+      try {
+        console.log('🔄 Creating BILL_UPDATED transaction...');
+        const transactionData = {
+          billId: bill.id,
+          type: 'BILL_UPDATED' as const,
+          action: 'Bill Marked as Paid',
+          title: 'Bill Marked as Paid',
+          message: `Bill ${bill.billNumber || bill.id} marked as paid for ${bill.customerName} - Amount: ₹${afterDiscount.toFixed(2)}`,
+          data: {
+            billId: bill.id,
+            billNumber: bill.billNumber || bill.id,
+            customerName: bill.customerName,
+            customerPhone: bill.customerPhone || '',
+            totalAmount: afterDiscount,
+            amountPaid: newAdvanceAmount,
+            remainingAmount: 0,
+            paymentStatus: 'Paid',
+            paymentMethod: bill.paymentMethod,
+            subtotal,
+            discount,
+            updatedAt: new Date().toISOString(),
+          },
+        };
+        
+        console.log('📤 Transaction data:', transactionData);
+        const transactionResponse = await transactionsApi.create(transactionData);
+        console.log('✅ Transaction created:', transactionResponse);
+      } catch (err) {
+        console.error('❌ Failed to create transaction:', err);
+        // Don't fail bill update if transaction creation fails
+      }
       
       setShowSettlementInfo(true);
       

@@ -1,4 +1,5 @@
-import React from "react";
+import { useNavigation } from "@react-navigation/native";
+import React, { use } from "react";
 import {
   View,
   Text,
@@ -8,6 +9,7 @@ import {
 } from "react-native";
 
 export default function HomeScreen() {
+  const navigation=useNavigation();
   return (
     <View style={styles.container}>
 
@@ -40,11 +42,14 @@ export default function HomeScreen() {
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
         <View style={styles.quickActions}>
-          <TouchableOpacity style={[styles.quickCard, styles.quickPrimary] }>
+          <TouchableOpacity style={[styles.quickCard, styles.quickPrimary] }
+          onPress={() => navigation.navigate('Billing' as never)}>
             <Text style={styles.quickEmoji}>✚</Text>
             <Text style={styles.quickTextPrimary}>New Bill</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickCard}>
+          <TouchableOpacity style={styles.quickCard} 
+          
+          >
             <Text style={styles.quickEmoji}>🏷️</Text>
             <Text style={styles.quickText}>View Products</Text>
           </TouchableOpacity>

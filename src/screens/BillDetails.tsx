@@ -13,6 +13,7 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BillingStackParamList } from "../navigation/BillingStack";
 import { useAuth } from "../hooks/useAuth";
+import { transactionsApi } from "../services/api";
 
 type BillDetailsProps = NativeStackScreenProps<BillingStackParamList, "BillDetails">;
 
@@ -78,7 +79,51 @@ const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
         amountPaid: parseFloat(amountPaid)
       };
 
-      await billsApi.create(billData);
+      console.log('📝 Creating bill with data:', billData);
+      const billResponse = await billsApi.create(billData);
+      console.log('✅ Bill created, response:', billResponse);
+      
+      const billId = billResponse._id || billResponse.id;
+      console.log('📌 Bill ID:', billId);
+
+      if (!billId) {
+        console.error('❌ No bill ID in response');
+        throw new Error('Bill created but no ID returned');
+      }
+
+      // Create transaction for bill creation
+      try {
+        console.log('🔄 Creating transaction...');
+        const transactionData = {
+          billId,
+          type: 'BILL_CREATED' as const,
+          action: 'Bill Created',
+          title: 'New Bill Created',
+          message: `Bill created for ${name || 'Customer'} - Amount: ₹${total.toFixed(2)}`,
+          data: {
+            billId,
+            customerName: name || 'Unknown',
+            customerPhone: phone || '',
+            totalAmount: total,
+            amountPaid: parseFloat(amountPaid),
+            remainingAmount: Math.max(0, total - parseFloat(amountPaid)),
+            paymentStatus: paymentStatus,
+            paymentMethod,
+            itemCount: items.length,
+            subtotal,
+            discount: discountEnabled ? discount : 0,
+            createdAt: new Date().toISOString(),
+          },
+        };
+        
+        console.log('📤 Transaction data:', transactionData);
+        const transactionResponse = await transactionsApi.create(transactionData);
+        console.log('✅ Transaction created:', transactionResponse);
+      } catch (err) {
+        console.error('❌ Failed to create transaction:', err);
+        // Don't fail bill creation if transaction creation fails
+      }
+
       navigation.replace('Billing');
     } catch (error) {
       console.error('Error creating bill:', error);

@@ -49,7 +49,7 @@ interface ProductInfo {
   price: number;
 }
 
-export default function SalesAnalyticsScreen({ route }: any) {
+export default function BillHistoryScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { billsApi } = useAuth();
   
