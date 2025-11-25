@@ -9,8 +9,8 @@ export type RootStackParamList = {
         products: any[];
       };
       BillDetailsScreen: undefined;
-      SalesAnalytics: { updatedBill?: any; refreshBills?: boolean };
-      SalesDetail: { bill: { id: string; customerName: string; amount: number; status: 'Paid' | 'Pending'; date: string; paymentMethod: 'Cash' | 'Online'; advanceAmount?: number; pendingAmount?: number; } };
+      BillHistory: { updatedBill?: any; refreshBills?: boolean };
+      BillInvoice: { bill: { id: string; customerName: string; amount: number; status: 'Paid' | 'Pending'; date: string; paymentMethod: 'Cash' | 'Online'; advanceAmount?: number; pendingAmount?: number; } };
       Profile: undefined;
       SalesReport: undefined;
       Settings: undefined;

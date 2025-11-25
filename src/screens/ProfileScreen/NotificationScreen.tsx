@@ -24,6 +24,7 @@ const NotificationScreen = () => {
     markNotificationAsReadMutation,
     markAllAsReadMutation,
     deleteNotificationMutation,
+    deleteAllNotificationsMutation,
   } = useAuth();
 
   const [page, setPage] = useState(1);
@@ -42,6 +43,7 @@ const NotificationScreen = () => {
   const markAsReadMutation = markNotificationAsReadMutation();
   const markAllAsReadMutation_mut = markAllAsReadMutation();
   const deleteNotificationMutation_mut = deleteNotificationMutation();
+  const deleteAllNotificationsMutation_mut = deleteAllNotificationsMutation();
 
   useEffect(() => {
     if (notificationsData?.notifications) {
@@ -105,12 +107,7 @@ const NotificationScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              // Delete all notifications
-              await Promise.all(
-                allNotifications.map((n) =>
-                  deleteNotificationMutation_mut.mutateAsync(n._id)
-                )
-              );
+              await deleteAllNotificationsMutation_mut.mutateAsync();
               setAllNotifications([]);
               Alert.alert("Success", "All notifications cleared");
             } catch {
@@ -218,11 +215,18 @@ const NotificationScreen = () => {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Notification</Text>
         </View>
-        {unreadData && unreadData.unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllAsRead}>
-            <Text style={{ color: THEME.colors.primary, fontWeight: "600" }}>Mark all</Text>
-          </TouchableOpacity>
-        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {unreadData && unreadData.unreadCount > 0 && (
+            <TouchableOpacity onPress={handleMarkAllAsRead} style={{ marginRight: 12 }}>
+              <Text style={{ color: THEME.colors.primary, fontWeight: "600" }}>Mark all</Text>
+            </TouchableOpacity>
+          )}
+          {allNotifications.length > 0 && (
+            <TouchableOpacity onPress={handleClearAll}>
+              <Text style={{ color: THEME.colors.error, fontWeight: "700" }}>Clear all</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <FlatList

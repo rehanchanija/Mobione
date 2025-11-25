@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   TextInput,
   ScrollView,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
@@ -32,7 +33,7 @@ const TransactionHistoryScreen = () => {
   const transactions: TransactionItem[] = txRes?.transactions || [];
 
   const [searchCustomer, setSearchCustomer] = useState('');
-  const [searchProduct, setSearchProduct] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<'All' | 'Paid' | 'Pending'>('All');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -51,21 +52,57 @@ const TransactionHistoryScreen = () => {
       const titleMsg = `${t.title} ${t.message}`;
       const matchesCustomer = !searchCustomer || normalize(titleMsg).includes(normalize(searchCustomer));
 
-      const dataText = JSON.stringify(t.data || {});
-      const matchesProduct = !searchProduct || normalize(dataText).includes(normalize(searchProduct));
+      const transactionStatus = ((t.data as any)?.paymentStatus ?? 'Pending');
+      const matchesStatus = paymentStatus === 'All' || transactionStatus === paymentStatus;
 
-      return matchesDateRange && matchesCustomer && matchesProduct;
+      return matchesDateRange && matchesCustomer && matchesStatus;
     });
-  }, [transactions, startDate, endDate, searchCustomer, searchProduct]);
+  }, [transactions, startDate, endDate, searchCustomer, paymentStatus]);
 
   const clearFilters = () => {
     setStartDate(null);
     setEndDate(null);
     setSearchCustomer('');
-    setSearchProduct('');
+    setPaymentStatus('All');
   };
 
-  const hasActiveFilters = startDate || endDate || searchCustomer || searchProduct;
+  const hasActiveFilters = startDate || endDate || searchCustomer || paymentStatus !== 'All';
+
+  const handleDeleteTransaction = async (id: string) => {
+    Alert.alert('Delete Transaction', 'Are you sure you want to delete this transaction?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await transactionsApi.remove(id);
+            await refetch();
+          } catch (e) {
+            Alert.alert('Error', 'Failed to delete transaction');
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleClearAllTransactions = () => {
+    Alert.alert('Clear All Transactions', 'Are you sure you want to delete all transactions?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await transactionsApi.removeAll();
+            await refetch();
+          } catch (e) {
+            Alert.alert('Error', 'Failed to clear transactions');
+          }
+        },
+      },
+    ]);
+  };
 
   const renderBill = ({ item }: { item: TransactionItem }) => (
     <View style={styles.billCard}>
@@ -77,19 +114,27 @@ const TransactionHistoryScreen = () => {
             {format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm')}
           </Text>
         </View>
-        <View style={[styles.statusBadge, item.type === 'BILL_CREATED' ? styles.statusPending : styles.statusPaid]}>
-          <Text style={styles.statusText}>
-            {item.type === 'BILL_CREATED' ? '🧾' : '✏️'} {item.type.replace('BILL_', '')}
-          </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View style={[
+            styles.statusBadge,
+            ((item.data as any)?.paymentStatus ?? 'Pending') === 'Paid' ? styles.statusPaid : styles.statusPending,
+          ]}>
+            <Text style={styles.statusText}>
+              {((item.data as any)?.paymentStatus ?? 'Pending') === 'Paid' ? '✓' : '⏱'} {((item.data as any)?.paymentStatus ?? 'Pending')}
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => handleDeleteTransaction(item._id)} style={{ marginLeft: 10 }}>
+            <Text style={{ fontSize: 16, color: '#9CA3AF' }}>✕</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Title & Message */}
+      {/* Transaction Summary */}
       <View style={styles.billSection}>
-        <Text style={styles.sectionEmoji}>📝</Text>
+        <Text style={styles.sectionEmoji}>👤</Text>
         <View style={{ flex: 1 }}>
-          <Text style={styles.customerName}>{item.title}</Text>
-          <Text style={{ color: '#6b7280', marginTop: 4 }}>{item.message}</Text>
+          <Text style={styles.customerName}>{(item.data as any)?.customerName ?? 'Unknown Customer'}</Text>
+          <Text style={{ color: '#6b7280', marginTop: 4 }}>Bill #{(item.data as any)?.billNumber ?? '—'}</Text>
         </View>
       </View>
 
@@ -98,23 +143,13 @@ const TransactionHistoryScreen = () => {
         <Text style={styles.sectionEmoji}>💰</Text>
         <View style={styles.itemsList}>
           <View style={styles.itemRow}>
-            <Text style={styles.itemName}>Subtotal</Text>
-            <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.subtotal ?? 0).toFixed(2)}</Text>
+            <Text style={styles.itemName}>Total Amount</Text>
+            <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.totalAmount ?? (item.data as any)?.total ?? 0).toFixed(2)}</Text>
           </View>
           <View style={styles.itemRow}>
-            <Text style={styles.itemName}>Discount</Text>
-            <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.discount ?? 0).toFixed(2)}</Text>
+            <Text style={styles.itemName}>Pending Amount</Text>
+            <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.remainingAmount ?? Math.max(0, Number((item.data as any)?.totalAmount ?? (item.data as any)?.total ?? 0) - Number((item.data as any)?.amountPaid ?? 0))).toFixed(2)}</Text>
           </View>
-          <View style={styles.itemRow}>
-            <Text style={styles.itemName}>Total</Text>
-            <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.total ?? 0).toFixed(2)}</Text>
-          </View>
-          {'amountPaid' in (item.data || {}) && (
-            <View style={styles.itemRow}>
-              <Text style={styles.itemName}>Paid</Text>
-              <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.amountPaid ?? 0).toFixed(2)}</Text>
-            </View>
-          )}
         </View>
       </View>
 
@@ -126,10 +161,7 @@ const TransactionHistoryScreen = () => {
           </Text>
           <Text style={styles.paymentText}>{(item.data as any)?.paymentMethod ?? 'Cash'}</Text>
         </View>
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalAmount}>₹{Number((item.data as any)?.total ?? 0).toFixed(2)}</Text>
-        </View>
+       
       </View>
     </View>
   );
@@ -177,7 +209,9 @@ const TransactionHistoryScreen = () => {
             {filteredTransactions.length} {filteredTransactions.length === 1 ? 'entry' : 'entries'}
           </Text>
         </View>
-        <View style={styles.backButton} />
+        <TouchableOpacity onPress={handleClearAllTransactions} style={styles.backButton}>
+          <Text style={{ color: '#DC2626', fontWeight: '700' }}>Clear all</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Horizontal Scrollable Filters */}
@@ -228,23 +262,28 @@ const TransactionHistoryScreen = () => {
           />
         </View>
 
-        {/* Product Filter */}
-        <View style={[
-          styles.filterChip,
-          searchProduct && styles.filterChipActive
-        ]}>
-          <Text style={styles.filterEmoji}>📦</Text>
-          <TextInput
-            style={[
-              styles.filterInput,
-              searchProduct && styles.filterInputActive
-            ]}
-            placeholder="Product"
-            value={searchProduct}
-            onChangeText={setSearchProduct}
-            placeholderTextColor="#9CA3AF"
-          />
-        </View>
+        {/* Payment Status Filter */}
+        <TouchableOpacity
+          onPress={() => {
+            if (paymentStatus === 'All') setPaymentStatus('Paid');
+            else if (paymentStatus === 'Paid') setPaymentStatus('Pending');
+            else setPaymentStatus('All');
+          }}
+          style={[
+            styles.filterChip,
+            paymentStatus !== 'All' && styles.filterChipActive
+          ]}
+        >
+          <Text style={styles.filterEmoji}>
+            {paymentStatus === 'Paid' ? '✓' : paymentStatus === 'Pending' ? '⏱' : '📊'}
+          </Text>
+          <Text style={[
+            styles.filterText,
+            paymentStatus !== 'All' && styles.filterTextActive
+          ]}>
+            {paymentStatus}
+          </Text>
+        </TouchableOpacity>
 
         {/* Clear Filters */}
         {hasActiveFilters && (
@@ -444,6 +483,33 @@ filterChip: {
   filterInputActive: {
     color: '#4F46E5',
     fontWeight: '600',
+  },
+  statusFilterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+    gap: 8,
+  },
+  statusFilterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  statusFilterChipActive: {
+    backgroundColor: '#EEF2FF',
+    borderColor: '#818CF8',
+  },
+  statusFilterText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+  statusFilterTextActive: {
+    color: '#4F46E5',
+    fontWeight: '700',
   },
   clearFilterChip: {
     backgroundColor: '#FEE2E2',

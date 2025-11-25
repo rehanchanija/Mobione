@@ -5,6 +5,7 @@ import StaffManagementScreen from "../screens/ProfileScreen/StaffManagementScree
 import TransactionHistoryScreen from "../screens/ProfileScreen/TransactionHistoryScreen";
 import AppSettingsScreen from "../screens/ProfileScreen/AppSettingsScreen";
 import HelpSupportScreen from "../screens/ProfileScreen/HelpSupportScreen";
+import BillsInvoice from "../screens/BillsInvoice";
 
 export type RootStackParamList = {
   Profile: undefined;
@@ -13,7 +14,7 @@ export type RootStackParamList = {
   TransactionHistory: undefined;
   AppSettings: undefined;
   HelpSupport: undefined;
-  
+    BillInvoice: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -27,6 +28,8 @@ export default function ProfileStack() {
       <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
       <Stack.Screen name="AppSettings" component={AppSettingsScreen} />
       <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+      <Stack.Screen name="BillInvoice" component={BillsInvoice}
+      />
     </Stack.Navigator>
   );
 }

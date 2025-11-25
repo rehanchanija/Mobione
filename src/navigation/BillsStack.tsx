@@ -13,8 +13,9 @@ const BillsStack = () => {
         headerShown: false,
       }}
     >
-      <Stack.Screen name="SalesAnalytics" component={BillHistoryScreen} />
-      <Stack.Screen name="SalesDetail" component={BillsInvoice} />
+      <Stack.Screen name="BillHistory" component={BillHistoryScreen} />
+      <Stack.Screen name="BillInvoice" component={BillsInvoice} />
+
     </Stack.Navigator>
   );
 };

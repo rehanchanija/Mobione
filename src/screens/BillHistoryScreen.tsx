@@ -40,14 +40,7 @@ interface Bill {
   amountPaid: number;
   createdAt: string;
 }
-  
 
-
-interface ProductInfo {
-  _id: string;
-  name: string;
-  price: number;
-}
 
 export default function BillHistoryScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
@@ -483,7 +476,7 @@ export default function BillHistoryScreen({ route }: any) {
                 <TouchableOpacity
                   key={bill._id}
                   style={styles.billItem}
-                  onPress={() => navigation.navigate('SalesDetail', { bill: navigationBill })}
+                  onPress={() => navigation.navigate('BillInvoice', { bill: navigationBill })}
                 >
                   <View style={styles.billHeader}>
                     <Text style={styles.billId}>Bill #{bill.billNumber}</Text>
@@ -551,7 +544,7 @@ export default function BillHistoryScreen({ route }: any) {
 
                   <TouchableOpacity 
                     style={styles.viewDetails}
-                    onPress={() => navigation.navigate('SalesDetail', { bill: navigationBill })}
+                    onPress={() => navigation.navigate('BillInvoice', { bill: navigationBill })}
                   >
                     <Text style={styles.viewDetailsText}>View Details 👉</Text>
                   </TouchableOpacity>
