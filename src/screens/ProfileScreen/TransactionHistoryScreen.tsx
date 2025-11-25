@@ -16,22 +16,20 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { transactionsApi, TransactionDto } from '../../services/api';
 import { format } from 'date-fns';
 
-interface Bill {
-  _id: string;
-  createdAt: string;
-  status: 'Paid' | 'Pending';
-  customer?: { name?: string };
-  items?: { product?: { name?: string }; quantity: number }[];
-  paymentMethod: 'Cash' | 'Online';
-  total?: number;
-}
+type TransactionItem = TransactionDto;
 
 const TransactionHistoryScreen = () => {
   const navigation = useNavigation<any>();
-  const { useBills } = useAuth();
-  const { data: bills, isLoading, refetch, error } = useBills();
+  const { } = useAuth();
+  const { data: txRes, isLoading, refetch, error } = useQuery({
+    queryKey: ['transactions', 1, 50],
+    queryFn: () => transactionsApi.list(1, 50),
+  });
+  const transactions: TransactionItem[] = txRes?.transactions || [];
 
   const [searchCustomer, setSearchCustomer] = useState('');
   const [searchProduct, setSearchProduct] = useState('');
@@ -40,27 +38,25 @@ const TransactionHistoryScreen = () => {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
-  const filteredBills = useMemo(() => {
+  const filteredTransactions = useMemo(() => {
     const normalize = (s?: string) => (s || '').toLowerCase();
 
-    return (bills || []).filter((b: Bill) => {
-      const billDate = new Date(b.createdAt);
+    return (transactions || []).filter((t: TransactionItem) => {
+      const tDate = new Date(t.createdAt);
 
       const matchesDateRange =
-        (!startDate || billDate >= startDate) &&
-        (!endDate || billDate <= endDate);
+        (!startDate || tDate >= startDate) &&
+        (!endDate || tDate <= endDate);
 
-      const matchesCustomer = !searchCustomer || 
-        normalize(b.customer?.name).includes(normalize(searchCustomer));
-      
-      const matchesProduct = !searchProduct || 
-        (b.items || []).some(it => 
-          normalize(it.product?.name).includes(normalize(searchProduct))
-        );
+      const titleMsg = `${t.title} ${t.message}`;
+      const matchesCustomer = !searchCustomer || normalize(titleMsg).includes(normalize(searchCustomer));
+
+      const dataText = JSON.stringify(t.data || {});
+      const matchesProduct = !searchProduct || normalize(dataText).includes(normalize(searchProduct));
 
       return matchesDateRange && matchesCustomer && matchesProduct;
     });
-  }, [bills, startDate, endDate, searchCustomer, searchProduct]);
+  }, [transactions, startDate, endDate, searchCustomer, searchProduct]);
 
   const clearFilters = () => {
     setStartDate(null);
@@ -71,7 +67,7 @@ const TransactionHistoryScreen = () => {
 
   const hasActiveFilters = startDate || endDate || searchCustomer || searchProduct;
 
-  const renderBill = ({ item }: { item: Bill }) => (
+  const renderBill = ({ item }: { item: TransactionItem }) => (
     <View style={styles.billCard}>
       {/* Header with Date and Status */}
       <View style={styles.billHeader}>
@@ -81,38 +77,44 @@ const TransactionHistoryScreen = () => {
             {format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm')}
           </Text>
         </View>
-        <View
-          style={[
-            styles.statusBadge,
-            item.status === 'Paid' ? styles.statusPaid : styles.statusPending,
-          ]}
-        >
+        <View style={[styles.statusBadge, item.type === 'BILL_CREATED' ? styles.statusPending : styles.statusPaid]}>
           <Text style={styles.statusText}>
-            {item.status === 'Paid' ? '✓' : '⏱'} {item.status}
+            {item.type === 'BILL_CREATED' ? '🧾' : '✏️'} {item.type.replace('BILL_', '')}
           </Text>
         </View>
       </View>
 
-      {/* Customer Info */}
+      {/* Title & Message */}
       <View style={styles.billSection}>
-        <Text style={styles.sectionEmoji}>👤</Text>
-        <Text style={styles.customerName}>
-          {item.customer?.name || 'Unknown Customer'}
-        </Text>
+        <Text style={styles.sectionEmoji}>📝</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.customerName}>{item.title}</Text>
+          <Text style={{ color: '#6b7280', marginTop: 4 }}>{item.message}</Text>
+        </View>
       </View>
 
-      {/* Items List */}
+      {/* Totals Snapshot */}
       <View style={styles.billSection}>
-        <Text style={styles.sectionEmoji}>📦</Text>
+        <Text style={styles.sectionEmoji}>💰</Text>
         <View style={styles.itemsList}>
-          {item.items?.map((it, idx) => (
-            <View key={`${item._id}-it-${idx}`} style={styles.itemRow}>
-              <Text style={styles.itemName}>
-                {it.product?.name || 'Unknown Product'}
-              </Text>
-              <Text style={styles.itemQuantity}>× {it.quantity}</Text>
+          <View style={styles.itemRow}>
+            <Text style={styles.itemName}>Subtotal</Text>
+            <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.subtotal ?? 0).toFixed(2)}</Text>
+          </View>
+          <View style={styles.itemRow}>
+            <Text style={styles.itemName}>Discount</Text>
+            <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.discount ?? 0).toFixed(2)}</Text>
+          </View>
+          <View style={styles.itemRow}>
+            <Text style={styles.itemName}>Total</Text>
+            <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.total ?? 0).toFixed(2)}</Text>
+          </View>
+          {'amountPaid' in (item.data || {}) && (
+            <View style={styles.itemRow}>
+              <Text style={styles.itemName}>Paid</Text>
+              <Text style={styles.itemQuantity}>₹{Number((item.data as any)?.amountPaid ?? 0).toFixed(2)}</Text>
             </View>
-          ))}
+          )}
         </View>
       </View>
 
@@ -120,19 +122,19 @@ const TransactionHistoryScreen = () => {
       <View style={styles.billFooter}>
         <View style={styles.paymentMethod}>
           <Text style={styles.paymentEmoji}>
-            {item.paymentMethod === 'Cash' ? '💵' : '💳'}
+            {((item.data as any)?.paymentMethod ?? 'Cash') === 'Cash' ? '💵' : '💳'}
           </Text>
-          <Text style={styles.paymentText}>{item.paymentMethod}</Text>
+          <Text style={styles.paymentText}>{(item.data as any)?.paymentMethod ?? 'Cash'}</Text>
         </View>
         <View style={styles.totalContainer}>
           <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalAmount}>₹{(item.total ?? 0).toFixed(2)}</Text>
+          <Text style={styles.totalAmount}>₹{Number((item.data as any)?.total ?? 0).toFixed(2)}</Text>
         </View>
       </View>
     </View>
   );
 
-  if (isLoading && !bills) {
+  if (isLoading && !transactions) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#6366F1" />
@@ -172,7 +174,7 @@ const TransactionHistoryScreen = () => {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Transactions</Text>
           <Text style={styles.headerSubtitle}>
-            {filteredBills.length} {filteredBills.length === 1 ? 'bill' : 'bills'}
+            {filteredTransactions.length} {filteredTransactions.length === 1 ? 'entry' : 'entries'}
           </Text>
         </View>
         <View style={styles.backButton} />
@@ -293,8 +295,8 @@ const TransactionHistoryScreen = () => {
         />
       )}
 
-      {/* Bills List */}
-      {(!bills || bills.length === 0) ? (
+      {/* Transactions List */}
+      {(!transactions || transactions.length === 0) ? (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyCard}>
             <Text style={styles.emptyEmoji}>📋</Text>
@@ -302,7 +304,7 @@ const TransactionHistoryScreen = () => {
             <Text style={styles.emptyMessage}>Create your first bill to see it here</Text>
           </View>
         </View>
-      ) : filteredBills.length === 0 ? (
+      ) : filteredTransactions.length === 0 ? (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyCard}>
             <Text style={styles.emptyEmoji}>🔍</Text>
@@ -312,7 +314,7 @@ const TransactionHistoryScreen = () => {
         </View>
       ) : (
         <FlatList
-          data={filteredBills}
+          data={filteredTransactions}
           renderItem={renderBill}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContainer}

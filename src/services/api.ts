@@ -455,3 +455,54 @@ export const notificationsApi = {
     return res.data;
   },
 };
+
+// ---------------- TRANSACTIONS ----------------
+export type TransactionType = 'BILL_CREATED' | 'BILL_UPDATED';
+
+export interface TransactionDto {
+  _id: string;
+  userId: string;
+  billId: string;
+  type: TransactionType;
+  title: string;
+  message: string;
+  action?: string;
+  data?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TransactionsResponse {
+  transactions: TransactionDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export const transactionsApi = {
+  create: async (data: { billId: string; type: TransactionType; title: string; message: string; action?: string; data?: Record<string, any> }): Promise<TransactionDto> => {
+    const res = await api.post<TransactionDto>(`/transactions`, data);
+    return res.data;
+  },
+  list: async (page: number = 1, limit: number = 10): Promise<TransactionsResponse> => {
+    const res = await api.get<TransactionsResponse>(`/transactions`, { params: { page, limit } });
+    return res.data;
+  },
+  getById: async (id: string): Promise<TransactionDto | null> => {
+    const res = await api.get<TransactionDto | null>(`/transactions/${id}`);
+    return res.data;
+  },
+  listByBill: async (billId: string, page: number = 1, limit: number = 10): Promise<TransactionsResponse> => {
+    const res = await api.get<TransactionsResponse>(`/transactions/bill/${billId}`, { params: { page, limit } });
+    return res.data;
+  },
+  remove: async (id: string): Promise<{ success: boolean }> => {
+    const res = await api.delete<{ success: boolean }>(`/transactions/${id}`);
+    return res.data;
+  },
+  removeAll: async (): Promise<{ success: boolean }> => {
+    const res = await api.delete<{ success: boolean }>(`/transactions`);
+    return res.data;
+  },
+};
