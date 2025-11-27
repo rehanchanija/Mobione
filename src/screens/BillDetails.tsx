@@ -116,11 +116,13 @@ const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
           },
         };
         
-        console.log('📤 Transaction data:', transactionData);
+        console.log('📤 Transaction data:', JSON.stringify(transactionData, null, 2));
         const transactionResponse = await transactionsApi.create(transactionData);
-        console.log('✅ Transaction created:', transactionResponse);
-      } catch (err) {
-        console.error('❌ Failed to create transaction:', err);
+        console.log('✅ Transaction created successfully:', transactionResponse);
+      } catch (err: any) {
+        console.error('❌ Failed to create transaction - Response data:', err?.response?.data);
+        console.error('❌ Failed to create transaction - Message:', err?.message);
+        console.error('❌ Full error:', JSON.stringify(err, null, 2));
         // Don't fail bill creation if transaction creation fails
       }
 

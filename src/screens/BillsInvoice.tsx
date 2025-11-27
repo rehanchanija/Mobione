@@ -17,7 +17,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import Share from 'react-native-share';
 import { useAuth } from '../hooks/useAuth';
-import { billsApi, transactionsApi } from '../services/api';
+import { billsApi } from '../services/api';
 import RNFS from 'react-native-fs';
 import RNPrint from 'react-native-print';
 
@@ -87,45 +87,12 @@ export default function BillsInvoice() {
       await billsApi.update(bill.id, updateData);
       console.log('✅ Bill updated');
 
-      // Create transaction for bill update
-      try {
-        console.log('🔄 Creating BILL_UPDATED transaction...');
-        const transactionData = {
-          billId: bill.id,
-          type: 'BILL_UPDATED' as const,
-          action: 'Bill Marked as Paid',
-          title: 'Bill Marked as Paid',
-          message: `Bill ${bill.billNumber || bill.id} marked as paid for ${bill.customerName} - Amount: ₹${afterDiscount.toFixed(2)}`,
-          data: {
-            billId: bill.id,
-            billNumber: bill.billNumber || bill.id,
-            customerName: bill.customerName,
-            customerPhone: bill.customerPhone || '',
-            totalAmount: afterDiscount,
-            amountPaid: newAdvanceAmount,
-            remainingAmount: 0,
-            paymentStatus: 'Paid',
-            paymentMethod: bill.paymentMethod,
-            subtotal,
-            discount,
-            updatedAt: new Date().toISOString(),
-          },
-        };
-        
-        console.log('📤 Transaction data:', transactionData);
-        const transactionResponse = await transactionsApi.create(transactionData);
-        console.log('✅ Transaction created:', transactionResponse);
-      } catch (err) {
-        console.error('❌ Failed to create transaction:', err);
-        // Don't fail bill update if transaction creation fails
-      }
-      
       setShowSettlementInfo(true);
       
       setTimeout(() => {
         setIsUpdatingBill(false);
         setShowSettlementInfo(false);
-        navigation.navigate('SalesAnalytics', { refreshBills: true });
+        navigation.navigate('BillHistory', { refreshBills: true });
       }, 2000);
     } catch (error) {
       console.error('Error marking bill as paid:', error);
