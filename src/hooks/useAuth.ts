@@ -14,6 +14,9 @@ import {
   notificationsApi,
   Notification,
   NotificationsResponse,
+  DashboardTotals,
+  ProductCountResponse,
+  TotalStockResponse,
   api
 } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -320,6 +323,30 @@ export const useAuth = () => {
     });
   };
 
+  const useDashboardTotals = () => {
+    return useQuery({
+      queryKey: ['bills', 'dashboard-totals'],
+      queryFn: () => billsApi.getDashboardTotals(),
+      refetchInterval: 10000, // Refetch every 20 seconds
+    });
+  };
+
+  const useTotalProductsCount = () => {
+    return useQuery({
+      queryKey: ['products', 'total-count'],
+      queryFn: () => productsApi.getTotalCount(),
+      refetchInterval: 20000, // Refetch every 20 seconds
+    });
+  };
+
+  const useTotalStock = () => {
+    return useQuery({
+      queryKey: ['products', 'total-stock'],
+      queryFn: () => productsApi.getTotalStock(),
+      refetchInterval: 20000, // Refetch every 20 seconds
+    });
+  };
+
   const logout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('refreshToken');
@@ -375,9 +402,12 @@ export const useAuth = () => {
     useProduct,
     updateProductMutation,
     deleteProductMutation,
+    useTotalProductsCount,
+    useTotalStock,
 
     // React Query hooks for bills
     useBills,
+    useDashboardTotals,
 
     // React Query hooks for notifications
     useNotifications,

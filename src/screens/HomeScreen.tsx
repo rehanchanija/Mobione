@@ -6,10 +6,16 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
+import { useAuth } from "../hooks/useAuth";
 
 export default function HomeScreen() {
-  const navigation=useNavigation();
+  const navigation = useNavigation();
+  const { useDashboardTotals, useTotalStock } = useAuth();
+  const { data: totals, isLoading } = useDashboardTotals();
+  const { data: stockData, isLoading: stockLoading } = useTotalStock();
+
   return (
     <View style={styles.container}>
 
@@ -18,18 +24,36 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>📌 Overview</Text>
         <View style={styles.grid}>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Today's Sales</Text>
-            <Text style={styles.cardValue}>₹ 12,345</Text>
+            <Text style={styles.cardLabel}>Total Sales (All Time)</Text>
+            <Text style={styles.cardValue}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#4A90E2" />
+              ) : (
+                `₹ ${(totals?.totalSalesAllTime || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+              )}
+            </Text>
             <Text style={styles.emoji}>💰</Text>
           </View>
           <View style={styles.card}>
             <Text style={styles.cardLabel}>Total Stock</Text>
-            <Text style={styles.cardValue}>875 Items</Text>
+            <Text style={styles.cardValue}>
+              {stockLoading ? (
+                <ActivityIndicator size="small" color="#4A90E2" />
+              ) : (
+                `${stockData?.totalStock || 0} Units`
+              )}
+            </Text>
             <Text style={styles.emoji}>📦</Text>
           </View>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Pending Payments</Text>
-            <Text style={styles.cardValue}>₹ 3,210</Text>
+            <Text style={styles.cardLabel}>Pending Payments (All Time)</Text>
+            <Text style={styles.cardValue}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#4A90E2" />
+              ) : (
+                `₹ ${(totals?.totalPendingAmountAllTime || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+              )}
+            </Text>
             <Text style={styles.emoji}>⏳</Text>
           </View>
           <View style={styles.card}>

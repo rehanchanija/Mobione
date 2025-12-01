@@ -60,6 +60,19 @@ export interface Bill {
   updatedAt: string;
 }
 
+export interface DashboardTotals {
+  totalSalesAllTime: number;
+  totalPendingAmountAllTime: number;
+}
+
+export interface ProductCountResponse {
+  totalProducts: number;
+}
+
+export interface TotalStockResponse {
+  totalStock: number;
+}
+
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -308,6 +321,14 @@ export const productsApi = {
     const res = await api.delete<{ success: boolean }>(`/products/${id}`);
     return res.data;
   },
+  getTotalCount: async (): Promise<ProductCountResponse> => {
+    const res = await api.get<ProductCountResponse>(`/products/dashboard/count`);
+    return res.data;
+  },
+  getTotalStock: async (): Promise<TotalStockResponse> => {
+    const res = await api.get<TotalStockResponse>(`/products/dashboard/stock`);
+    return res.data;
+  },
 };
 
 // ---------------- CATEGORIES ----------------
@@ -374,6 +395,10 @@ export const billsApi = {
   },
   update: async (id: string, data: Partial<any>) => {
     const res = await api.patch(`/bills/${id}`, data);
+    return res.data;
+  },
+  getDashboardTotals: async (): Promise<DashboardTotals> => {
+    const res = await api.get(`/bills/dashboard/totals`);
     return res.data;
   },
 };
