@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { use } from "react";
+import React, { use, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,18 +9,113 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useAuth } from "../hooks/useAuth";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/types";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
-  const navigation = useNavigation();
-  const { useDashboardTotals, useTotalStock } = useAuth();
+  const navigation = useNavigation<NavigationProp>();
+  const { useDashboardTotals, useTotalStock, useNotifications } = useAuth();
   const { data: totals, isLoading } = useDashboardTotals();
   const { data: stockData, isLoading: stockLoading } = useTotalStock();
+  const { data: notificationsData, isLoading: notificationsLoading } = useNotifications(1, 5);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (notificationsData?.notifications) {
+      setNotifications(notificationsData.notifications);
+    }
+  }, [notificationsData]);
+
+  const getNotificationEmoji = (type: string) => {
+    switch (type) {
+      case 'BILL_CREATED':
+        return '🧾';
+      case 'BILL_UPDATED':
+        return '📝';
+      case 'LOW_STOCK':
+        return '⚠️';
+      case 'PRODUCT_CREATED':
+      case 'PRODUCT_UPDATED':
+        return '📦';
+      case 'PRODUCT_DELETED':
+        return '🗑️';
+      default:
+        return '📌';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffHours < 1) {
+      return 'Just now';
+    } else if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays}d ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const getActivityText = (notification: any) => {
+    const { type, message, data } = notification;
+
+    if (type === 'BILL_CREATED') {
+      const billNumber = data?.billNumber || 'Unknown';
+      const lastFourDigits = billNumber.toString().slice(-4);
+      const customerName = data?.customerName || 'Customer';
+      return `Sold #${lastFourDigits} - ${customerName}`;
+    } else if (type === 'BILL_UPDATED') {
+      const billNumber = data?.billNumber || 'Unknown';
+      const lastFourDigits = billNumber.toString().slice(-4);
+      const customerName = data?.customerName || 'Customer';
+      return `Updated Sale #${lastFourDigits} - ${customerName}`;
+    } else if (type === 'LOW_STOCK') {
+      const productName = data?.productName || 'Product';
+      const stock = data?.stock || '0';
+      return `Low Stock: ${productName} (${stock} units)`;
+    } else if (type === 'PRODUCT_CREATED') {
+      const productName = data?.productName || data?.name || message;
+      return `Stock create: ${productName}`;
+    } else if (type === 'PRODUCT_UPDATED') {
+      const productName = data?.productName || data?.name || message;
+      return `Stock update: ${productName}`;
+    }
+    return message;
+  };
+
+  const getActivityAmount = (notification: any) => {
+    const { type, data } = notification;
+
+    if (type === 'BILL_CREATED' || type === 'BILL_UPDATED') {
+      const amount = data?.totalAmount || 0;
+      return `₹ ${amount.toLocaleString('en-IN')}`;
+    } else if (type === 'LOW_STOCK') {
+      const stock = data?.stock || '0';
+      return `${stock} units`;
+    } else if (type === 'PRODUCT_UPDATED' || type === 'PRODUCT_CREATED') {
+      const quantity = data?.stock || data?.quantity || '';
+      if (type === 'PRODUCT_UPDATED' && quantity) {
+        return `${quantity} units`;
+      }
+      return quantity ? `+${quantity}` : '';
+    }
+    return '';
+  };
 
   return (
     <View style={styles.container}>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Overview */}
         <Text style={styles.sectionTitle}>📌 Overview</Text>
         <View style={styles.grid}>
           <View style={styles.card}>
@@ -34,7 +129,7 @@ export default function HomeScreen() {
             </Text>
             <Text style={styles.emoji}>💰</Text>
           </View>
-          <View style={styles.card}>
+          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('ProductList' , { allProducts: true } as never)}>
             <Text style={styles.cardLabel}>Total Stock</Text>
             <Text style={styles.cardValue}>
               {stockLoading ? (
@@ -44,8 +139,8 @@ export default function HomeScreen() {
               )}
             </Text>
             <Text style={styles.emoji}>📦</Text>
-          </View>
-          <View style={styles.card}>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('BillHistory', { filterPending: true })}>
             <Text style={styles.cardLabel}>Pending Payments (All Time)</Text>
             <Text style={styles.cardValue}>
               {isLoading ? (
@@ -55,7 +150,7 @@ export default function HomeScreen() {
               )}
             </Text>
             <Text style={styles.emoji}>⏳</Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.card}>
             <Text style={styles.cardLabel}>Recent Orders</Text>
             <Text style={styles.cardValue}>15 Orders</Text>
@@ -72,8 +167,9 @@ export default function HomeScreen() {
             <Text style={styles.quickTextPrimary}>New Bill</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickCard} 
+          onPress={() => navigation.navigate('ProductList' as never)}>
           
-          >
+          
             <Text style={styles.quickEmoji}>🏷️</Text>
             <Text style={styles.quickText}>View Products</Text>
           </TouchableOpacity>
@@ -81,43 +177,30 @@ export default function HomeScreen() {
 
         {/* Recent Activity */}
         <Text style={styles.sectionTitle}>🕒 Recent Activity</Text>
-        <View style={styles.activityItem}>
-          <Text style={styles.emoji}>🧾</Text>
-          <View style={styles.activityContent}>
-            <Text style={styles.activityText}>Sale #10234 to Mr. Sharma</Text>
-            <Text style={styles.activityTime}>10:30 AM</Text>
+        {notificationsLoading ? (
+          <ActivityIndicator size="large" color="#4A90E2" style={{ marginVertical: 20 }} />
+        ) : notifications.length > 0 ? (
+          notifications.map((notification) => (
+            <View key={notification._id} style={styles.activityItem}>
+              <Text style={styles.emoji}>{getNotificationEmoji(notification.type)}</Text>
+              <View style={styles.activityContent}>
+                <Text style={styles.activityText}>{getActivityText(notification)}</Text>
+              </View>
+              <View style={styles.activityRightContent}>
+                <Text style={styles.activityTime}>{formatDate(notification.createdAt)}</Text>
+                <Text style={styles.activityAmount}>{getActivityAmount(notification)}</Text>
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={styles.activityItem}>
+            <Text style={styles.emoji}>📭</Text>
+            <View style={styles.activityContent}>
+              <Text style={styles.activityText}>No notifications yet</Text>
+              <Text style={styles.activityTime}>Check back later</Text>
+            </View>
           </View>
-          <Text style={styles.activityAmount}>₹ 1,500</Text>
-        </View>
-
-        <View style={styles.activityItem}>
-          <Text style={styles.emoji}>📦</Text>
-          <View style={styles.activityContent}>
-            <Text style={styles.activityText}>Stock Update: Laptops</Text>
-            <Text style={styles.activityTime}>09:15 AM</Text>
-          </View>
-          <Text style={styles.activityAmount}>+5 Units</Text>
-        </View>
-
-        <View style={styles.activityItem}>
-          <Text style={styles.emoji}>💵</Text>
-          <View style={styles.activityContent}>
-            <Text style={styles.activityText}>
-              Payment Received from Mrs. Kaur
-            </Text>
-            <Text style={styles.activityTime}>09:45 AM</Text>
-          </View>
-          <Text style={styles.activityAmount}>₹ 800</Text>
-        </View>
-
-        <View style={styles.activityItem}>
-          <Text style={styles.emoji}>🧾</Text>
-          <View style={styles.activityContent}>
-            <Text style={styles.activityText}>Sale #10233 to Mr. Kumar</Text>
-            <Text style={styles.activityTime}>Yesterday</Text>
-          </View>
-          <Text style={styles.activityAmount}>₹ 2,200</Text>
-        </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -227,6 +310,10 @@ const styles = StyleSheet.create({
   activityContent: {
     flex: 1,
     marginLeft: 12,
+  },
+  activityRightContent: {
+    alignItems: "flex-end",
+    marginLeft: 10,
   },
   activityText: {
     fontSize: 15,

@@ -173,6 +173,16 @@ export default function BillHistoryScreen({ route }: any) {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+
+  // Handle filterPending param from HomeScreen
+  React.useEffect(() => {
+    if ((route.params as any)?.filterPending === true) {
+      setSelectedStatuses(['Pending']);
+      setActiveFilter('Status');
+      // Clear the param after using it
+      navigation.setParams({ filterPending: undefined } as any);
+    }
+  }, [(route.params as any)?.filterPending, navigation]);
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>(['Cash', 'Online']);
   const [expandedBillId, setExpandedBillId] = useState<string | null>(null);
 

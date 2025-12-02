@@ -215,6 +215,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['notifications', page, limit, isRead],
       queryFn: () => notificationsApi.list(page, limit, isRead),
+      refetchInterval: 10000, // Refetch every 10 seconds
     });
   };
 
@@ -335,7 +336,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['products', 'total-count'],
       queryFn: () => productsApi.getTotalCount(),
-      refetchInterval: 20000, // Refetch every 20 seconds
+      refetchInterval: 10000, // Refetch every 20 seconds
     });
   };
 
@@ -343,7 +344,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['products', 'total-stock'],
       queryFn: () => productsApi.getTotalStock(),
-      refetchInterval: 20000, // Refetch every 20 seconds
+      refetchInterval: 10000, // Refetch every 20 seconds
     });
   };
 

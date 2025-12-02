@@ -10,6 +10,7 @@ import { RootStackParamList } from './src/navigation/types';
 import ProfileStack from './src/navigation/ProfileStack';
 import AuthScreen from './src/screens/AuthScreen';
 import NotificationScreen from './src/screens/ProfileScreen/NotificationScreen';
+import Dashboard from './src/navigation/DashboardStack';
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => {
             />
             <Stack.Screen name="Profile" component={ProfileStack} />
             <Stack.Screen name="Notification" component={NotificationScreen} />
+            <Stack.Screen name="HomeScreen" component={Dashboard} />
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>
