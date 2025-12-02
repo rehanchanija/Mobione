@@ -320,7 +320,8 @@ export const useAuth = () => {
   const useBills = (page: number, limit: number) => {
     return useQuery({
       queryKey: ['bills', page, limit],
-      queryFn: () => billsApi.listPaged(page, limit)
+      queryFn: () => billsApi.listPaged(page, limit),
+      refetchInterval: 5000, // Refetch every 5 seconds
     });
   };
 

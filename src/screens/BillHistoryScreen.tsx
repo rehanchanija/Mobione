@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import {
   View,
@@ -12,7 +12,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -44,85 +44,58 @@ interface Bill {
 
 export default function BillHistoryScreen({ route }: any) {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const { billsApi } = useAuth();
+  const { useBills } = useAuth();
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [allBills, setAllBills] = useState<Bill[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isLoadingBills, setIsLoadingBills] = useState(false);
-  const [billsError, setBillsError] = useState<any>(null);
-  const [totalPages, setTotalPages] = useState(1);
 
-  // Fetch bills directly
-  const fetchBills = async (page: number) => {
-    try {
-      setIsLoadingBills(page === 1);
-      console.log(`� Fetching bills - page: ${page}, pageSize: ${pageSize}`);
+  // Use the useBills hook from useAuth
+  const { data: billsResponse, isLoading: isLoadingBills, error: billsQueryError, refetch: refetchBills } = useBills(currentPage, pageSize);
+  
+  const billsError = billsQueryError?.message || null;
+  const totalPages = billsResponse?.totalPages || 1;
+
+  // Update allBills when billsResponse changes
+  useEffect(() => {
+    console.log('📡 useBills hook triggered - page:', currentPage, 'pageSize:', pageSize);
+    
+    if (billsResponse?.bills && billsResponse.bills.length > 0) {
+      console.log('📦 Bills response:', billsResponse);
       
-      const response = await billsApi.listPaged(page, pageSize);
-      console.log('📦 Bills response:', response);
-      
-      if (response?.bills && response.bills.length > 0) {
-   
-        if (page === 1) {
-          setAllBills(response.bills);
-          console.log('✅ Set allBills to new data:', response.bills.length);
-        } else {
-          setAllBills(prevBills => {
-            const existingIds = new Set(prevBills.map((b: Bill) => b._id));
-            const newBills = response.bills.filter((b: Bill) => !existingIds.has(b._id));
-            console.log('➕ Appending new bills:', newBills.length);
-            return [...prevBills, ...newBills];
-          });
-        }
-        setTotalPages(response.totalPages || 1);
-        setBillsError(null);
-      } else {
-        console.log('⚠️ No bills in response');
-        if (page === 1) {
-          setAllBills([]);
-        }
-      }
-      
-      setIsLoadingMore(false);
-    } catch (error: any) {
-      console.error('❌ Error fetching bills:', error);
-      setBillsError(error?.response?.data?.message || error.message);
-      setIsLoadingMore(false);
       if (currentPage === 1) {
-        setIsLoadingBills(false);
-      }
-    }
-  };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('🔄 Screen focused - fetching bills');
-      const shouldRefresh = route.params?.refreshBills;
-      if (shouldRefresh) {
-        console.log('🔄 Refresh flag detected - reloading all bills');
-        setCurrentPage(1);
-        setAllBills([]);
-        fetchBills(1);
-        // Clear the refresh flag
-        navigation.setParams({ refreshBills: false });
+        // Initial load on page 1 - replace all bills
+        setAllBills(billsResponse.bills);
+        console.log('✅ Initial load - Set allBills to new data:', billsResponse.bills.length);
       } else {
-        setCurrentPage(1);
-        setAllBills([]);
-        fetchBills(1);
+        // Page > 1 (scroll pagination) - append new bills
+        setAllBills(prevBills => {
+          const existingIds = new Set(prevBills.map((b: Bill) => b._id));
+          const newBills = billsResponse.bills.filter((b: Bill) => !existingIds.has(b._id));
+          console.log('➕ Scroll pagination: Appending new bills:', newBills.length);
+          return [...prevBills, ...newBills];
+        });
       }
-    }, [route.params?.refreshBills])
-  );
-
-  // Fetch more bills when page changes (for infinite scroll)
-  React.useEffect(() => {
-    if (currentPage > 1) {
-      console.log('📄 Fetching next page:', currentPage);
-      fetchBills(currentPage);
+    } else {
+      console.log('⚠️ No bills in response');
+      if (currentPage === 1) {
+        setAllBills([]);
+      }
     }
-  }, [currentPage]);
+    setIsLoadingMore(false);
+  }, [billsResponse, currentPage]);
+
+  // Handle filterPending param from HomeScreen
+  useEffect(() => {
+    if ((route.params as any)?.filterPending === true) {
+      setSelectedStatuses(['Pending']);
+      setActiveFilter('Status');
+      // Clear the param after using it
+      navigation.setParams({ filterPending: undefined } as any);
+    }
+  }, [(route.params as any)?.filterPending, navigation]);
   
   // Transform bills data to include status
   const transformedBills = useMemo(() => {
@@ -142,10 +115,19 @@ export default function BillHistoryScreen({ route }: any) {
   
   // Set bills data
   const [billsData, setBillsData] = useState<Bill[]>([]);
+  const [newBillsCount, setNewBillsCount] = useState(0);
   
   // Update bills data when transformed bills change
   React.useEffect(() => {
     console.log('📊 Updating billsData with transformedBills:', transformedBills.length);
+    const oldCount = billsData.length;
+    const newCount = transformedBills.length;
+    if (newCount > oldCount && currentPage === 1) {
+      setNewBillsCount(newCount - oldCount);
+      console.log('✨ New bills detected:', newCount - oldCount);
+      // Auto-dismiss the notification after 3 seconds
+      setTimeout(() => setNewBillsCount(0), 3000);
+    }
     setBillsData(transformedBills);
   }, [transformedBills]);
   
@@ -174,15 +156,6 @@ export default function BillHistoryScreen({ route }: any) {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
-  // Handle filterPending param from HomeScreen
-  React.useEffect(() => {
-    if ((route.params as any)?.filterPending === true) {
-      setSelectedStatuses(['Pending']);
-      setActiveFilter('Status');
-      // Clear the param after using it
-      navigation.setParams({ filterPending: undefined } as any);
-    }
-  }, [(route.params as any)?.filterPending, navigation]);
   const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>(['Cash', 'Online']);
   const [expandedBillId, setExpandedBillId] = useState<string | null>(null);
 
@@ -444,14 +417,20 @@ export default function BillHistoryScreen({ route }: any) {
           style={styles.billList}
           onScroll={({ nativeEvent }) => {
             const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-            const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 100;
+            // Trigger fetch when user scrolls past 50% or within 150 pixels of bottom
+            const scrollPercentage = (contentOffset.y / (contentSize.height - layoutMeasurement.height)) * 100;
+            const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 150;
+            
+            console.log(`📍 Scroll: ${scrollPercentage.toFixed(0)}% | Close to bottom: ${isCloseToBottom}`);
             
             if (isCloseToBottom && !isLoadingMore && currentPage < totalPages) {
+              console.log('🚀 Triggering new page fetch from scroll');
               setIsLoadingMore(true);
               setCurrentPage(prev => prev + 1);
             }
           }}
-          scrollEventThrottle={16}
+          scrollEventThrottle={8}
+          showsVerticalScrollIndicator={true}
         >
           {processedBills.length > 0 ? (
             processedBills.map((bill) => {
@@ -574,7 +553,8 @@ export default function BillHistoryScreen({ route }: any) {
       {/* Loading indicator for infinite scroll */}
       {isLoadingMore && (
         <View style={styles.loadingMoreContainer}>
-          <Text style={styles.loadingMoreText}>Loading more bills...</Text>
+          <ActivityIndicator size="small" color="#0066FF" />
+          <Text style={styles.loadingMoreText}>📥 Fetching more bills...</Text>
         </View>
       )}
 
@@ -867,14 +847,23 @@ const styles = StyleSheet.create({
 
   // Infinite scroll loading indicator
   loadingMoreContainer: {
-    paddingVertical: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#F0F7FF',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BDE7FF',
+    flexDirection: 'row',
   },
   loadingMoreText: {
     fontSize: 14,
-    color: '#666666',
-    fontWeight: '500',
+    color: '#0066FF',
+    fontWeight: '600',
+    marginLeft: 12,
   },
 
   // View More/Less Buttons for Products
