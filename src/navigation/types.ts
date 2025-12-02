@@ -4,12 +4,12 @@ export type RootStackParamList = {
       AuthScreen: undefined;
       CreateProduct: undefined;
       Products: undefined;
-      ProductList: {
-        brand: { id: string; name: string; emoji: string };
-        products: any[];
-      };
+      Brand: undefined;
+      ProductList: { brand: { id: string; name: string; emoji: string };
+   products: { id: string; name: string; price: string; stock: string; status: "In Stock" | "Low Stock" | "Out of Stock"; image: any; emoji: string; brandId: string; quantity?: number }[]
+   };
       BillDetailsScreen: undefined;
-      BillHistory: { updatedBill?: any; refreshBills?: boolean };
+      BillHistory: { updatedBill?: any; refreshBills?: boolean; filterPending?: boolean };
       BillInvoice: { bill: { id: string; customerName: string; amount: number; status: 'Paid' | 'Pending'; date: string; paymentMethod: 'Cash' | 'Online'; advanceAmount?: number; pendingAmount?: number; } };
       Profile: undefined;
       SalesReport: undefined;
@@ -20,6 +20,7 @@ export type RootStackParamList = {
       HelpSupport: undefined;
       Notification: undefined;
       CreateProfile:undefined;
+      HomeScreen: undefined;
     };
 
     export type RootTabParamList = {

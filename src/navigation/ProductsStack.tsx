@@ -3,19 +3,16 @@ import ProductsScreen from "../screens/BrandScreen";
 import CreateProductScreen from "../screens/CreateProductScreen";
 import ProductListScreen from "../screens/ProductListScreen";
 import BrandScreen from "../screens/BrandScreen";
+import { RootStackParamList } from "./types";
 
-export type ProductsStackParamList = {
-  Products: undefined;
-  CreateProduct: undefined;
-  ProductList: { brand: { id: string; name: string; emoji: string }; products: { id: string; name: string; price: string; stock: string; status: "In Stock" | "Low Stock" | "Out of Stock"; image: any; emoji: string; brandId: string; quantity?: number }[] };
-};
 
-const Stack = createNativeStackNavigator<ProductsStackParamList>();
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function ProductsStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Products" component={BrandScreen}
+      <Stack.Screen name="Brand" component={BrandScreen}
     options={{
           headerShown: false, // 👈 hide default header
         }}
