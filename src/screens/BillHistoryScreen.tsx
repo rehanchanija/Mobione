@@ -550,11 +550,9 @@ export default function BillHistoryScreen({ route }: any) {
         )}
       </View>
 
-      {/* Loading indicator for infinite scroll */}
       {isLoadingMore && (
-        <View style={styles.loadingMoreContainer}>
+        <View style={{ padding: 12, alignItems: 'center' }}>
           <ActivityIndicator size="small" color="#0066FF" />
-          <Text style={styles.loadingMoreText}>📥 Fetching more bills...</Text>
         </View>
       )}
 

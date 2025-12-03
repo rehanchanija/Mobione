@@ -25,18 +25,6 @@ import { Alert } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
 
-
-
-// Bill hooks implementation
-// const useBill = (billId: string) => {
-//   return useQuery({
-//     queryKey: ['bills', billId],
-//     queryFn: () => billsApi.get(billId),
-//     enabled: !!billId,
-//   });
-// };
-
-// Brand hooks implementation
 const useBrands = () => {
   return useQuery({
     queryKey: ['brands'],
