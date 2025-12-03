@@ -447,13 +447,15 @@ filterChip: {
   alignItems: 'center',
   backgroundColor: '#F9FAFB',
   borderRadius: 10,
-  paddingHorizontal: 6, // ⬆️ increased padding
-  paddingVertical: 10,   // ⬆️ increased padding
-  borderWidth: 1.5,
+  paddingHorizontal: 10,
+  paddingVertical: 8,
+  borderWidth: 1.2,
   borderColor: '#E5E7EB',
-  marginRight: 12,       // ⬆️ more gap between filters
-  height: 42,            // ⬆️ taller filter chip
+  marginRight: 10,
+  height: 38,        // reduced height
+  maxWidth: 140,     // prevents oversized width
 },
+
 
   filterChipActive: {
     backgroundColor: '#EEF2FF',

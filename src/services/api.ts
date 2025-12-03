@@ -65,6 +65,10 @@ export interface DashboardTotals {
   totalPendingAmountAllTime: number;
 }
 
+export interface BillsCountResponse {
+  totalBills: number;
+}
+
 export interface ProductCountResponse {
   totalProducts: number;
 }
@@ -399,6 +403,10 @@ export const billsApi = {
   },
   getDashboardTotals: async (): Promise<DashboardTotals> => {
     const res = await api.get(`/bills/dashboard/totals`);
+    return res.data;
+  },
+  getTotalCount: async (): Promise<BillsCountResponse> => {
+    const res = await api.get<BillsCountResponse>(`/bills/total/count`);
     return res.data;
   },
 };

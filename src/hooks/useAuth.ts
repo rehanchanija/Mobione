@@ -321,6 +321,14 @@ export const useAuth = () => {
     });
   };
 
+  const useTotalBillsCount = () => {
+    return useQuery({
+      queryKey: ['bills', 'total-count'],
+      queryFn: () => billsApi.getTotalCount(),
+      refetchInterval: 10000,
+    });
+  };
+
   const useTotalProductsCount = () => {
     return useQuery({
       queryKey: ['products', 'total-count'],
@@ -398,6 +406,7 @@ export const useAuth = () => {
     // React Query hooks for bills
     useBills,
     useDashboardTotals,
+    useTotalBillsCount,
 
     // React Query hooks for notifications
     useNotifications,

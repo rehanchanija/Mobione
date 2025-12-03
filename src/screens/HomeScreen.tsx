@@ -16,10 +16,11 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { useDashboardTotals, useTotalStock, useNotifications } = useAuth();
+  const { useDashboardTotals, useTotalStock, useNotifications, useTotalBillsCount } = useAuth();
   const { data: totals, isLoading } = useDashboardTotals();
   const { data: stockData, isLoading: stockLoading } = useTotalStock();
   const { data: notificationsData, isLoading: notificationsLoading } = useNotifications(1, 5);
+  const { data: billsCountData, isLoading: billsCountLoading } = useTotalBillsCount();
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
@@ -152,8 +153,14 @@ export default function HomeScreen() {
             <Text style={styles.emoji}>⏳</Text>
           </TouchableOpacity>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Recent Orders</Text>
-            <Text style={styles.cardValue}>15 Orders</Text>
+            <Text style={styles.cardLabel}>Total Orders</Text>
+            <Text style={styles.cardValue}>
+              {billsCountLoading ? (
+                <ActivityIndicator size="small" color="#4A90E2" />
+              ) : (
+                `${billsCountData?.totalBills || 0} Bills`
+              )}
+            </Text>
             <Text style={styles.emoji}>🛒</Text>
           </View>
         </View>
