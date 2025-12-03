@@ -152,17 +152,17 @@ export default function HomeScreen() {
             </Text>
             <Text style={styles.emoji}>⏳</Text>
           </TouchableOpacity>
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>Total Orders</Text>
+          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('BillHistory' as never)}>
+            <Text style={styles.cardLabel}>Total Bills</Text>
             <Text style={styles.cardValue}>
               {billsCountLoading ? (
                 <ActivityIndicator size="small" color="#4A90E2" />
               ) : (
-                `${billsCountData?.totalBills || 0} Bills`
+                `${billsCountData?.totalBills || 0} Orders`
               )}
             </Text>
             <Text style={styles.emoji}>🛒</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Quick Actions */}
