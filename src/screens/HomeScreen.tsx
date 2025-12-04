@@ -1,4 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
+import { CompositeNavigationProp, useNavigation } from "@react-navigation/native";
 import React, { use, useState, useEffect } from "react";
 import {
   View,
@@ -10,9 +10,13 @@ import {
 } from "react-native";
 import { useAuth } from "../hooks/useAuth";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/types";
+import { RootStackParamList, RootTabParamList } from "../navigation/types";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<RootTabParamList>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -130,7 +134,10 @@ export default function HomeScreen() {
             </Text>
             <Text style={styles.emoji}>💰</Text>
           </View>
-          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('ProductList' , { allProducts: true } as never)}>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate('Products')}
+          >
             <Text style={styles.cardLabel}>Total Stock</Text>
             <Text style={styles.cardValue}>
               {stockLoading ? (
@@ -141,7 +148,15 @@ export default function HomeScreen() {
             </Text>
             <Text style={styles.emoji}>📦</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('BillHistory', { filterPending: true })}>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() =>
+              navigation.navigate('Bills',  {
+                screen: 'BillHistory',
+                params: { filterPending: true },
+              })
+            }
+          >
             <Text style={styles.cardLabel}>Pending Payments (All Time)</Text>
             <Text style={styles.cardValue}>
               {isLoading ? (
@@ -152,7 +167,15 @@ export default function HomeScreen() {
             </Text>
             <Text style={styles.emoji}>⏳</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('BillHistory' as never)}>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() =>
+              navigation.navigate('Bills', {
+                screen: 'BillHistory',
+                params: { filterPending: false },
+              })
+            }
+          >
             <Text style={styles.cardLabel}>Total Bills</Text>
             <Text style={styles.cardValue}>
               {billsCountLoading ? (
@@ -174,8 +197,8 @@ export default function HomeScreen() {
             <Text style={styles.quickTextPrimary}>New Bill</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickCard} 
-          onPress={() => navigation.navigate('ProductList' as never)}>
-          
+            onPress={() => navigation.navigate('Products')}
+>
           
             <Text style={styles.quickEmoji}>🏷️</Text>
             <Text style={styles.quickText}>View Products</Text>

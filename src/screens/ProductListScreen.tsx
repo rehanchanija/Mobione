@@ -48,8 +48,9 @@ const FilterTab = ({ title, emoji, isActive, onPress }: FilterTabProps) => (
 type ProductListScreenRouteProp = RouteProp<
   {
     ProductList: {
-      brand: Brand;
-      products: Product[];
+      brand?: Brand;
+      products?: Product[];
+      allProducts?: boolean;
     };
   },
   "ProductList"
@@ -58,7 +59,7 @@ type ProductListScreenRouteProp = RouteProp<
 export default function ProductListScreen() {
   const navigation = useNavigation();
   const route = useRoute<ProductListScreenRouteProp>();
-  const { brand } = route.params;
+  const { brand, allProducts } = route.params || {} as any;
   const { brandsApi, productsApi, categoriesApi } = useAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -117,14 +118,32 @@ export default function ProductListScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [prods, cats, stock] = await Promise.all([
-        brandsApi.products(brand.id),
-        categoriesApi.list(),
-        brandsApi.stockTotal(brand.id),
-      ]);
-      setProducts(prods as any);
-      setCategories(cats);
-      setBrandStockTotal(stock.stockTotal ?? 0);
+      if (allProducts) {
+        const [prods, cats] = await Promise.all([
+          productsApi.list(undefined, 1, 200),
+          categoriesApi.list(),
+        ]);
+        setProducts(prods as any);
+        setCategories(cats);
+        setBrandStockTotal(0);
+      } else if (brand && brand.id) {
+        const [prods, cats, stock] = await Promise.all([
+          brandsApi.products(brand.id),
+          categoriesApi.list(),
+          brandsApi.stockTotal(brand.id),
+        ]);
+        setProducts(prods as any);
+        setCategories(cats);
+        setBrandStockTotal(stock.stockTotal ?? 0);
+      } else {
+        const [prods, cats] = await Promise.all([
+          productsApi.list(undefined, 1, 200),
+          categoriesApi.list(),
+        ]);
+        setProducts(prods as any);
+        setCategories(cats);
+        setBrandStockTotal(0);
+      }
     } catch {
       Alert.alert('Error', 'Failed to load products/categories');
     } finally {
@@ -134,7 +153,7 @@ export default function ProductListScreen() {
 
   useEffect(() => {
     loadData();
-  }, [brand.id]);
+  }, [brand?.id, allProducts]);
 
   const handleCreateProduct = () => {
     setIsEditMode(false);
@@ -224,7 +243,12 @@ export default function ProductListScreen() {
           stock: Math.max(0, Number(productStock) + (parseInt(addStockQuantity) || 0)),
           categoryId: selectedCategoryId,
         };
-        const created = await brandsApi.createProduct(brand.id, createData);
+        const brandId = brand?.id;
+        if (!brandId) {
+          Alert.alert('Error', 'Brand is required to create a product');
+          return;
+        }
+        const created = await brandsApi.createProduct(brandId, createData);
         setProducts([created, ...products]);
         Alert.alert('Success', 'Product created successfully');
       }
@@ -258,7 +282,7 @@ export default function ProductListScreen() {
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{brand.name}</Text>
+          <Text style={styles.headerTitle}>{brand?.name || "All Products"}</Text>
           <View style={styles.stockBadge}>
             <Text style={styles.stockBadgeText}>📦 {brandStockTotal} units</Text>
           </View>

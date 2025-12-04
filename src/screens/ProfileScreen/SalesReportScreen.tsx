@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,96 +11,11 @@ import {
   Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../../hooks/useAuth';
 import { LineChart } from 'react-native-chart-kit'; 
-
-interface SalesData {
-  totalSales: number;
-  totalOrders: number;
-  averagePrice: number;
-  totalCustomers: number;
-  graphData: {
-    labels: string[];
-    datasets: number[];
-  };
-  trendingProducts: {
-    name: string;
-    sold: number;
-    revenue: number;
-  }[];
-}
-
-interface MockData {
-  daily: SalesData;
-  weekly: SalesData;
-  monthly: SalesData;
-  allTime: SalesData;
-}
 
 type FilterPeriod = 'daily' | 'weekly' | 'monthly' | 'allTime';
 
-// Mock data - Replace with actual data from your backend
-const mockData: MockData = {
-  daily: {
-    totalSales: 45250,
-    totalOrders: 12,
-    averagePrice: 3770,
-    totalCustomers: 10,
-    graphData: {
-      labels: ["9AM", "12PM", "3PM", "6PM", "9PM"],
-      datasets: [4500, 12000, 9000, 15000, 4750]
-    },
-    trendingProducts: [
-      { name: "iPhone 13", sold: 3, revenue: 210000 },
-      { name: "Samsung S21", sold: 2, revenue: 140000 },
-      { name: "AirPods Pro", sold: 4, revenue: 100000 },
-    ]
-  },
-  weekly: {
-    totalSales: 284750,
-    totalOrders: 85,
-    averagePrice: 3350,
-    totalCustomers: 65,
-    graphData: {
-      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      datasets: [45000, 38000, 65000, 42000, 49000, 35000, 10750]
-    },
-    trendingProducts: [
-      { name: "iPhone 13", sold: 15, revenue: 1050000 },
-      { name: "Samsung S21", sold: 12, revenue: 840000 },
-      { name: "AirPods Pro", sold: 20, revenue: 500000 },
-    ]
-  },
-  monthly: {
-    totalSales: 1245850,
-    totalOrders: 342,
-    averagePrice: 3643,
-    totalCustomers: 280,
-    graphData: {
-      labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-      datasets: [284750, 315000, 298000, 348100]
-    },
-    trendingProducts: [
-      { name: "iPhone 13", sold: 58, revenue: 4060000 },
-      { name: "Samsung S21", sold: 45, revenue: 3150000 },
-      { name: "AirPods Pro", sold: 85, revenue: 2125000 },
-    ]
-  },
-  allTime: {
-    totalSales: 15245850,
-    totalOrders: 4250,
-    averagePrice: 3587,
-    totalCustomers: 3200,
-    graphData: {
-      labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-      datasets: [2284750, 2515000, 2798000, 2348100, 2800000, 2500000]
-    },
-    trendingProducts: [
-      { name: "iPhone 13", sold: 580, revenue: 40600000 },
-      { name: "Samsung S21", sold: 450, revenue: 31500000 },
-      { name: "AirPods Pro", sold: 850, revenue: 21250000 },
-    ]
-  }
-};
 
 interface FilterTabProps {
   title: string;
@@ -136,12 +51,52 @@ const StatCard = ({ title, value, icon }: StatCardProps) => (
 const SalesReportScreen = () => {
   const navigation = useNavigation();
   const [activeFilter, setActiveFilter] = useState<FilterPeriod>('daily');
+  const { useSalesReport } = useAuth();
+
+  const timeFilter = useMemo(() => {
+    if (activeFilter === 'daily') return 'day';
+    if (activeFilter === 'weekly') return 'week';
+    if (activeFilter === 'monthly') return 'month';
+    return 'all';
+  }, [activeFilter]);
+  const { data: reportData } = useSalesReport(timeFilter as any);
 
   const handleBack = () => {
     navigation.goBack();
   };
 
-  const currentData = mockData[activeFilter];
+  const currentData = reportData || {
+    totalSales: 0,
+    totalOrders: 0,
+    averageOrderValue: 0,
+    totalCustomers: 0,
+    totalProductsSold: 0,
+    dailyStats: [],
+    topProducts: [],
+    timeFilter: 'all',
+  };
+
+  const chartLabels = useMemo(() => {
+    const stats = Array.isArray(currentData.dailyStats) ? currentData.dailyStats : [];
+    const labels = stats.map((d) => (d?.date ? String(d.date).slice(5) : ''));
+    if (labels.length < 2) {
+      // Ensure at least two points to avoid chartkit path Infinity
+      return [...labels, ''];
+    }
+    return labels;
+  }, [currentData.dailyStats]);
+
+  const chartValues = useMemo(() => {
+    const stats = Array.isArray(currentData.dailyStats) ? currentData.dailyStats : [];
+    const values = stats.map((d) => {
+      const v = Number(d?.sales ?? 0);
+      return Number.isFinite(v) ? v : 0;
+    });
+    if (values.length < 2) {
+      return [...values, 0];
+    }
+    return values;
+  }, [currentData.dailyStats]);
 
   const formatCurrency = (amount: number): string => {
     return '₹' + amount.toLocaleString('en-IN');
@@ -201,25 +156,26 @@ const SalesReportScreen = () => {
       >
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
-          <StatCard 
-            title="Total Sales" 
-            value={formatCurrency(currentData.totalSales)}
-            icon="💰"
-          />
+          <StatCard title="Total Sales" value={formatCurrency(currentData.totalSales)} icon="💰" />
           <StatCard 
             title="Total Orders" 
             value={currentData.totalOrders.toString()}
             icon="📦"
           />
           <StatCard 
-            title="Avg. Price" 
-            value={formatCurrency(currentData.averagePrice)}
+            title="Avg. Order" 
+            value={formatCurrency(currentData.averageOrderValue)}
             icon="💎"
           />
           <StatCard 
             title="Customers" 
             value={currentData.totalCustomers.toString()}
             icon="👥"
+          />
+          <StatCard 
+            title="Total Products" 
+            value={currentData.totalProductsSold.toString()}
+            icon="🏷️"
           />
         </View>
 
@@ -228,10 +184,8 @@ const SalesReportScreen = () => {
           <Text style={styles.graphTitle}>Sales Overview</Text>
           <LineChart
             data={{
-              labels: currentData.graphData.labels,
-              datasets: [{
-                data: currentData.graphData.datasets
-              }]
+              labels: chartLabels,
+              datasets: [{ data: chartValues }]
             }}
             width={Dimensions.get('window').width - 48}
             height={220}
@@ -262,16 +216,16 @@ const SalesReportScreen = () => {
         {/* Trending Products */}
         <View style={styles.trendingSection}>
           <Text style={styles.trendingTitle}>Trending Products 🔥</Text>
-          {currentData.trendingProducts.map((product, index) => (
+          {currentData.topProducts.map((product, index) => (
             <View key={index} style={styles.trendingItem}>
               <View style={styles.trendingLeft}>
                 <Text style={styles.trendingRank}>#{index + 1}</Text>
-                <Text style={styles.trendingName}>{product.name}</Text>
+                <Text style={styles.trendingName}>{product.name || 'Unknown'}</Text>
               </View>
               <View style={styles.trendingRight}>
-                <Text style={styles.trendingSold}>{product.sold} sold</Text>
+                <Text style={styles.trendingSold}>{product.quantity} sold</Text>
                 <Text style={styles.trendingRevenue}>
-                  {formatCurrency(product.revenue)}
+                  {formatCurrency(product.revenue || 0)}
                 </Text>
               </View>
             </View>

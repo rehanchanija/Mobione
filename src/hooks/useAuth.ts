@@ -17,7 +17,8 @@ import {
   DashboardTotals,
   ProductCountResponse,
   TotalStockResponse,
-  api
+  api,
+  getSalesReport
 } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -345,6 +346,14 @@ export const useAuth = () => {
     });
   };
 
+  const useSalesReport = (timeFilter: 'day' | 'week' | 'month' | 'all') => {
+    return useQuery({
+      queryKey: ['sales-report', timeFilter],
+      queryFn: () => getSalesReport(timeFilter),
+      refetchInterval: 10000,
+    });
+  };
+
   const logout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('refreshToken');
@@ -402,6 +411,7 @@ export const useAuth = () => {
     deleteProductMutation,
     useTotalProductsCount,
     useTotalStock,
+    useSalesReport,
 
     // React Query hooks for bills
     useBills,

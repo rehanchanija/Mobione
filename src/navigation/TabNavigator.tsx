@@ -22,8 +22,7 @@ const getEmojiIcon = (route: keyof RootTabParamList) => {
       return "🧾";
     case "Bills":
       return "📑";
- 
-    default:
+     default:
       return "❓";
   }
 };

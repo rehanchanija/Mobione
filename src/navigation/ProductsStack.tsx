@@ -11,7 +11,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function ProductsStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator initialRouteName="Brand">
       <Stack.Screen name="Brand" component={BrandScreen}
     options={{
           headerShown: false, // 👈 hide default header

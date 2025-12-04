@@ -1,3 +1,5 @@
+import { NavigatorScreenParams } from '@react-navigation/native';
+
 export type RootStackParamList = {
       Splash: undefined;
       MainTabs: undefined;
@@ -5,9 +7,11 @@ export type RootStackParamList = {
       CreateProduct: undefined;
       Products: undefined;
       Brand: undefined;
-      ProductList: { brand: { id: string; name: string; emoji: string };
-   products: { id: string; name: string; price: string; stock: string; status: "In Stock" | "Low Stock" | "Out of Stock"; image: any; emoji: string; brandId: string; quantity?: number }[]
-   };
+      ProductList: {
+        brand?: { id: string; name: string; emoji: string };
+        products?: { id: string; name: string; price: string; stock: string; status: "In Stock" | "Low Stock" | "Out of Stock"; image: any; emoji: string; brandId: string; quantity?: number }[];
+        allProducts?: boolean;
+      };
       BillDetailsScreen: undefined;
       BillHistory: { updatedBill?: any; refreshBills?: boolean; filterPending?: boolean };
       BillInvoice: { bill: { id: string; customerName: string; amount: number; status: 'Paid' | 'Pending'; date: string; paymentMethod: 'Cash' | 'Online'; advanceAmount?: number; pendingAmount?: number; } };
@@ -25,12 +29,10 @@ export type RootStackParamList = {
 
     export type RootTabParamList = {
       Home: undefined;
-      Products: undefined;
-      Bills: undefined;
+      Products: NavigatorScreenParams<RootStackParamList> | undefined;
+      Bills: NavigatorScreenParams<RootStackParamList> | undefined;
       Billing: undefined;
       Transactions: undefined;
-      
-
     };
     
 

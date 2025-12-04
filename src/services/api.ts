@@ -15,6 +15,7 @@ export interface SalesReportData {
   totalOrders: number;
   averageOrderValue: number;
   totalCustomers: number;
+  totalProductsSold: number;
   dailyStats: {
     date: string;
     sales: number;
