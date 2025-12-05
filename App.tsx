@@ -11,6 +11,8 @@ import ProfileStack from './src/navigation/ProfileStack';
 import AuthScreen from './src/screens/AuthScreen';
 import NotificationScreen from './src/screens/ProfileScreen/NotificationScreen';
 import Dashboard from './src/navigation/DashboardStack';
+import FlashMessage from "react-native-flash-message";
+
 
 const queryClient = new QueryClient();
 
@@ -45,7 +47,9 @@ const App = () => {
             <Stack.Screen name="Notification" component={NotificationScreen} />
             <Stack.Screen name="HomeScreen" component={Dashboard} />
           </Stack.Navigator>
+
         </NavigationContainer>
+                <FlashMessage position="top" style={{ margin: 20,marginTop:80 ,borderRadius:10, }} />
       </AuthProvider>
     </QueryClientProvider>
   );

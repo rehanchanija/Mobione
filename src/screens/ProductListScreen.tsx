@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  Alert,
   ScrollView,
 } from "react-native";
 import { PermissionsAndroid, Platform, Linking } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
+import { showMessage } from "react-native-flash-message";
+import { Alert } from "react-native";
 
 interface Product {
   _id: string;
@@ -232,7 +233,7 @@ export default function ProductListScreen() {
         
         const updated = await productsApi.update(editingProduct._id, updateData);
         setProducts(products.map(p => (p._id === editingProduct._id ? updated : p)));
-        Alert.alert('Success', 'Product updated successfully');
+        showMessage({ message: 'Product updated', description: 'Product updated successfully', type: 'success' });
       } else {
         // For create mode: always include stock
         const createData = {
@@ -245,16 +246,16 @@ export default function ProductListScreen() {
         };
         const brandId = brand?.id;
         if (!brandId) {
-          Alert.alert('Error', 'Brand is required to create a product');
+          showMessage({ message: 'Brand required', description: 'Select a brand to create product', type: 'warning' });
           return;
         }
         const created = await brandsApi.createProduct(brandId, createData);
         setProducts([created, ...products]);
-        Alert.alert('Success', 'Product created successfully');
+        showMessage({ message: 'Product created', description: 'Product created successfully', type: 'success' });
       }
       setIsProductModalVisible(false);
     } catch {
-      Alert.alert('Error', isEditMode ? 'Failed to update product' : 'Failed to create product');
+      showMessage({ message: 'Error', description: isEditMode ? 'Failed to update product' : 'Failed to create product', type: 'danger' });
     }
   };
 

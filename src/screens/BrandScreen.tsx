@@ -1,17 +1,18 @@
   import React, { useEffect, useState } from "react";
-  import {
-    View,
-    Text,
-    StyleSheet,
-    FlatList,
-    Image,
-    TouchableOpacity,
-    Modal,
-    TextInput,
-    Alert,
-    RefreshControl,
-    ActivityIndicator,
-  } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
+  RefreshControl,
+  ActivityIndicator,
+} from "react-native";
+import { showMessage } from 'react-native-flash-message';
   import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";    
             import { NativeStackNavigationProp } from "@react-navigation/native-stack";
   import { BillingStackParamList } from "../navigation/BillingStack";
@@ -80,7 +81,7 @@
         );
         setBrands(withTotals);
       } catch (e) {
-        Alert.alert("Error", "Failed to load brands");
+        showMessage({ message: 'Failed to load brands', type: 'danger' });
       } finally {
         setLoading(false);
       }
@@ -112,7 +113,7 @@
         }));
         setProducts(mapped);
       } catch (e) {
-        Alert.alert("Error", "Failed to load products");
+        showMessage({ message: 'Failed to load products', type: 'danger' });
       } finally {
         setLoading(false);
       }
@@ -167,14 +168,15 @@
           {
             text: "Delete",
             style: "destructive",
-            onPress: async () => {
-              try {
-                await brandsApi.remove(brand._id);
-                setBrands(brands.filter(b => b._id !== brand._id));
-              } catch {
-                Alert.alert("Error", "Failed to delete brand");
-              }
-            },
+          onPress: async () => {
+            try {
+              await brandsApi.remove(brand._id);
+              setBrands(brands.filter(b => b._id !== brand._id));
+              showMessage({ message: 'Brand deleted', type: 'success' });
+            } catch {
+              showMessage({ message: 'Failed to delete brand', type: 'danger' });
+            }
+          },
           },
         ]
       );
@@ -182,7 +184,7 @@
 
     const handleSaveBrand = async () => {
       if (!brandName.trim()) {
-        Alert.alert("Error", "Please enter brand name");
+        showMessage({ message: 'Please enter brand name', type: 'warning' });
         return;
       }
 
@@ -195,7 +197,7 @@
           setBrands([...brands, created]);
         }
       } catch {
-        Alert.alert("Error", editingBrand ? "Failed to update brand" : "Failed to create brand");
+        showMessage({ message: editingBrand ? 'Failed to update brand' : 'Failed to create brand', type: 'danger' });
         return;
       }
 
