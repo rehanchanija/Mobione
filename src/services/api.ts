@@ -1,13 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 
-// ✅ Safer BASE_URL handling
-const BASE_URL =
-  Platform.OS === 'android'
-    ? 'http://192.168.29.69:3000'
-    : 'http://172.16.56.71:3000';
-
+// const BASE_URL = 'https://mobi-one-backend.vercel.app/api'
+const BASE_URL = 'http://192.168.29.69:3000/api'
 export type TimeFilterType = 'day' | 'week' | 'month' | 'all';
 
 export interface SalesReportData {
@@ -167,6 +162,7 @@ export const authApi = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     try {
       const response = await api.post('/auth/login', data);
+      
       const raw = response.data as any;
       const token = raw?.token || raw?.access_token;
 
