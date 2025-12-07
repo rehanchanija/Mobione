@@ -216,7 +216,7 @@ const SalesReportScreen = () => {
         {/* Trending Products */}
         <View style={styles.trendingSection}>
           <Text style={styles.trendingTitle}>Trending Products 🔥</Text>
-          {currentData.topProducts.slice(0, 5).map((product, index) => (
+          {currentData.topProducts.map((product, index) => (
             <View key={index} style={styles.trendingItem}>
               <View style={styles.trendingLeft}>
                 <Text style={styles.trendingRank}>#{index + 1}</Text>

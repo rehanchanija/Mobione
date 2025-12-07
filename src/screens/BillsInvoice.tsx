@@ -11,11 +11,14 @@ import {
   ActivityIndicator,
   Platform,
   PermissionsAndroid,
+  TextInput,
+  Linking,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import Share from 'react-native-share';
+import { showMessage } from 'react-native-flash-message';
 import { useAuth } from '../hooks/useAuth';
 import { billsApi } from '../services/api';
 import RNFS from 'react-native-fs';
@@ -65,12 +68,106 @@ export default function BillsInvoice() {
   const finalAmount = afterDiscount - advanceAmount;
   const pendingAmount = finalAmount > 0 ? finalAmount : 0;
   const status = pendingAmount <= 0 ? 'Paid' : bill.status;
+  const [reminderLanguage, setReminderLanguage] = useState('english');
 
   const [showSettlementInfo, setShowSettlementInfo] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
   const [isUpdatingBill, setIsUpdatingBill] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState('');
+
+ 
+  const generateReminderMessage = (language: 'hindi' | 'english') => {
+    const due = new Date();
+    due.setDate(due.getDate() + 3);
+    const dueStr = due.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    
+    if (language === 'hindi') {
+      return `🔔 *भुगतान अनुस्मारक*
+
+प्रिय *${bill.customerName}*,
+
+यह आपके लंबित भुगतान के बारे में एक सौम्य अनुस्मारक है:
+
+📋 *बिल विवरण:*
+• बिल नंबर: #${bill.billNumber || bill.id}
+• तिथि: ${bill.date}
+
+💰 *भुगतान सारांश:*
+• कुल राशि: ₹${subtotal.toFixed(2)}
+• दिया गया भुगतान: ₹${advanceAmount.toFixed(2)}
+• *बाकी राशि: ₹${pendingAmount.toFixed(2)}*
+
+⏰ *अंतिम तिथि:* ${dueStr}
+
+कृपया शेष भुगतान जल्द से जल्द पूरा करें।
+
+यदि आपके कोई प्रश्न हैं, तो आप बेझिझक हमसे संपर्क कर सकते हैं।
+
+आपके व्यापार के लिए धन्यवाद! 🙏
+
+सादर,
+*${profile?.shopName || 'हमारी दुकान'}*
+${profile?.phone ? `📞 ${profile.phone}` : ''}`;
+    } else {
+      return `🔔 *Payment Reminder*
+
+Dear *${bill.customerName}*,
+
+This is a friendly reminder regarding your pending payment:
+
+📋 *Bill Details:*
+• Bill No: #${bill.billNumber || bill.id}
+• Date: ${bill.date}
+
+💰 *Payment Summary:*
+• Total Amount: ₹${subtotal.toFixed(2)}
+• Amount Paid: ₹${advanceAmount.toFixed(2)}
+• *Pending Amount: ₹${pendingAmount.toFixed(2)}*
+
+⏰ *Due Date:* ${dueStr}
+
+Please clear the pending amount at your earliest convenience.
+
+For any queries, feel free to contact us.
+
+Thank you for your business! 🙏
+
+Best regards,
+*${profile?.shopName || 'Our Shop'}*
+${profile?.phone ? `📞 ${profile.phone}` : ''}`;
+    }
+  };
+
+  const openReminderModal = () => {
+    const msg = generateReminderMessage('hindi');
+    setReminderMessage(msg);
+    setReminderLanguage('hindi');
+    setShowReminderModal(true);
+  };
+
+   const sendWhatsAppReminder = async () => {
+    try {
+      const text = encodeURIComponent(reminderMessage || '');
+      const rawPhone = String(bill.customerPhone || '').replace(/\D/g, '');
+      let phone = rawPhone;
+      if (/^\d{10}$/.test(rawPhone)) phone = `91${rawPhone}`;
+      const waUrlScheme = phone ? `whatsapp://send?phone=${phone}&text=${text}` : `whatsapp://send?text=${text}`;
+      const waWebUrl = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
+      const canOpen = await Linking.canOpenURL('whatsapp://send');
+      if (canOpen) {
+        await Linking.openURL(waUrlScheme);
+      } else {
+        await Linking.openURL(waWebUrl);
+      }
+      setShowReminderModal(false);
+      showMessage({ message: 'Opening WhatsApp', type: 'info' });
+    } catch (e) {
+      showMessage({ message: 'Failed to open WhatsApp', type: 'danger' });
+    }
+  };
 
   const handleMarkAsPaid = async () => {
     try {
@@ -526,11 +623,19 @@ export default function BillsInvoice() {
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Status:</Text>
-              <View style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
-                <Text style={getStatusTextStyle(status)}>
-                  {getStatusEmoji(status)} {status}
-                </Text>
-              </View>
+              {status === 'Pending' ? (
+                <TouchableOpacity onPress={openReminderModal} style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
+                  <Text style={getStatusTextStyle(status)}>
+                    {getStatusEmoji(status)} {status}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
+                  <Text style={getStatusTextStyle(status)}>
+                    {getStatusEmoji(status)} {status}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -709,11 +814,19 @@ export default function BillsInvoice() {
                   </View>
                   <View style={styles.row}>
                     <Text style={styles.label}>Status:</Text>
-                    <View style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
-                      <Text style={getStatusTextStyle(status)}>
-                        {getStatusEmoji(status)} {status}
-                      </Text>
-                    </View>
+                    {status === 'Pending' ? (
+                      <TouchableOpacity onPress={openReminderModal} style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
+                        <Text style={getStatusTextStyle(status)}>
+                          {getStatusEmoji(status)} {status}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
+                        <Text style={getStatusTextStyle(status)}>
+                          {getStatusEmoji(status)} {status}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 </View>
 
@@ -892,6 +1005,68 @@ export default function BillsInvoice() {
             >
               <Text style={styles.closeBottomButtonText}>Close</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Pending Reminder Modal */}
+      <Modal
+        visible={showReminderModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowReminderModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>💬 WhatsApp Reminder</Text>
+              <TouchableOpacity onPress={() => setShowReminderModal(false)} style={styles.closeButton}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ maxHeight: 400, padding: 16 }}>
+              <View style={styles.langToggle}>
+                <TouchableOpacity
+                  style={[styles.langBtn, reminderLanguage === 'english' && styles.langBtnActive]}
+                  onPress={() => {
+                    setReminderLanguage('english');
+                    setReminderMessage(generateReminderMessage('english'));
+                  }}
+                >
+                  <Text style={[styles.langBtnText, reminderLanguage === 'english' && styles.langBtnTextActive]}>English</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.langBtn, reminderLanguage === 'hindi' && styles.langBtnActive]}
+                  onPress={() => {
+                    setReminderLanguage('hindi');
+                    setReminderMessage(generateReminderMessage('hindi'));
+                  }}
+                >
+                  <Text style={[styles.langBtnText, reminderLanguage === 'hindi' && styles.langBtnTextActive]}>हिंदी</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={{ fontWeight: '700', marginBottom: 8 }}>Message</Text>
+              <TextInput
+                style={styles.reminderInput}
+                value={reminderMessage}
+                onChangeText={setReminderMessage}
+                multiline
+                numberOfLines={8}
+                placeholder="Type your reminder message"
+                textAlignVertical="top"
+              />
+              <View style={{ marginTop: 8 }}>
+                <Text style={{ color: '#6B7280' }}>Will be sent to: {bill.customerPhone || 'No phone number'}</Text>
+              </View>
+            </ScrollView>
+            <View style={styles.reminderButtonRow}>
+              <TouchableOpacity style={[styles.reminderBtn, { backgroundColor: '#F3F4F6' }]} onPress={() => setShowReminderModal(false)}>
+                <Text style={{ fontWeight: '700', color: '#374151' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.reminderBtn, styles.reminderPrimary]} onPress={sendWhatsAppReminder}>
+                <Text style={{ fontWeight: '700', color: '#FFF' }}>Next</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -1301,5 +1476,57 @@ const styles = StyleSheet.create({
     color: '#0066FF',
     fontWeight: '700',
     fontSize: 14,
+  },
+  reminderInput: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 140,
+    fontSize: 14,
+    color: '#111827',
+    backgroundColor: '#FAFAFA',
+  },
+  reminderButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+  },
+  reminderBtn: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+    marginHorizontal: 6,
+    alignItems: 'center',
+  },
+  reminderPrimary: { backgroundColor: '#22C55E' },
+  langToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  langBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F5F5F5',
+    marginRight: 8,
+  },
+  langBtnActive: {
+    backgroundColor: '#EEF2FF',
+    borderColor: '#818CF8',
+  },
+  langBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#374151',
+  },
+  langBtnTextActive: {
+    color: '#4F46E5',
   },
 });

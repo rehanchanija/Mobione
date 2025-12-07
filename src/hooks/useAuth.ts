@@ -12,17 +12,12 @@ import {
   customersApi,
   billsApi,
   notificationsApi,
-  Notification,
-  NotificationsResponse,
-  DashboardTotals,
-  ProductCountResponse,
-  TotalStockResponse,
   api,
   getSalesReport
 } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { Alert } from 'react-native';
+import { showMessage } from 'react-native-flash-message';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
 
@@ -297,11 +292,11 @@ export const useAuth = () => {
     onSuccess: (data) => {
       // Update profile in cache
       queryClient.setQueryData(['profile'], data);
-      Alert.alert('Success', 'Profile updated successfully');
+      showMessage({ message: 'Profile updated successfully', type: 'success' });
     },
     onError: (error: any) => {
       const message = error.response?.data?.message || 'Failed to update profile';
-      Alert.alert('Error', message);
+      showMessage({ message: message, type: 'danger' });
     },
   });
 

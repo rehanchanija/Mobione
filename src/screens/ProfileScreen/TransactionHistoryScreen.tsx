@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   TextInput,
   ScrollView,
-  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
@@ -20,17 +19,19 @@ import { useAuth } from '../../hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { transactionsApi, TransactionDto } from '../../services/api';
 import { format } from 'date-fns';
+import { useFlashMessage, FlashMessageContainer } from './FlashMessage';
 
 type TransactionItem = TransactionDto;
 
 const TransactionHistoryScreen = () => {
   const navigation = useNavigation<any>();
+  const { messages, dismissMessage, showSuccess, showError, showInfo } = useFlashMessage();
   const { } = useAuth();
-  const { data: txRes, isLoading, refetch, error } = useQuery({
+  const { data, isLoading, refetch, error } = useQuery({
     queryKey: ['transactions', 1, 50],
     queryFn: () => transactionsApi.list(1, 50),
   });
-  const transactions: TransactionItem[] = txRes?.transactions || [];
+  const transactions: TransactionItem[] = data?.transactions || [];
 
   const [searchCustomer, setSearchCustomer] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<'All' | 'Paid' | 'Pending'>('All');
@@ -38,7 +39,7 @@ const TransactionHistoryScreen = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-
+ 
   const filteredTransactions = useMemo(() => {
     const normalize = (s?: string) => (s || '').toLowerCase();
 
@@ -64,44 +65,29 @@ const TransactionHistoryScreen = () => {
     setEndDate(null);
     setSearchCustomer('');
     setPaymentStatus('All');
+    showInfo('All filters cleared', 'Filters Reset');
   };
 
   const hasActiveFilters = startDate || endDate || searchCustomer || paymentStatus !== 'All';
 
   const handleDeleteTransaction = async (id: string) => {
-    Alert.alert('Delete Transaction', 'Are you sure you want to delete this transaction?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await transactionsApi.remove(id);
-            await refetch();
-          } catch (e) {
-            Alert.alert('Error', 'Failed to delete transaction');
-          }
-        },
-      },
-    ]);
+    try {
+      await transactionsApi.remove(id);
+      await refetch();
+      showSuccess('Transaction deleted', 'Deleted');
+    } catch (e) {
+      showError('Failed to delete transaction', 'Error');
+    }
   };
 
-  const handleClearAllTransactions = () => {
-    Alert.alert('Clear All Transactions', 'Are you sure you want to delete all transactions?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await transactionsApi.removeAll();
-            await refetch();
-          } catch (e) {
-            Alert.alert('Error', 'Failed to clear transactions');
-          }
-        },
-      },
-    ]);
+  const handleClearAllTransactions = async () => {
+    try {
+      await transactionsApi.removeAll();
+      await refetch();
+      showSuccess('All transactions cleared', 'Success');
+    } catch (e) {
+      showError('Failed to clear transactions', 'Error');
+    }
   };
 
   const renderBill = ({ item }: { item: TransactionItem }) => (
@@ -175,9 +161,11 @@ const TransactionHistoryScreen = () => {
   }
 
   if (error) {
+    showError('Failed to load transactions. Please try again.', 'Error');
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+        <FlashMessageContainer messages={messages} onDismiss={dismissMessage} />
         <View style={styles.container}>
           <View style={styles.errorCard}>
             <Text style={styles.errorEmoji}>⚠️</Text>
@@ -268,6 +256,8 @@ const TransactionHistoryScreen = () => {
             if (paymentStatus === 'All') setPaymentStatus('Paid');
             else if (paymentStatus === 'Paid') setPaymentStatus('Pending');
             else setPaymentStatus('All');
+            const count = filteredTransactions.length;
+            showInfo(`Showing ${count} transactions`, 'Filter Applied');
           }}
           style={[
             styles.filterChip,
@@ -361,14 +351,21 @@ const TransactionHistoryScreen = () => {
           refreshControl={
             <RefreshControl 
               refreshing={!!isLoading} 
-              onRefresh={refetch}
+              onRefresh={async () => {
+                try {
+                  await refetch();
+                  showSuccess('Transactions refreshed', 'Updated');
+                } catch (err) {
+                  showError('Failed to refresh transactions', 'Error');
+                }
+              }}
               tintColor="#6366F1"
               colors={['#6366F1']}
             />
           }
-        />
-      )}
-    </SafeAreaView>
+      />
+    )}
+  </SafeAreaView>
   );
 };
 
@@ -733,3 +730,4 @@ filterChip: {
 });
 
 export default TransactionHistoryScreen;
+
