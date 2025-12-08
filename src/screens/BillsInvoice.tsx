@@ -22,6 +22,8 @@ import { showMessage } from 'react-native-flash-message';
 import { useAuth } from '../hooks/useAuth';
 import { billsApi } from '../services/api';
 import RNFS from 'react-native-fs';
+// @ts-ignore
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
 
 interface BillsInvoiceProps {
   route: {
@@ -492,33 +494,38 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         </html>
       `;
 
-      const fileName = `Bill_${bill.billNumber || bill.id}.html`;
-      const filePath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+      const fileName = `Bill_${bill.billNumber || bill.id}.pdf`;
       
-      // Save HTML file instead of PDF
-      await RNFS.writeFile(filePath, html, 'utf8');
-      
-      console.log('✅ Invoice generated at:', filePath);
-      
-      // Share the file
-      try {
-        await Share.open({
-          url: `file://${filePath}`,
-          filename: fileName,
-          title: `Bill ${bill.billNumber || bill.id}`,
-          message: `Your invoice has been generated`,
-          failOnCancel: false,
-        });
-      } catch (shareError) {
-        console.log('Share cancelled or failed, file is still saved');
-      }
-      
-      showMessage({ 
-        message: '✅ Invoice Saved Successfully', 
-        description: `File saved to Downloads folder`,
-        type: 'success',
-        duration: 3
+      // Generate PDF using react-native-html-to-pdf
+      const pdfResult = await RNHTMLtoPDF.convert({
+        html,
+        fileName: fileName.replace('.pdf', ''),
+        directory: 'Documents',
+        width: 595,
+        height: 842,
       });
+
+      if (pdfResult.filePath) {
+        console.log('✅ PDF generated at:', pdfResult.filePath);
+        
+        // Copy to Downloads folder as well
+        const downloadPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+        try {
+          await RNFS.copyFile(pdfResult.filePath, downloadPath);
+          console.log('✅ PDF copied to Downloads:', downloadPath);
+        } catch (copyError) {
+          console.warn('Could not copy to Downloads, but file is saved in Documents');
+        }
+        
+        showMessage({ 
+          message: '✅ Invoice Downloaded Successfully', 
+          description: `${fileName}`,
+          type: 'success',
+          duration: 3
+        });
+      } else {
+        throw new Error('Failed to generate PDF');
+      }
 
       setIsGeneratingPdf(false);
     } catch (error: any) {
@@ -528,6 +535,323 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
       Alert.alert(
         'PDF Download Failed',
         `Error: ${error.message || 'Unknown error'}\n\nTroubleshooting:\n• Check storage permissions\n• Ensure packages are installed\n• Try restarting the app`,
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const shareInvoice = async (): Promise<void> => {
+    try {
+      console.log('📤 Sharing invoice...');
+
+      const itemsHtml = bill.items
+        .map((item: any, index: number) => {
+          const name = item?.name ?? item?.product?.name ?? 'Unknown Product';
+          const qty = item?.quantity ?? 0;
+          const price = item?.price ?? 0;
+          const total = qty * price;
+          return `
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #e5e5e5;">${index + 1}. ${name}</td>
+              <td style="padding: 10px; text-align: center; border-bottom: 1px solid #e5e5e5;">${qty}</td>
+              <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e5e5e5;">₹${price.toFixed(2)}</td>
+              <td style="padding: 10px; text-align: right; border-bottom: 1px solid #e5e5e5; font-weight: 600;">₹${total.toFixed(2)}</td>
+            </tr>
+          `;
+        })
+        .join('');
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Courier New', monospace; 
+              padding: 30px; 
+              background: #fff;
+              color: #000;
+              line-height: 1.4;
+            }
+            .container {
+              max-width: 800px;
+              margin: 0 auto;
+              border: 2px solid #000;
+              padding: 25px;
+            }
+            .share-icon {
+              text-align: center;
+              font-size: 32px;
+              margin-bottom: 15px;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #000;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
+            }
+            .shop-name {
+              font-size: 24px;
+              font-weight: bold;
+              color: #000;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+            }
+            .shop-details {
+              font-size: 12px;
+              color: #000;
+              margin: 3px 0;
+            }
+            .section {
+              margin: 20px 0;
+            }
+            .section-title {
+              font-size: 14px;
+              font-weight: bold;
+              color: #000;
+              margin-bottom: 10px;
+              padding-bottom: 5px;
+              border-bottom: 1px solid #000;
+              text-transform: uppercase;
+            }
+            .info-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 6px 0;
+              font-size: 12px;
+            }
+            .info-label {
+              font-weight: bold;
+              color: #000;
+            }
+            .info-value {
+              font-weight: normal;
+              color: #000;
+            }
+            .status-badge {
+              display: inline-block;
+              padding: 3px 8px;
+              border: 1px solid #000;
+              font-size: 11px;
+              font-weight: bold;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 15px 0;
+              border: 1px solid #000;
+            }
+            th {
+              background: #000;
+              color: #fff;
+              padding: 8px;
+              text-align: left;
+              font-weight: bold;
+              font-size: 12px;
+              border: 1px solid #000;
+            }
+            td {
+              padding: 8px;
+              border: 1px solid #000;
+              font-size: 11px;
+            }
+            .amount-section {
+              border: 2px solid #000;
+              padding: 15px;
+              margin: 20px 0;
+            }
+            .amount-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 5px 0;
+              font-size: 12px;
+            }
+            .amount-row.total {
+              border-top: 2px solid #000;
+              margin-top: 8px;
+              padding-top: 10px;
+              font-size: 16px;
+              font-weight: bold;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 30px;
+              padding-top: 15px;
+              border-top: 2px solid #000;
+            }
+            .footer-text {
+              font-size: 14px;
+              font-weight: bold;
+              color: #000;
+              margin-bottom: 8px;
+            }
+            .footer-note {
+              font-size: 10px;
+              color: #000;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="share-icon">📤</div>
+            
+            <div class="header">
+              <div class="shop-name">${profile?.shopName || shop.name}</div>
+              <div class="shop-details">Owner: ${profile?.name || shop.owner}</div>
+              ${profile?.phone ? `<div class="shop-details">Phone: ${profile.phone}</div>` : ''}
+              ${profile?.shopDetails ? `<div class="shop-details">${profile.shopDetails}</div>` : ''}
+            </div>
+
+            <div class="section">
+              <div class="section-title">Bill Information</div>
+              <div class="info-row">
+                <span class="info-label">Bill Number:</span>
+                <span class="info-value">#${bill.billNumber || bill.id}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Date:</span>
+                <span class="info-value">${bill.date}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="status-badge">${status}</span>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Customer Information</div>
+              <div class="info-row">
+                <span class="info-label">Name:</span>
+                <span class="info-value">${bill.customerName}</span>
+              </div>
+              ${bill.customerPhone ? `
+              <div class="info-row">
+                <span class="info-label">Phone:</span>
+                <span class="info-value">${bill.customerPhone}</span>
+              </div>
+              ` : ''}
+              ${bill.customeradress ? `
+              <div class="info-row">
+                <span class="info-label">Address:</span>
+                <span class="info-value">${bill.customeradress}</span>
+              </div>
+              ` : ''}
+              <div class="info-row">
+                <span class="info-label">Payment Method:</span>
+                <span class="info-value">${bill.paymentMethod}</span>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Items Purchased</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th style="text-align: left;">Product</th>
+                    <th style="text-align: center; width: 60px;">Qty</th>
+                    <th style="text-align: right; width: 80px;">Price</th>
+                    <th style="text-align: right; width: 100px;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsHtml}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="amount-section">
+              <div class="section-title">Amount Summary</div>
+              <div class="amount-row">
+                <span>Subtotal:</span>
+                <span>₹${subtotal.toFixed(2)}</span>
+              </div>
+              ${discount > 0 ? `
+              <div class="amount-row">
+                <span>Discount (${((discount / subtotal) * 100).toFixed(0)}%):</span>
+                <span>- ₹${discount.toFixed(2)}</span>
+              </div>
+              ` : ''}
+              <div class="amount-row">
+                <span><strong>Amount Payable:</strong></span>
+                <span><strong>₹${afterDiscount.toFixed(2)}</strong></span>
+              </div>
+              <div style="height: 1px; background: #000; margin: 8px 0;"></div>
+              <div class="amount-row">
+                <span>Amount Paid:</span>
+                <span>₹${advanceAmount.toFixed(2)}</span>
+              </div>
+              ${pendingAmount > 0 ? `
+              <div class="amount-row">
+                <span>Amount Due:</span>
+                <span>₹${pendingAmount.toFixed(2)}</span>
+              </div>
+              ` : ''}
+              <div class="amount-row total">
+                <span>Final Amount:</span>
+                <span>₹${(afterDiscount - advanceAmount).toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div class="footer">
+              <div class="footer-text">Thank you for your business!</div>
+              <div class="footer-note">Generated: ${new Date().toLocaleString()}</div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const fileName = `Bill_${bill.billNumber || bill.id}.pdf`;
+      
+      // Generate PDF using react-native-html-to-pdf
+      const pdfResult = await RNHTMLtoPDF.convert({
+        html,
+        fileName: fileName.replace('.pdf', ''),
+        directory: 'Documents',
+        width: 595,
+        height: 842,
+      });
+
+      if (pdfResult.filePath) {
+        // Copy to Downloads folder as well
+        const downloadPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+        try {
+          await RNFS.copyFile(pdfResult.filePath, downloadPath);
+          console.log('✅ PDF copied to Downloads:', downloadPath);
+        } catch (copyError) {
+          console.warn('Could not copy to Downloads, but file is saved in Documents');
+        }
+
+        // Share the PDF file
+        try {
+          await Share.open({
+            url: `file://${pdfResult.filePath}`,
+            filename: fileName,
+            title: `Bill ${bill.billNumber || bill.id}`,
+            message: `Your invoice has been generated`,
+            failOnCancel: false,
+          });
+        } catch (shareError) {
+          console.log('Share cancelled or failed');
+        }
+        
+        showMessage({ 
+          message: '📤 Invoice Shared', 
+          description: `${fileName}`,
+          type: 'success',
+          duration: 3
+        });
+      } else {
+        throw new Error('Failed to generate PDF');
+      }
+    } catch (error: any) {
+      console.error('❌ Share Error:', error);
+      Alert.alert(
+        'Share Failed',
+        `Error: ${error.message || 'Unknown error'}`,
         [{ text: 'OK' }]
       );
     }
@@ -596,6 +920,12 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
             ) : (
               <Text style={styles.iconText}>⬇️</Text>
             )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={shareInvoice}
+          >
+            <Text style={styles.iconText}>📤</Text>
           </TouchableOpacity>
         </View>
       </View>
