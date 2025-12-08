@@ -22,7 +22,6 @@ import { showMessage } from 'react-native-flash-message';
 import { useAuth } from '../hooks/useAuth';
 import { billsApi } from '../services/api';
 import RNFS from 'react-native-fs';
-import RNPrint from 'react-native-print';
 
 interface BillsInvoiceProps {
   route: {
@@ -71,15 +70,12 @@ export default function BillsInvoice() {
   const [reminderLanguage, setReminderLanguage] = useState('english');
 
   const [showSettlementInfo, setShowSettlementInfo] = useState(false);
-  const [showPdfModal, setShowPdfModal] = useState(false);
-  const [pdfPath, setPdfPath] = useState<string | null>(null);
   const [isUpdatingBill, setIsUpdatingBill] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderMessage, setReminderMessage] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
- 
   const generateReminderMessage = (language: 'hindi' | 'english') => {
     const due = new Date();
     due.setDate(due.getDate() + 3);
@@ -199,17 +195,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
     }
   };
 
-  // const handleDelete = async () => {
-  //   try {
-  //     await billsApi.delete(bill.id);
-  //     showMessage({ message: 'Bill deleted successfully', type: 'success' });
-  //     navigation.navigate('BillHistory', { refreshBills: true });
-  //   } catch (error) {
-  //     console.error('Error deleting bill:', error);
-  //     Alert.alert('Error', 'Failed to delete bill. Please try again.');
-  //   }
-  // };
-
   // Request storage permissions
   const requestStoragePermission = async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
@@ -235,16 +220,16 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
     }
   };
 
-  const generatePDF = async (): Promise<string | null> => {
+  const generateAndDownloadPDF = async (): Promise<void> => {
     try {
       setIsGeneratingPdf(true);
-      console.log('🔄 Starting PDF generation...');
+      console.log('🔄 Starting PDF generation and download...');
 
       const hasPermission = await requestStoragePermission();
       if (!hasPermission) {
         Alert.alert('Permission Denied', 'Storage permission is required to save PDF files');
         setIsGeneratingPdf(false);
-        return null;
+        return;
       }
 
       const itemsHtml = bill.items
@@ -273,148 +258,134 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
-              font-family: Arial, sans-serif; 
-              padding: 40px; 
+              font-family: 'Courier New', monospace; 
+              padding: 30px; 
               background: #fff;
-              color: #333;
-              line-height: 1.6;
+              color: #000;
+              line-height: 1.4;
             }
             .container {
               max-width: 800px;
               margin: 0 auto;
-              border: 3px solid #0066FF;
-              border-radius: 10px;
-              padding: 30px;
+              border: 2px solid #000;
+              padding: 25px;
+            }
+            .share-icon {
+              text-align: center;
+              font-size: 32px;
+              margin-bottom: 15px;
             }
             .header {
               text-align: center;
-              border-bottom: 3px solid #0066FF;
-              padding-bottom: 20px;
-              margin-bottom: 30px;
+              border-bottom: 2px solid #000;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
             }
             .shop-name {
-              font-size: 32px;
+              font-size: 24px;
               font-weight: bold;
-              color: #0066FF;
-              margin-bottom: 10px;
-              letter-spacing: 2px;
-            }
-            .shop-details {
-              font-size: 14px;
-              color: #666;
-              margin: 5px 0;
-            }
-            .section {
-              margin: 25px 0;
-            }
-            .section-title {
-              font-size: 18px;
-              font-weight: bold;
-              color: #0066FF;
-              margin-bottom: 15px;
-              padding-bottom: 8px;
-              border-bottom: 2px solid #E5E5E5;
+              color: #000;
+              margin-bottom: 8px;
               text-transform: uppercase;
             }
-            .info-table {
-              width: 100%;
-              margin: 15px 0;
+            .shop-details {
+              font-size: 12px;
+              color: #000;
+              margin: 3px 0;
+            }
+            .section {
+              margin: 20px 0;
+            }
+            .section-title {
+              font-size: 14px;
+              font-weight: bold;
+              color: #000;
+              margin-bottom: 10px;
+              padding-bottom: 5px;
+              border-bottom: 1px solid #000;
+              text-transform: uppercase;
             }
             .info-row {
               display: flex;
               justify-content: space-between;
-              padding: 10px 0;
-              border-bottom: 1px solid #f0f0f0;
+              padding: 6px 0;
+              font-size: 12px;
             }
             .info-label {
-              font-weight: 600;
-              color: #666;
+              font-weight: bold;
+              color: #000;
             }
             .info-value {
-              font-weight: 600;
-              color: #1A1A1A;
+              font-weight: normal;
+              color: #000;
             }
             .status-badge {
               display: inline-block;
-              padding: 6px 12px;
-              border-radius: 20px;
-              font-size: 12px;
-              font-weight: 600;
-            }
-            .status-paid {
-              background: #E8F5E9;
-              color: #2E7D32;
-            }
-            .status-pending {
-              background: #FFF3E0;
-              color: #EF6C00;
+              padding: 3px 8px;
+              border: 1px solid #000;
+              font-size: 11px;
+              font-weight: bold;
             }
             table {
               width: 100%;
               border-collapse: collapse;
-              margin: 20px 0;
+              margin: 15px 0;
+              border: 1px solid #000;
             }
             th {
-              background: #F5F5F5;
-              padding: 12px;
+              background: #000;
+              color: #fff;
+              padding: 8px;
               text-align: left;
-              font-weight: 700;
-              border-bottom: 2px solid #0066FF;
+              font-weight: bold;
+              font-size: 12px;
+              border: 1px solid #000;
             }
             td {
-              padding: 10px;
-              border-bottom: 1px solid #e5e5e5;
+              padding: 8px;
+              border: 1px solid #000;
+              font-size: 11px;
             }
             .amount-section {
-              background: #F8F9FA;
-              padding: 20px;
-              border-radius: 10px;
-              margin: 25px 0;
-              border: 2px solid #0066FF;
+              border: 2px solid #000;
+              padding: 15px;
+              margin: 20px 0;
             }
             .amount-row {
               display: flex;
               justify-content: space-between;
-              padding: 8px 0;
-              font-size: 15px;
+              padding: 5px 0;
+              font-size: 12px;
             }
             .amount-row.total {
-              border-top: 2px solid #0066FF;
-              margin-top: 10px;
-              padding-top: 15px;
-              font-size: 20px;
+              border-top: 2px solid #000;
+              margin-top: 8px;
+              padding-top: 10px;
+              font-size: 16px;
               font-weight: bold;
-              color: #0066FF;
             }
-            .discount { color: #D32F2F; font-weight: 600; }
-            .paid { color: #2E7D32; font-weight: 600; }
-            .pending { color: #EF6C00; font-weight: 600; }
             .footer {
               text-align: center;
-              margin-top: 40px;
-              padding-top: 20px;
-              border-top: 2px dashed #E5E5E5;
+              margin-top: 30px;
+              padding-top: 15px;
+              border-top: 2px solid #000;
             }
             .footer-text {
-              font-size: 18px;
-              font-weight: 600;
-              color: #0066FF;
-              margin-bottom: 10px;
+              font-size: 14px;
+              font-weight: bold;
+              color: #000;
+              margin-bottom: 8px;
             }
             .footer-note {
-              font-size: 14px;
-              color: #666;
-              font-style: italic;
-            }
-            .divider {
-              height: 2px;
-              background: #E5E5E5;
-              margin: 20px 0;
+              font-size: 10px;
+              color: #000;
             }
           </style>
         </head>
         <body>
           <div class="container">
+            <div class="share-icon">📤</div>
+            
             <div class="header">
               <div class="shop-name">${profile?.shopName || shop.name}</div>
               <div class="shop-details">Owner: ${profile?.name || shop.owner}</div>
@@ -423,60 +394,54 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
             </div>
 
             <div class="section">
-              <div class="section-title">📋 Bill Information</div>
-              <div class="info-table">
-                <div class="info-row">
-                  <span class="info-label">Bill Number:</span>
-                  <span class="info-value">#${bill.billNumber || bill.id}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Date:</span>
-                  <span class="info-value">${bill.date}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-label">Status:</span>
-                  <span class="status-badge ${status === 'Paid' ? 'status-paid' : 'status-pending'}">
-                    ${status === 'Paid' ? '✅' : '⏳'} ${status}
-                  </span>
-                </div>
+              <div class="section-title">Bill Information</div>
+              <div class="info-row">
+                <span class="info-label">Bill Number:</span>
+                <span class="info-value">#${bill.billNumber || bill.id}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Date:</span>
+                <span class="info-value">${bill.date}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="status-badge">${status}</span>
               </div>
             </div>
 
             <div class="section">
-              <div class="section-title">👤 Customer Information</div>
-              <div class="info-table">
-                <div class="info-row">
-                  <span class="info-label">Name:</span>
-                  <span class="info-value">${bill.customerName}</span>
-                </div>
-                ${bill.customerPhone ? `
-                <div class="info-row">
-                  <span class="info-label">Phone:</span>
-                  <span class="info-value">${bill.customerPhone}</span>
-                </div>
-                ` : ''}
-                ${bill.customeradress ? `
-                <div class="info-row">
-                  <span class="info-label">Address:</span>
-                  <span class="info-value">${bill.customeradress}</span>
-                </div>
-                ` : ''}
-                <div class="info-row">
-                  <span class="info-label">Payment Method:</span>
-                  <span class="info-value">${bill.paymentMethod === 'Cash' ? '💵' : '💳'} ${bill.paymentMethod}</span>
-                </div>
+              <div class="section-title">Customer Information</div>
+              <div class="info-row">
+                <span class="info-label">Name:</span>
+                <span class="info-value">${bill.customerName}</span>
+              </div>
+              ${bill.customerPhone ? `
+              <div class="info-row">
+                <span class="info-label">Phone:</span>
+                <span class="info-value">${bill.customerPhone}</span>
+              </div>
+              ` : ''}
+              ${bill.customeradress ? `
+              <div class="info-row">
+                <span class="info-label">Address:</span>
+                <span class="info-value">${bill.customeradress}</span>
+              </div>
+              ` : ''}
+              <div class="info-row">
+                <span class="info-label">Payment Method:</span>
+                <span class="info-value">${bill.paymentMethod}</span>
               </div>
             </div>
 
             <div class="section">
-              <div class="section-title">🛍️ Items Purchased</div>
+              <div class="section-title">Items Purchased</div>
               <table>
                 <thead>
                   <tr>
                     <th style="text-align: left;">Product</th>
-                    <th style="text-align: center; width: 80px;">Qty</th>
-                    <th style="text-align: right; width: 100px;">Price</th>
-                    <th style="text-align: right; width: 120px;">Total</th>
+                    <th style="text-align: center; width: 60px;">Qty</th>
+                    <th style="text-align: right; width: 80px;">Price</th>
+                    <th style="text-align: right; width: 100px;">Total</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -486,13 +451,13 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
             </div>
 
             <div class="amount-section">
-              <div class="section-title">💰 Amount Summary</div>
+              <div class="section-title">Amount Summary</div>
               <div class="amount-row">
                 <span>Subtotal:</span>
                 <span>₹${subtotal.toFixed(2)}</span>
               </div>
               ${discount > 0 ? `
-              <div class="amount-row discount">
+              <div class="amount-row">
                 <span>Discount (${((discount / subtotal) * 100).toFixed(0)}%):</span>
                 <span>- ₹${discount.toFixed(2)}</span>
               </div>
@@ -501,13 +466,13 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
                 <span><strong>Amount Payable:</strong></span>
                 <span><strong>₹${afterDiscount.toFixed(2)}</strong></span>
               </div>
-              <div style="height: 1px; background: #E5E5E5; margin: 10px 0;"></div>
-              <div class="amount-row paid">
+              <div style="height: 1px; background: #000; margin: 8px 0;"></div>
+              <div class="amount-row">
                 <span>Amount Paid:</span>
                 <span>₹${advanceAmount.toFixed(2)}</span>
               </div>
               ${pendingAmount > 0 ? `
-              <div class="amount-row pending">
+              <div class="amount-row">
                 <span>Amount Due:</span>
                 <span>₹${pendingAmount.toFixed(2)}</span>
               </div>
@@ -519,60 +484,52 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
             </div>
 
             <div class="footer">
-              <div class="footer-text">🙏 Thank you for shopping with us!</div>
-              <div class="footer-note">Visit again ❤️</div>
-              <div class="footer-note" style="margin-top: 10px;">Generated: ${new Date().toLocaleString()}</div>
+              <div class="footer-text">Thank you for your business!</div>
+              <div class="footer-note">Generated: ${new Date().toLocaleString()}</div>
             </div>
           </div>
         </body>
         </html>
       `;
 
-      const fileName = `Bill_${bill.billNumber || bill.id}_${Date.now()}.pdf`;
+      const fileName = `Bill_${bill.billNumber || bill.id}.html`;
+      const filePath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
       
-      if (Platform.OS === 'android') {
-        const filePath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
-        
-        await RNPrint.print({
-          html,
+      // Save HTML file instead of PDF
+      await RNFS.writeFile(filePath, html, 'utf8');
+      
+      console.log('✅ Invoice generated at:', filePath);
+      
+      // Share the file
+      try {
+        await Share.open({
+          url: `file://${filePath}`,
+          filename: fileName,
+          title: `Bill ${bill.billNumber || bill.id}`,
+          message: `Your invoice has been generated`,
+          failOnCancel: false,
         });
-
-        console.log('✅ PDF printed successfully');
-        setIsGeneratingPdf(false);
-        return filePath;
-      } else {
-        await RNPrint.print({ html });
-        setIsGeneratingPdf(false);
-        return 'PDF Printed';
+      } catch (shareError) {
+        console.log('Share cancelled or failed, file is still saved');
       }
+      
+      showMessage({ 
+        message: '✅ Invoice Saved Successfully', 
+        description: `File saved to Downloads folder`,
+        type: 'success',
+        duration: 3
+      });
+
+      setIsGeneratingPdf(false);
     } catch (error: any) {
       console.error('❌ PDF Generation Error:', error);
       setIsGeneratingPdf(false);
       
       Alert.alert(
-        'PDF Generation Failed',
+        'PDF Download Failed',
         `Error: ${error.message || 'Unknown error'}\n\nTroubleshooting:\n• Check storage permissions\n• Ensure packages are installed\n• Try restarting the app`,
         [{ text: 'OK' }]
       );
-      return null;
-    }
-  };
-
-  const handleShare = async () => {
-    const path = await generatePDF();
-    if (path) {
-      try {
-        await Share.open({ 
-          url: Platform.OS === 'ios' ? path : 'file://' + path,
-          type: 'application/pdf',
-          title: `Bill #${bill.billNumber || bill.id}`,
-        });
-      } catch (error: any) {
-        if (error.message !== 'User did not share') {
-          console.error('Share error:', error);
-          Alert.alert('Share Error', 'Failed to share PDF');
-        }
-      }
     }
   };
 
@@ -625,25 +582,19 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         <View style={styles.actionIcons}>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => navigation.navigate('EditBill', { billId: bill.id })}
-          >
-            <Text style={styles.iconText}>✏️</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconButton}
             onPress={() => setShowDeleteConfirm(true)}
           >
             <Text style={styles.iconText}>🗑️</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={handleShare}
+            onPress={generateAndDownloadPDF}
             disabled={isGeneratingPdf}
           >
             {isGeneratingPdf ? (
               <ActivityIndicator size="small" color="#0066FF" />
             ) : (
-              <Text style={styles.iconText}>📤</Text>
+              <Text style={styles.iconText}>⬇️</Text>
             )}
           </TouchableOpacity>
         </View>

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -30,6 +31,7 @@ const NotificationScreen = () => {
   const [page, setPage] = useState(1);
   const [allNotifications, setAllNotifications] = useState<Notification[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // API hooks
   const {
@@ -74,6 +76,7 @@ const NotificationScreen = () => {
   };
 
   const handleMarkAllAsRead = async () => {
+    setMenuVisible(false);
     try {
       await markAllAsReadMutation_mut.mutateAsync();
       setAllNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -94,6 +97,7 @@ const NotificationScreen = () => {
   };
 
   const handleClearAll = () => {
+    setMenuVisible(false);
     Alert.alert(
       "Clear All Notifications",
       "Are you sure you want to delete all notifications?",
@@ -130,7 +134,7 @@ const NotificationScreen = () => {
     }
   };
 
-   const handleRefresh = () => {
+  const handleRefresh = () => {
     setPage(1);
     refetchNotifications();
   };
@@ -165,9 +169,8 @@ const NotificationScreen = () => {
       </View>
       <TouchableOpacity
         onPress={() => handleDelete(item._id)}
-        style={{ marginLeft: 10 }}
       >
-        <Text style={{ fontSize: 16, color: THEME.colors.textTertiary }}>✕</Text>
+        <Text style={{ fontSize: 20,  color: THEME.colors.textTertiary, fontWeight: "bold" }}>✕</Text>
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -204,7 +207,7 @@ const NotificationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      {/* Custom header same as your original */}
+      {/* Custom header with dropdown menu */}
       <View style={styles.customHeader}>
         <TouchableOpacity
           style={styles.backButton}
@@ -215,19 +218,65 @@ const NotificationScreen = () => {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Notification</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {unreadData && unreadData.unreadCount > 0 && (
-            <TouchableOpacity onPress={handleMarkAllAsRead} style={{ marginRight: 12 }}>
-              <Text style={{ color: THEME.colors.primary, fontWeight: "600" }}>Mark all</Text>
-            </TouchableOpacity>
-          )}
-          {allNotifications.length > 0 && (
-            <TouchableOpacity onPress={handleClearAll}>
-              <Text style={{ color: THEME.colors.error, fontWeight: "700" }}>Clear all</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => setMenuVisible(true)}
+        >
+          <Text style={styles.menuIcon}>⋮</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Dropdown Menu Modal */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity
+              style={[
+                styles.menuItem,
+                (!unreadData || unreadData.unreadCount === 0) && styles.menuItemDisabled
+              ]}
+              onPress={handleMarkAllAsRead}
+              disabled={!unreadData || unreadData.unreadCount === 0}
+            >
+              <Text style={[
+                styles.menuItemIcon,
+                (!unreadData || unreadData.unreadCount === 0) && styles.menuItemTextDisabled
+              ]}>✓</Text>
+              <Text style={[
+                styles.menuItemText,
+                (!unreadData || unreadData.unreadCount === 0) && styles.menuItemTextDisabled
+              ]}>Mark all as read</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.menuItem,
+                { borderTopWidth: 1, borderTopColor: THEME.colors.border },
+                allNotifications.length === 0 && styles.menuItemDisabled
+              ]}
+              onPress={handleClearAll}
+              disabled={allNotifications.length === 0}
+            >
+              <Text style={[
+                styles.menuItemIcon,
+                { color: allNotifications.length > 0 ? THEME.colors.error : THEME.colors.textTertiary }
+              ]}>🗑</Text>
+              <Text style={[
+                styles.menuItemText,
+                { color: allNotifications.length > 0 ? THEME.colors.error : THEME.colors.textTertiary }
+              ]}>Clear all</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <FlatList
         data={allNotifications}
@@ -279,7 +328,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     backgroundColor: THEME.colors.white,
-    padding: THEME.spacing.lg,
+    marginHorizontal: THEME.spacing.xs,
+    padding: THEME.spacing.sm,
     borderRadius: THEME.spacing.borderRadius.xl,
     marginBottom: THEME.spacing.md,
     ...THEME.shadows.md,
@@ -310,12 +360,12 @@ const styles = StyleSheet.create({
   customHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: THEME.spacing["2xl"],
-    paddingVertical: THEME.spacing.lg,
+    paddingHorizontal: THEME.spacing["xl"],
+    paddingVertical: THEME.spacing.xl,
     backgroundColor: THEME.colors.white,
-    marginHorizontal: THEME.spacing["2xl"],
-    marginTop: THEME.spacing.xl,
-    marginBottom: THEME.spacing.lg,
+    marginHorizontal: THEME.spacing.lg,
+    marginTop: THEME.spacing.md,
+    marginBottom: THEME.spacing.xl,
     borderRadius: THEME.spacing.borderRadius.xl,
     ...THEME.shadows.md,
   },
@@ -338,7 +388,54 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: THEME.typography.fontSizes["2xl"],
-    fontWeight: "700",
+    fontWeight: "600",
     color: THEME.colors.textPrimary,
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  menuIcon: {
+    fontSize: 24,
+    color: THEME.colors.gray700,
+    fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+    paddingTop: 100,
+    paddingRight: 20,
+  },
+  menuContainer: {
+    backgroundColor: THEME.colors.white,
+    borderRadius: THEME.spacing.borderRadius.lg,
+    minWidth: 200,
+    ...THEME.shadows.lg,
+    overflow: "hidden",
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: THEME.spacing.lg,
+  },
+  menuItemIcon: {
+    fontSize: 20,
+    marginRight: THEME.spacing.md,
+    color: THEME.colors.textPrimary,
+  },
+  menuItemText: {
+    fontSize: THEME.typography.fontSizes.base,
+    fontWeight: "600",
+    color: THEME.colors.textPrimary,
+  },
+  menuItemDisabled: {
+    opacity: 0.5,
+  },
+  menuItemTextDisabled: {
+    color: THEME.colors.textTertiary,
   },
 });
