@@ -15,6 +15,7 @@ export type RootStackParamList = {
       BillDetailsScreen: undefined;
       BillHistory: { updatedBill?: any; refreshBills?: boolean; filterPending?: boolean };
       BillInvoice: { bill: { id: string; customerName: string; amount: number; status: 'Paid' | 'Pending'; date: string; paymentMethod: 'Cash' | 'Online'; advanceAmount?: number; pendingAmount?: number; } };
+      EditBill: { billId: string };
       Profile: undefined;
       SalesReport: undefined;
       Settings: undefined;

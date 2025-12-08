@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   TextInput,
   ScrollView,
+  Modal,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
@@ -39,6 +40,10 @@ const TransactionHistoryScreen = () => {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'Date' | 'Status' | 'Payment' | 'Amount' | null>(null);
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState<string[]>(['Cash', 'Online']);
+  const [amountRange, setAmountRange] = useState<{ min: string; max: string }>({ min: '', max: '' });
+  const [showAmountFilter, setShowAmountFilter] = useState(false);
  
   const filteredTransactions = useMemo(() => {
     const normalize = (s?: string) => (s || '').toLowerCase();
@@ -56,19 +61,28 @@ const TransactionHistoryScreen = () => {
       const transactionStatus = ((t.data as any)?.paymentStatus ?? 'Pending');
       const matchesStatus = paymentStatus === 'All' || transactionStatus === paymentStatus;
 
-      return matchesDateRange && matchesCustomer && matchesStatus;
+      const method = ((t.data as any)?.paymentMethod ?? 'Cash');
+      const matchesMethod = selectedPaymentMethods.length === 2 || selectedPaymentMethods.includes(method);
+
+      const totalVal = Number(((t.data as any)?.totalAmount ?? (t.data as any)?.total ?? 0));
+      const minOk = !amountRange.min || totalVal >= Number(amountRange.min);
+      const maxOk = !amountRange.max || totalVal <= Number(amountRange.max);
+      const matchesAmount = minOk && maxOk;
+
+      return matchesDateRange && matchesCustomer && matchesStatus && matchesMethod && matchesAmount;
     });
-  }, [transactions, startDate, endDate, searchCustomer, paymentStatus]);
+  }, [transactions, startDate, endDate, searchCustomer, paymentStatus, selectedPaymentMethods, amountRange.min, amountRange.max]);
 
   const clearFilters = () => {
     setStartDate(null);
     setEndDate(null);
     setSearchCustomer('');
     setPaymentStatus('All');
-    showInfo('All filters cleared', 'Filters Reset');
+    setSelectedPaymentMethods(['Cash', 'Online']);
+    setAmountRange({ min: '', max: '' });
   };
 
-  const hasActiveFilters = startDate || endDate || searchCustomer || paymentStatus !== 'All';
+  const hasActiveFilters = startDate || endDate || searchCustomer || paymentStatus !== 'All' || selectedPaymentMethods.length < 2 || !!amountRange.min || !!amountRange.max;
 
   const handleDeleteTransaction = async (id: string) => {
     try {
@@ -100,7 +114,7 @@ const TransactionHistoryScreen = () => {
             {format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm')}
           </Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        `<View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={[
             styles.statusBadge,
             ((item.data as any)?.paymentStatus ?? 'Pending') === 'Paid' ? styles.statusPaid : styles.statusPending,
@@ -112,7 +126,7 @@ const TransactionHistoryScreen = () => {
           <TouchableOpacity onPress={() => handleDeleteTransaction(item._id)} style={{ marginLeft: 10 }}>
             <Text style={{ fontSize: 16, color: '#9CA3AF' }}>✕</Text>
           </TouchableOpacity>
-        </View>
+        </View>`
       </View>
 
       {/* Transaction Summary */}
@@ -257,7 +271,6 @@ const TransactionHistoryScreen = () => {
             else if (paymentStatus === 'Paid') setPaymentStatus('Pending');
             else setPaymentStatus('All');
             const count = filteredTransactions.length;
-            showInfo(`Showing ${count} transactions`, 'Filter Applied');
           }}
           style={[
             styles.filterChip,
@@ -274,6 +287,13 @@ const TransactionHistoryScreen = () => {
             {paymentStatus}
           </Text>
         </TouchableOpacity>
+
+        {/* Payment Method Filter */}
+      
+
+        {/* Amount Filter */}
+      
+         
 
         {/* Clear Filters */}
         {hasActiveFilters && (
@@ -324,6 +344,9 @@ const TransactionHistoryScreen = () => {
         />
       )}
 
+      {/* Amount Filter Modal */}
+     
+
       {/* Transactions List */}
       {(!transactions || transactions.length === 0) ? (
         <View style={styles.emptyContainer}>
@@ -351,14 +374,7 @@ const TransactionHistoryScreen = () => {
           refreshControl={
             <RefreshControl 
               refreshing={!!isLoading} 
-              onRefresh={async () => {
-                try {
-                  await refetch();
-                  showSuccess('Transactions refreshed', 'Updated');
-                } catch (err) {
-                  showError('Failed to refresh transactions', 'Error');
-                }
-              }}
+             
               tintColor="#6366F1"
               colors={['#6366F1']}
             />
@@ -424,15 +440,15 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 2,
   },
-  filtersScroll: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
+ filtersScroll: {
+  backgroundColor: '#fff',
+  marginHorizontal: 16,
+  borderRadius: 16,
+  height: 50,           // FIX HEIGHT
+  minHeight: 50,
+  maxHeight: 50,
+},
+
  filtersScrollContainer: {
   paddingHorizontal: 12,
   paddingVertical: 14,

@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { RootTabParamList } from "./types";
 import HomeScreen from "../screens/HomeScreen";
-import { Alert, Text, View, TouchableOpacity, Platform, StatusBar, StyleSheet } from "react-native";
+import { Alert, Text, View, TouchableOpacity, Platform, StatusBar, StyleSheet, Animated } from "react-native";
 import BillingStack from "./BillingStack";
 import BillsStack from "./BillsStack";
 import { useNavigation } from "@react-navigation/native";
@@ -43,6 +43,62 @@ const getHeaderTitle = (route: keyof RootTabParamList) => {
   }
 };
 
+// Animated Bell Component
+const AnimatedBell = ({ unreadCount }: { unreadCount: number }) => {
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const prevUnreadRef = useRef(0);
+  const runningRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    const prev = prevUnreadRef.current;
+
+    // If unread decreases to 0 → stop and reset
+    if (unreadCount === 0) {
+      runningRef.current?.stop?.();
+      shakeAnim.setValue(0);
+      prevUnreadRef.current = unreadCount;
+      return;
+    }
+
+    // Only perform a single shake when unread count changes (e.g., new notification)
+    if (unreadCount > 0 && unreadCount !== prev) {
+      runningRef.current?.stop?.();
+      const shakeOnce = Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+      ]);
+      runningRef.current = shakeOnce;
+      shakeOnce.start(() => {
+        runningRef.current = null;
+      });
+    }
+
+    prevUnreadRef.current = unreadCount;
+  }, [unreadCount, shakeAnim]);
+
+  const rotation = shakeAnim.interpolate({
+    inputRange: [-10, 10],
+    outputRange: ['-15deg', '15deg'],
+  });
+
+  return (
+    <Animated.View
+      style={{
+        transform: [{ rotate: rotation }],
+        position: 'relative',
+      }}
+    >
+      <Text style={{ fontSize: 30, marginRight: 18 }}>🔔</Text>
+      {unreadCount > 0 && (
+        <View style={styles.badge} />
+      )}
+    </Animated.View>
+  );
+};
+
 const TabNavigator = () => {
   const navigation = useNavigation();
   const { useUnreadCount } = useAuth();
@@ -75,10 +131,7 @@ const TabNavigator = () => {
               onPress={() => navigation.navigate("Notification" as never)}
               style={{ position: "relative" }}
             >
-              <Text style={{ fontSize: 30, marginRight: 18 }}>🔔</Text>
-              {unreadCount > 0 && (
-                <View style={styles.badge} />
-              )}
+              <AnimatedBell unreadCount={unreadCount} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => navigation.navigate("Profile" as never)}
@@ -126,6 +179,5 @@ const styles = StyleSheet.create({
     borderColor: THEME.colors.white,
   },
 });
-
 
 export default TabNavigator;

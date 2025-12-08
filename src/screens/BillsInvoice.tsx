@@ -77,6 +77,7 @@ export default function BillsInvoice() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderMessage, setReminderMessage] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
  
   const generateReminderMessage = (language: 'hindi' | 'english') => {
@@ -148,7 +149,7 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
     setShowReminderModal(true);
   };
 
-   const sendWhatsAppReminder = async () => {
+  const sendWhatsAppReminder = async () => {
     try {
       const text = encodeURIComponent(reminderMessage || '');
       const rawPhone = String(bill.customerPhone || '').replace(/\D/g, '');
@@ -198,12 +199,22 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
     }
   };
 
+  // const handleDelete = async () => {
+  //   try {
+  //     await billsApi.delete(bill.id);
+  //     showMessage({ message: 'Bill deleted successfully', type: 'success' });
+  //     navigation.navigate('BillHistory', { refreshBills: true });
+  //   } catch (error) {
+  //     console.error('Error deleting bill:', error);
+  //     Alert.alert('Error', 'Failed to delete bill. Please try again.');
+  //   }
+  // };
+
   // Request storage permissions
   const requestStoragePermission = async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
 
     try {
-      // Android 13+ doesn't need storage permissions for app-specific directories
       if (Platform.Version >= 33) {
         return true;
       }
@@ -229,7 +240,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
       setIsGeneratingPdf(true);
       console.log('🔄 Starting PDF generation...');
 
-      // Request permission
       const hasPermission = await requestStoragePermission();
       if (!hasPermission) {
         Alert.alert('Permission Denied', 'Storage permission is required to save PDF files');
@@ -237,7 +247,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         return null;
       }
 
-      // Generate items HTML with table rows
       const itemsHtml = bill.items
         .map((item: any, index: number) => {
           const name = item?.name ?? item?.product?.name ?? 'Unknown Product';
@@ -255,7 +264,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         })
         .join('');
 
-      // Professional HTML template
       const html = `
         <!DOCTYPE html>
         <html>
@@ -407,7 +415,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         </head>
         <body>
           <div class="container">
-            <!-- Header -->
             <div class="header">
               <div class="shop-name">${profile?.shopName || shop.name}</div>
               <div class="shop-details">Owner: ${profile?.name || shop.owner}</div>
@@ -415,7 +422,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
               ${profile?.shopDetails ? `<div class="shop-details">${profile.shopDetails}</div>` : ''}
             </div>
 
-            <!-- Bill Information -->
             <div class="section">
               <div class="section-title">📋 Bill Information</div>
               <div class="info-table">
@@ -436,7 +442,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
               </div>
             </div>
 
-            <!-- Customer Information -->
             <div class="section">
               <div class="section-title">👤 Customer Information</div>
               <div class="info-table">
@@ -463,7 +468,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
               </div>
             </div>
 
-            <!-- Items Table -->
             <div class="section">
               <div class="section-title">🛍️ Items Purchased</div>
               <table>
@@ -481,7 +485,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
               </table>
             </div>
 
-            <!-- Amount Summary -->
             <div class="amount-section">
               <div class="section-title">💰 Amount Summary</div>
               <div class="amount-row">
@@ -515,7 +518,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
               </div>
             </div>
 
-            <!-- Footer -->
             <div class="footer">
               <div class="footer-text">🙏 Thank you for shopping with us!</div>
               <div class="footer-note">Visit again ❤️</div>
@@ -526,14 +528,11 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         </html>
       `;
 
-      // Use react-native-print to generate PDF
       const fileName = `Bill_${bill.billNumber || bill.id}_${Date.now()}.pdf`;
       
-      // For Android, save to downloads
       if (Platform.OS === 'android') {
         const filePath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
         
-        // Print to PDF (fileName option is not supported in the PrintOptionsType)
         await RNPrint.print({
           html,
         });
@@ -542,7 +541,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         setIsGeneratingPdf(false);
         return filePath;
       } else {
-        // For iOS
         await RNPrint.print({ html });
         setIsGeneratingPdf(false);
         return 'PDF Printed';
@@ -557,6 +555,24 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         [{ text: 'OK' }]
       );
       return null;
+    }
+  };
+
+  const handleShare = async () => {
+    const path = await generatePDF();
+    if (path) {
+      try {
+        await Share.open({ 
+          url: Platform.OS === 'ios' ? path : 'file://' + path,
+          type: 'application/pdf',
+          title: `Bill #${bill.billNumber || bill.id}`,
+        });
+      } catch (error: any) {
+        if (error.message !== 'User did not share') {
+          console.error('Share error:', error);
+          Alert.alert('Share Error', 'Failed to share PDF');
+        }
+      }
     }
   };
 
@@ -604,7 +620,33 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Sale Details</Text>
-        <View style={styles.placeholder} />
+        
+        {/* Action Icons */}
+        <View style={styles.actionIcons}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('EditBill', { billId: bill.id })}
+          >
+            <Text style={styles.iconText}>✏️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => setShowDeleteConfirm(true)}
+          >
+            <Text style={styles.iconText}>🗑️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleShare}
+            disabled={isGeneratingPdf}
+          >
+            {isGeneratingPdf ? (
+              <ActivityIndicator size="small" color="#0066FF" />
+            ) : (
+              <Text style={styles.iconText}>📤</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
@@ -724,40 +766,27 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
             )}
           </View>
         </View>
-
-        {/* Actions */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => setShowPdfModal(true)}
-          >
-            <Text style={styles.actionButtonText}>📄 Print Receipt</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              status === 'Pending' ? styles.primaryButton : styles.disabledButton,
-            ]}
-            disabled={status !== 'Pending' || isUpdatingBill}
-            onPress={handleMarkAsPaid}
-          >
-            {isUpdatingBill ? (
-              <ActivityIndicator color="#FFF" size="small" />
-            ) : (
-              <Text
-                style={[
-                  styles.actionButtonText,
-                  status === 'Pending'
-                    ? styles.primaryButtonText
-                    : styles.disabledButtonText,
-                ]}
-              >
-                ✅ Mark as Paid
-              </Text>
-            )}
-          </TouchableOpacity>
-        </View>
       </ScrollView>
+
+      {/* Bottom Action Button */}
+      <View style={styles.bottomActionContainer}>
+        <TouchableOpacity
+          style={[
+            styles.bottomActionButton,
+            status === 'Pending' ? styles.paidButtonActive : styles.paidButtonDisabled,
+          ]}
+          disabled={status !== 'Pending' || isUpdatingBill}
+          onPress={handleMarkAsPaid}
+        >
+          {isUpdatingBill ? (
+            <ActivityIndicator color="#FFF" size="small" />
+          ) : (
+            <Text style={styles.bottomActionText}>
+              {status === 'Pending' ? '✅ Mark as Paid' : '✓ Paid'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Settlement Info Overlay */}
       {showSettlementInfo && (
@@ -769,242 +798,42 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         </View>
       )}
 
-      {/* Receipt Modal */}
+      {/* Delete Confirmation Modal */}
       <Modal
-        visible={showPdfModal}
+        visible={showDeleteConfirm}
         transparent
-        animationType="slide"
-        onRequestClose={() => setShowPdfModal(false)}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteConfirm(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            {/* Modal Header */}
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>📋 Bill Receipt</Text>
+          <View style={styles.deleteConfirmCard}>
+            <Text style={styles.deleteTitle}>Delete Bill?</Text>
+            <Text style={styles.deleteMessage}>
+              Are you sure you want to delete this bill? This action cannot be undone.
+            </Text>
+            <View style={styles.deleteButtonRow}>
               <TouchableOpacity
-                onPress={() => setShowPdfModal(false)}
-                style={styles.closeButton}
+                style={[styles.deleteButton, styles.cancelButton]}
+                onPress={() => setShowDeleteConfirm(false)}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
-              <View style={styles.receiptCard}>
-                {/* Shop Header */}
-                <View style={styles.shopHeader}>
-                  <Text style={styles.shopName}>{profile?.shopName || shop.name}</Text>
-                  <Text style={styles.shopDetails}>Owner: {profile?.name || shop.owner}</Text>
-                  {profile?.phone && <Text style={styles.shopDetails}>📞 {profile.phone}</Text>}
-                  {profile?.shopDetails && <Text style={styles.shopDetails}>📍 {profile.shopDetails}</Text>}
-                </View>
-                
-                <View style={styles.divider} />
-
-                {/* Bill Info */}
-                <View style={styles.infoSection}>
-                  <Text style={styles.receiptSectionTitle}>📋 Bill Information</Text>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Bill No:</Text>
-                    <Text style={styles.valueBold}>#{bill.billNumber || bill.id}</Text>
-                  </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Date:</Text>
-                    <Text style={styles.value}>{bill.date}</Text>
-                  </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Status:</Text>
-                    {status === 'Pending' ? (
-                      <TouchableOpacity onPress={openReminderModal} style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
-                        <Text style={getStatusTextStyle(status)}>
-                          {getStatusEmoji(status)} {status}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <View style={[styles.statusBadge, getStatusBadgeStyle(status)]}>
-                        <Text style={getStatusTextStyle(status)}>
-                          {getStatusEmoji(status)} {status}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-                <View style={styles.divider} />
-
-                {/* Customer Info */}
-                <View style={styles.infoSection}>
-                  <Text style={styles.receiptSectionTitle}>👤 Customer Details</Text>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Name:</Text>
-                    <Text style={styles.value}>{bill.customerName}</Text>
-                  </View>
-                  {bill.customerPhone && (
-                    <View style={styles.row}>
-                      <Text style={styles.label}>Phone:</Text>
-                      <Text style={styles.value}>{bill.customerPhone}</Text>
-                    </View>
-                  )}
-                  {bill.customeradress && (
-                    <View style={styles.row}>
-                      <Text style={styles.label}>Address:</Text>
-                      <Text style={styles.value}>{bill.customeradress}</Text>
-                    </View>
-                  )}
-                  <View style={styles.row}>
-                    <Text style={styles.label}>Payment:</Text>
-                    <Text style={styles.value}>
-                      {bill.paymentMethod === 'Cash' ? '💵' : '💳'} {bill.paymentMethod}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.divider} />
-
-                {/* Items Table */}
-                <View style={styles.infoSection}>
-                  <Text style={styles.receiptSectionTitle}>🛍️ Items Purchased</Text>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.tableHeaderText, { flex: 2 }]}>Product</Text>
-                    <Text style={[styles.tableHeaderText, { flex: 1, textAlign: "center" }]}>Qty</Text>
-                    <Text style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}>Price</Text>
-                    <Text style={[styles.tableHeaderText, { flex: 1, textAlign: "right" }]}>Total</Text>
-                  </View>
-                  {bill.items.map((item: any, index) => {
-                    const itemTotal = item.quantity * item.price;
-                    return (
-                      <View key={index} style={styles.tableRow}>
-                        <Text style={[styles.tableValue, { flex: 2 }]} numberOfLines={2}>
-                          {item?.name ?? item?.product?.name ?? 'Unknown'}
-                        </Text>
-                        <Text style={[styles.tableValue, { flex: 1, textAlign: "center" }]}>
-                          {item.quantity}
-                        </Text>
-                        <Text style={[styles.tableValue, { flex: 1, textAlign: "right" }]}>
-                          ₹{item.price}
-                        </Text>
-                        <Text style={[styles.tableValueBold, { flex: 1, textAlign: "right" }]}>
-                          ₹{itemTotal.toFixed(2)}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-
-                <View style={styles.divider} />
-
-                {/* Amount Summary */}
-                <View style={styles.amountSummaryBox}>
-                  <Text style={styles.receiptSectionTitle}>💰 Amount Summary</Text>
-                  <View style={styles.amountRow}>
-                    <Text style={styles.amountLabel}>Subtotal:</Text>
-                    <Text style={styles.amountValue}>₹{subtotal.toFixed(2)}</Text>
-                  </View>
-                  {discount > 0 && (
-                    <View style={styles.amountRow}>
-                      <Text style={styles.amountLabel}>Discount ({((discount / subtotal) * 100).toFixed(0)}%):</Text>
-                      <Text style={[styles.amountValue, styles.discountText]}>
-                        - ₹{discount.toFixed(2)}
-                      </Text>
-                    </View>
-                  )}
-                  <View style={styles.amountDivider} />
-                  <View style={styles.amountRow}>
-                    <Text style={styles.amountLabelBold}>Amount Payable:</Text>
-                    <Text style={styles.amountValueBold}>₹{afterDiscount.toFixed(2)}</Text>
-                  </View>
-                  <View style={styles.amountDivider} />
-                  <View style={styles.amountRow}>
-                    <Text style={styles.amountLabel}>Amount Paid:</Text>
-                    <Text style={[styles.amountValue, styles.paidTextColor]}>
-                      ₹{advanceAmount.toFixed(2)}
-                    </Text>
-                  </View>
-                  {pendingAmount > 0 && (
-                    <View style={styles.amountRow}>
-                      <Text style={styles.amountLabel}>Amount Due:</Text>
-                      <Text style={[styles.amountValue, styles.pendingTextColor]}>
-                        ₹{pendingAmount.toFixed(2)}
-                      </Text>
-                    </View>
-                  )}
-                  <View style={styles.amountDivider} />
-                  <View style={styles.totalRow}>
-                    <Text style={styles.totalLabel}>Final Amount:</Text>
-                    <Text style={styles.totalValue}>₹{(afterDiscount - advanceAmount).toFixed(2)}</Text>
-                  </View>
-                </View>
-
-                {/* Footer */}
-                <View style={styles.receiptFooter}>
-                  <Text style={styles.footerText}>🙏 Thank you for shopping with us!</Text>
-                  <Text style={styles.footerNote}>Visit again ❤️</Text>
-                  <Text style={styles.footerTimestamp}>
-                    Generated: {new Date().toLocaleString()}
-                  </Text>
-                </View>
-              </View>
-            </ScrollView>
-
-            {/* Action Buttons */}
-            <View style={styles.buttonRow}>
               <TouchableOpacity
-                style={[styles.button, styles.downloadBtn]}
-                disabled={isGeneratingPdf}
+                style={[styles.deleteButton, styles.confirmDeleteButton]}
                 onPress={async () => {
-                  const path = await generatePDF();
-                  if (path) {
-                    Alert.alert(
-                      'PDF Downloaded! ✅',
-                      `Bill saved successfully!\n\nLocation: ${path}`,
-                      [
-                        { text: 'OK' }
-                      ]
-                    );
+                  setShowDeleteConfirm(false);
+                  try {
+                    await billsApi.remove(bill.id);
+                    showMessage({ message: 'Bill deleted successfully', type: 'success' });
+                    navigation.navigate('BillHistory', { refreshBills: true });
+                  } catch (error: any) {
+                    Alert.alert('Error', 'Failed to delete bill. Please try again.');
                   }
                 }}
               >
-                {isGeneratingPdf ? (
-                  <ActivityIndicator color="#FFF" size="small" />
-                ) : (
-                  <Text style={styles.buttonText}>📥 Download PDF</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.shareBtn]}
-                disabled={isGeneratingPdf}
-                onPress={async () => {
-                  const path = await generatePDF();
-                  if (path) {
-                    try {
-                      await Share.open({ 
-                        url: Platform.OS === 'ios' ? path : 'file://' + path,
-                        type: 'application/pdf',
-                        title: `Bill #${bill.billNumber || bill.id}`,
-                      });
-                    } catch (error: any) {
-                      if (error.message !== 'User did not share') {
-                        console.error('Share error:', error);
-                        Alert.alert('Share Error', 'Failed to share PDF');
-                      }
-                    }
-                  }
-                }}
-              >
-                {isGeneratingPdf ? (
-                  <ActivityIndicator color="#FFF" size="small" />
-                ) : (
-                  <Text style={styles.buttonText}>📤 Share Bill</Text>
-                )}
+                <Text style={styles.confirmDeleteText}>Delete</Text>
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={styles.closeBottomButton}
-              onPress={() => setShowPdfModal(false)}
-            >
-              <Text style={styles.closeBottomButtonText}>Close</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1064,7 +893,7 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
                 <Text style={{ fontWeight: '700', color: '#374151' }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.reminderBtn, styles.reminderPrimary]} onPress={sendWhatsAppReminder}>
-                <Text style={{ fontWeight: '700', color: '#FFF' }}>Next</Text>
+                <Text style={{ fontWeight: '700', color: '#FFF' }}>Send</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1090,10 +919,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  backButton: { padding: 8 },
+  backButton: { padding: 8, minWidth: 60 },
   backButtonText: { fontSize: 16, color: '#0066FF', fontWeight: '600' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A' },
-  placeholder: { width: 50 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', flex: 1, textAlign: 'center' },
+  actionIcons: { 
+    flexDirection: 'row', 
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  iconText: {
+    fontSize: 18,
+  },
   content: { flex: 1, padding: 16 },
   card: { 
     backgroundColor: '#FFF', 
@@ -1117,25 +963,6 @@ const styles = StyleSheet.create({
   pendingBadge: { backgroundColor: '#FFF3E0', borderWidth: 1, borderColor: '#FFE5A1' },
   paidText: { fontSize: 12, fontWeight: '700', color: '#2E7D32' },
   pendingText: { fontSize: 12, fontWeight: '700', color: '#EF6C00' },
-  actionsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
-  actionButton: { 
-    flex: 1, 
-    padding: 16, 
-    borderRadius: 10, 
-    backgroundColor: '#F5F5F5', 
-    marginHorizontal: 4, 
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  actionButtonText: { fontSize: 14, fontWeight: '700', color: '#666' },
-  primaryButton: { backgroundColor: '#0066FF' },
-  primaryButtonText: { color: '#FFF' },
-  disabledButton: { backgroundColor: '#F5F5F5', opacity: 0.5 },
-  disabledButtonText: { color: '#999' },
   settlementOverlay: { 
     position: 'absolute', 
     top: 0, 
@@ -1190,6 +1017,43 @@ const styles = StyleSheet.create({
   noItemsText: { fontSize: 14, color: '#999', textAlign: 'center', marginVertical: 12, fontStyle: 'italic' },
   pendingValue: { fontSize: 16, fontWeight: '700', color: '#EF6C00' },
   
+  // Bottom Action Button
+  bottomActionContainer: {
+    padding: 16,
+    backgroundColor: '#FFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  bottomActionButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  paidButtonActive: {
+    backgroundColor: '#0066FF',
+  },
+  paidButtonDisabled: {
+    backgroundColor: '#E8F5E9',
+    borderWidth: 1,
+    borderColor: '#C3E6CB',
+  },
+  bottomActionText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFF',
+  },
+  
   // Modal Styles
   modalOverlay: { 
     flex: 1, 
@@ -1239,244 +1103,64 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFF',
   },
-  modalScrollView: {
-    maxHeight: 500,
-  },
-  receiptCard: { 
-    padding: 20,
-  },
-  shopHeader: {
-    backgroundColor: '#F0F7FF',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#0066FF',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  shopName: { 
-    fontSize: 24, 
-    fontWeight: '800', 
-    textAlign: 'center', 
-    marginBottom: 6,
-    color: '#0066FF',
-    letterSpacing: 1,
-  },
-  shopDetails: { 
-    fontSize: 13, 
-    textAlign: 'center', 
-    color: '#666',
-    marginVertical: 2,
-    fontWeight: '500',
-  },
   
-  infoSection: {
-    marginVertical: 8,
-  },
-  receiptSectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0066FF',
-    marginBottom: 12,
-    paddingBottom: 6,
-    borderBottomWidth: 2,
-    borderBottomColor: '#E5E5E5',
-    letterSpacing: 0.5,
-  },
-  row: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    marginVertical: 6,
-    paddingVertical: 4,
-  },
-  label: { 
-    fontWeight: '600', 
-    color: '#666',
-    fontSize: 14,
-  },
-  value: { 
-    fontWeight: '600', 
-    color: '#1A1A1A',
-    fontSize: 14,
-  },
-  valueBold: {
-    fontWeight: '700',
-    color: '#0066FF',
-    fontSize: 14,
-  },
-  
-  // Table Styles
-  tableHeader: { 
-    flexDirection: 'row', 
-    marginTop: 8, 
-    borderBottomWidth: 2, 
-    borderBottomColor: '#0066FF', 
-    paddingBottom: 8,
-    backgroundColor: '#F5F5F5',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-  },
-  tableHeaderText: { 
-    fontWeight: '700', 
-    fontSize: 12,
-    color: '#1A1A1A',
-  },
-  tableRow: { 
-    flexDirection: 'row', 
-    marginVertical: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  tableValue: { 
-    fontSize: 12,
-    color: '#333',
-    fontWeight: '500',
-  },
-  tableValueBold: {
-    fontSize: 12,
-    color: '#0066FF',
-    fontWeight: '700',
-  },
-  
-  // Amount Summary Box
-  amountSummaryBox: {
-    backgroundColor: '#F8F9FA',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#0066FF',
-    marginVertical: 8,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
-  amountLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-  },
-  amountLabelBold: {
-    fontSize: 15,
-    color: '#1A1A1A',
-    fontWeight: '700',
-  },
-  // amountValue: {
-  //   fontSize: 14,
-  //   color: '#1A1A1A',
-  //   fontWeight: '600',
-  // },
-  amountValueBold: {
-    fontSize: 15,
-    color: '#0066FF',
-    fontWeight: '700',
-  },
-  discountText: {
-    color: '#D32F2F',
-  },
-  paidTextColor: {
-    color: '#2E7D32',
-  },
-  pendingTextColor: {
-    color: '#EF6C00',
-  },
-  amountDivider: {
-    height: 1,
-    backgroundColor: '#E5E5E5',
-    marginVertical: 8,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    borderTopWidth: 2,
-    borderTopColor: '#0066FF',
-    marginTop: 8,
-  },
-  totalLabel: { 
-    fontWeight: '800', 
-    fontSize: 16,
-    color: '#0066FF',
-  },
-  totalValue: { 
-    fontWeight: '800', 
-    fontSize: 16,
-    color: '#0066FF',
-  },
-  
-  // Footer
-  receiptFooter: {
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 2,
-    // borderTopStyle: 'dashed',
-    borderTopColor: '#E5E5E5',
-    alignItems: 'center',
-  },
-  footerText: { 
-    textAlign: 'center', 
-    fontWeight: '700',
-    fontSize: 16,
-    color: '#0066FF',
-    marginBottom: 6,
-  },
-  footerNote: { 
-    textAlign: 'center', 
-    fontSize: 14, 
-    color: '#666',
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  footerTimestamp: {
-    fontSize: 11,
-    color: '#999',
-    fontStyle: 'italic',
-  },
-  
-  // Button Styles
-  buttonRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-  },
-  button: { 
-    flex: 1, 
-    padding: 14, 
-    borderRadius: 10, 
-    marginHorizontal: 4, 
-    alignItems: 'center',
-    elevation: 3,
+  // Delete Confirmation Modal
+  deleteConfirmCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  downloadBtn: { backgroundColor: '#0066FF' },
-  shareBtn: { backgroundColor: '#2E7D32' },
-  buttonText: { 
-    color: '#FFF', 
+  deleteTitle: {
+    fontSize: 22,
     fontWeight: '700',
-    fontSize: 14,
+    color: '#FF4444',
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  closeBottomButton: {
+  deleteMessage: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  deleteButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  deleteButton: {
+    flex: 1,
     padding: 14,
-    marginHorizontal: 16,
-    marginBottom: 16,
     borderRadius: 10,
-    backgroundColor: '#F5F5F5',
     alignItems: 'center',
   },
-  closeBottomButtonText: {
-    color: '#0066FF',
-    fontWeight: '700',
-    fontSize: 14,
+  cancelButton: {
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
   },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  confirmDeleteButton: {
+    backgroundColor: '#FF4444',
+  },
+  confirmDeleteText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  
   reminderInput: {
     borderWidth: 1,
     borderColor: '#E5E7EB',
