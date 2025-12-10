@@ -38,11 +38,11 @@ const ProfileScreen = () => {
       description: 'View all transaction records and details',
       screen: 'TransactionHistory',
     },
-    {
-      title: 'App Settings',
-      description: 'Configure app preferences & notifications',
-      screen: 'AppSettings',
-    },
+    // {
+    //   title: 'App Settings',
+    //   description: 'Configure app preferences & notifications',
+    //   screen: 'AppSettings',
+    // },
     {
       title: 'Help & Support',
       description: 'Get help, contact support or view FAQs',
@@ -301,9 +301,7 @@ const ProfileScreen = () => {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>Made with ❤️ by MobiOne Team</Text>
-          <Text style={styles.footerVersion}>
-            Version 2.1.0 • © 2024 FlowPay Solutions
-          </Text>
+  <Text style={styles.footerVersion}>Version 2.1.0 • © {new Date().getFullYear()} BuildsWith Rehan</Text>
         </View>
 
         {/* Edit Shop Details Modal */}

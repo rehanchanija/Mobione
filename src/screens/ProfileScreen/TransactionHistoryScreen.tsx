@@ -13,6 +13,7 @@ import {
   TextInput,
   ScrollView,
   Modal,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
@@ -95,13 +96,31 @@ const TransactionHistoryScreen = () => {
   };
 
   const handleClearAllTransactions = async () => {
-    try {
-      await transactionsApi.removeAll();
-      await refetch();
-      showSuccess('All transactions cleared', 'Success');
-    } catch (e) {
-      showError('Failed to clear transactions', 'Error');
-    }
+    Alert.alert(
+      'Clear All Transactions',
+      'Are you sure you want to delete all transactions? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            try {
+              await transactionsApi.removeAll();
+              await refetch();
+              showSuccess('All transactions cleared', 'Success');
+            } catch (e) {
+              showError('Failed to clear transactions', 'Error');
+            }
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const renderBill = ({ item }: { item: TransactionItem }) => (
@@ -114,7 +133,7 @@ const TransactionHistoryScreen = () => {
             {format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm')}
           </Text>
         </View>
-        `<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <View style={[
             styles.statusBadge,
             ((item.data as any)?.paymentStatus ?? 'Pending') === 'Paid' ? styles.statusPaid : styles.statusPending,
@@ -126,7 +145,7 @@ const TransactionHistoryScreen = () => {
           <TouchableOpacity onPress={() => handleDeleteTransaction(item._id)} style={{ marginLeft: 10 }}>
             <Text style={{ fontSize: 16, color: '#9CA3AF' }}>✕</Text>
           </TouchableOpacity>
-        </View>`
+        </View>
       </View>
 
       {/* Transaction Summary */}
@@ -211,8 +230,9 @@ const TransactionHistoryScreen = () => {
             {filteredTransactions.length} {filteredTransactions.length === 1 ? 'entry' : 'entries'}
           </Text>
         </View>
-        <TouchableOpacity onPress={handleClearAllTransactions} style={styles.backButton}>
-          <Text style={{ color: '#DC2626', fontWeight: '700' }}>Clear all</Text>
+        <TouchableOpacity onPress={handleClearAllTransactions} style={styles.clearAllButton}>
+          <Text style={styles.clearAllButtonEmoji}>🗑️</Text>
+          <Text style={styles.clearAllButtonText}>Clear all</Text>
         </TouchableOpacity>
       </View>
 
@@ -421,6 +441,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  clearAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
+    gap: 6,
+  },
+  clearAllButtonEmoji: {
+    fontSize: 16,
+  },
+  clearAllButtonText: {
+    color: '#DC2626',
+    fontWeight: '700',
+    fontSize: 13,
   },
   backEmoji: {
     fontSize: 20,
@@ -746,4 +785,3 @@ filterChip: {
 });
 
 export default TransactionHistoryScreen;
-
