@@ -64,11 +64,23 @@ const createBrandMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: any) => brandsApi.create(data),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['brands'] });
-      // Refresh notifications to show the brand creation notification immediately
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      showMessage({
+        message: 'Success',
+        description: `Brand "${data.name}" created successfully`,
+        type: 'success',
+      });
+    },
+    onError: (error: any) => {
+      const errorMsg = error?.response?.data?.message || 'Failed to create brand';
+      showMessage({
+        message: 'Error',
+        description: errorMsg,
+        type: 'danger',
+      });
     },
   });
 };
@@ -78,11 +90,23 @@ const updateBrandMutation = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
       brandsApi.update(id, data),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['brands'] });
-      // Refresh notifications to show the brand update notification immediately
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      showMessage({
+        message: 'Success',
+        description: `Brand "${data.name}" updated successfully`,
+        type: 'success',
+      });
+    },
+    onError: (error: any) => {
+      const errorMsg = error?.response?.data?.message || 'Failed to update brand';
+      showMessage({
+        message: 'Error',
+        description: errorMsg,
+        type: 'danger',
+      });
     },
   });
 };
@@ -93,9 +117,21 @@ const deleteBrandMutation = () => {
     mutationFn: (id: string) => brandsApi.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brands'] });
-      // Refresh notifications to show the brand deletion notification immediately
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      showMessage({
+        message: 'Success',
+        description: 'Brand deleted successfully',
+        type: 'success',
+      });
+    },
+    onError: (error: any) => {
+      const errorMsg = error?.response?.data?.message || 'Failed to delete brand';
+      showMessage({
+        message: 'Error',
+        description: errorMsg,
+        type: 'danger',
+      });
     },
   });
 };
@@ -108,12 +144,24 @@ const createBrandProductMutation = () => {
       const res = await api.post('/products', { ...productData, brandId });
       return res.data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data: any, variables) => {
       queryClient.invalidateQueries({ queryKey: ['brands', variables.brandId, 'products'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      // Refresh notifications to show the product creation notification immediately
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      showMessage({
+        message: 'Success',
+        description: `Product "${data.name}" created successfully`,
+        type: 'success',
+      });
+    },
+    onError: (error: any) => {
+      const errorMsg = error?.response?.data?.message || 'Failed to create product';
+      showMessage({
+        message: 'Error',
+        description: errorMsg,
+        type: 'danger',
+      });
     },
   });
 };
@@ -139,16 +187,28 @@ const updateProductMutation = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => 
       productsApi.update(id, data),
-    onSuccess: (_, variables) => {
+    onSuccess: (data: any, variables) => {
       queryClient.invalidateQueries({ queryKey: ['products', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
       // Also invalidate brand products if the product has a brandId
       if (variables.data.brandId) {
         queryClient.invalidateQueries({ queryKey: ['brands', variables.data.brandId, 'products'] });
       }
-      // Refresh notifications to show the product update notification immediately
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      showMessage({
+        message: 'Success',
+        description: `Product "${data.name}" updated successfully`,
+        type: 'success',
+      });
+    },
+    onError: (error: any) => {
+      const errorMsg = error?.response?.data?.message || 'Failed to update product';
+      showMessage({
+        message: 'Error',
+        description: errorMsg,
+        type: 'danger',
+      });
     },
   });
 };
@@ -161,9 +221,21 @@ const deleteProductMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       // We don't know which brand this product belonged to, so invalidate all brand products
       queryClient.invalidateQueries({ queryKey: ['brands'] });
-      // Refresh notifications to show the product deletion notification immediately
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+      showMessage({
+        message: 'Success',
+        description: 'Product deleted successfully',
+        type: 'success',
+      });
+    },
+    onError: (error: any) => {
+      const errorMsg = error?.response?.data?.message || 'Failed to delete product';
+      showMessage({
+        message: 'Error',
+        description: errorMsg,
+        type: 'danger',
+      });
     },
   });
 };

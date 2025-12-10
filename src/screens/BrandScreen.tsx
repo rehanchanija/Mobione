@@ -62,7 +62,17 @@ import { showMessage } from 'react-native-flash-message';
     const [selectMode, setSelectMode] = useState(false);
     const [selected, setSelected] = useState<Record<string, { id: string; name: string; unitPrice: number; quantity: number }>>({});
 
-    const { brandsApi, productsApi } = useAuth();
+    const { 
+      brandsApi, 
+      productsApi,
+      createBrandMutation,
+      updateBrandMutation,
+      deleteBrandMutation
+    } = useAuth();
+    
+    const createMut = createBrandMutation();
+    const updateMut = updateBrandMutation();
+    const deleteMut = deleteBrandMutation();
     
     const loadBrands = async () => {
       try {
@@ -168,15 +178,14 @@ import { showMessage } from 'react-native-flash-message';
           {
             text: "Delete",
             style: "destructive",
-          onPress: async () => {
-            try {
-              await brandsApi.remove(brand._id);
-              setBrands(brands.filter(b => b._id !== brand._id));
-              showMessage({ message: 'Brand deleted', type: 'success' });
-            } catch {
-              showMessage({ message: 'Failed to delete brand', type: 'danger' });
-            }
-          },
+            onPress: async () => {
+              try {
+                await deleteMut.mutateAsync(brand._id);
+                setBrands(brands.filter(b => b._id !== brand._id));
+              } catch (error) {
+                // Error message already shown by mutation's onError handler
+              }
+            },
           },
         ]
       );
@@ -190,20 +199,24 @@ import { showMessage } from 'react-native-flash-message';
 
       try {
         if (editingBrand) {
-          const updated = await brandsApi.update(editingBrand._id, { name: brandName });
+          const updated = await updateMut.mutateAsync({ 
+            id: editingBrand._id, 
+            data: { name: brandName } 
+          });
           setBrands(brands.map(b => (b._id === editingBrand._id ? updated : b)));
         } else {
-          const created = await brandsApi.create({ name: brandName });
+          const created = await createMut.mutateAsync({ name: brandName });
           setBrands([...brands, created]);
         }
-      } catch {
-        showMessage({ message: editingBrand ? 'Failed to update brand' : 'Failed to create brand', type: 'danger' });
+        
+        // Auto close modal and reset
+        setModalVisible(false);
+        setBrandName("");
+        setEditingBrand(null);
+      } catch (error) {
+        // Error message already shown by mutation's onError handler
         return;
       }
-
-      setModalVisible(false);
-      setBrandName("");
-      setEditingBrand(null);
     };
 
     const renderBrandCard = ({ item }: { item: Brand }) => (

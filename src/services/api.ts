@@ -426,15 +426,9 @@ export const getSalesReport = async (timeFilter: TimeFilterType = 'all'): Promis
 
 // ---------------- NOTIFICATIONS ----------------
 export type NotificationType = 
-  | 'PRODUCT_CREATED' 
-  | 'PRODUCT_UPDATED' 
-  | 'PRODUCT_DELETED' 
   | 'LOW_STOCK' 
   | 'PAYMENT_PENDING' 
-  | 'BILL_CREATED' 
-  | 'BRAND_CREATED' 
-  | 'BRAND_UPDATED' 
-  | 'BRAND_DELETED';
+  | 'BILL_CREATED';
 
 export interface Notification {
   _id: string;

@@ -147,12 +147,8 @@ const NotificationScreen = () => {
       <Text style={styles.emoji}>
         {item.type === "BILL_CREATED"
           ? "📄"
-          : item.type === "PRODUCT_CREATED"
-          ? "📦"
           : item.type === "PAYMENT_PENDING"
           ? "💰"
-          : item.type === "BRAND_CREATED"
-          ? "🏷️"
           : item.type === "LOW_STOCK"
           ? "⚠️"
           : "🔔"}

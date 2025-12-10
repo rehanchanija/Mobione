@@ -81,7 +81,7 @@ const AnimatedBell = ({ unreadCount }: { unreadCount: number }) => {
     
     intervalRef.current = setInterval(() => {
       performShake();
-    }, 2000);
+    }, 5000);
 
     return () => {
       if (intervalRef.current) {
