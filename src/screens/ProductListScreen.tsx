@@ -61,7 +61,7 @@ export default function ProductListScreen() {
   const navigation = useNavigation();
   const route = useRoute<ProductListScreenRouteProp>();
   const { brand, allProducts } = route.params || {} as any;
-  const { brandsApi, productsApi, categoriesApi } = useAuth();
+  const { brandsApi, productsApi, categoriesApi, updateCategoryMutation, deleteCategoryMutation } = useAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [brandStockTotal, setBrandStockTotal] = useState<number>(0);
@@ -85,6 +85,14 @@ export default function ProductListScreen() {
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isScannerVisible, setIsScannerVisible] = useState(false);
+  
+  // Category edit/delete states
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState("");
+  const [isCategoryEditModalVisible, setIsCategoryEditModalVisible] = useState(false);
+  
+  const updateCategoryMut = updateCategoryMutation();
+  const deleteCategoryMut = deleteCategoryMutation();
 
   const requestCameraPermission = async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
@@ -291,7 +299,7 @@ export default function ProductListScreen() {
       </View>
 
       {/* Filter Tabs */}
-      <View style={styles.filterSection}>
+      {/* <View style={styles.filterSection}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -322,7 +330,7 @@ export default function ProductListScreen() {
             onPress={() => setActiveFilter('allTime')} 
           />
         </ScrollView>
-      </View>
+      </View> */}
 
       {/* Product List */}
       <FlatList
@@ -470,20 +478,69 @@ export default function ProductListScreen() {
                 {showCategoryDropdown && (
                   <View style={styles.dropdownList}>
                     {categories.map((c) => (
-                      <TouchableOpacity
+                      <View
                         key={c._id}
                         style={[
                           styles.dropdownItem,
                           selectedCategoryId === c._id && styles.selectedDropdownItem
                         ]}
-                        onPress={() => {
-                          setSelectedCategoryId(c._id);
-                          setShowCategoryDropdown(false);
-                        }}
-                        activeOpacity={0.7}
                       >
-                        <Text style={styles.dropdownItemText}>{c.name}</Text>
-                      </TouchableOpacity>
+                        <TouchableOpacity
+                          style={{ flex: 1 }}
+                          onPress={() => {
+                            setSelectedCategoryId(c._id);
+                            setShowCategoryDropdown(false);
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.dropdownItemText}>{c.name}</Text>
+                        </TouchableOpacity>
+                        <View style={styles.categoryActions}>
+                          <TouchableOpacity
+                            onPress={() => {
+                              setEditingCategoryId(c._id);
+                              setEditingCategoryName(c.name);
+                              setIsCategoryEditModalVisible(true);
+                            }}
+                            activeOpacity={0.6}
+                            style={styles.categoryActionButton}
+                          >
+                            <Text style={styles.categoryActionIcon}>✏️</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => {
+                              Alert.alert(
+                                'Delete Category',
+                                `Are you sure you want to delete "${c.name}"?`,
+                                [
+                                  { text: 'Cancel', style: 'cancel' },
+                                  {
+                                    text: 'Delete',
+                                    style: 'destructive',
+                                    onPress: async () => {
+                                      try {
+                                        await deleteCategoryMut.mutateAsync(c._id);
+                                        setCategories(categories.filter(cat => cat._id !== c._id));
+                                        if (selectedCategoryId === c._id) {
+                                          setSelectedCategoryId('');
+                                        }
+                                        showMessage({ message: 'Category deleted successfully', type: 'success' });
+                                      } catch (error: any) {
+                                        const errorMessage = error?.response?.data?.message || 'Failed to delete category';
+                                        Alert.alert('Error', errorMessage);
+                                      }
+                                    },
+                                  },
+                                ]
+                              );
+                            }}
+                            activeOpacity={0.6}
+                            style={styles.categoryActionButton}
+                          >
+                            <Text style={styles.categoryActionIcon}>🗑️</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
                     ))}
                     <TouchableOpacity
                       style={styles.createCategoryButton}
@@ -646,6 +703,77 @@ export default function ProductListScreen() {
                 activeOpacity={0.8}
               >
                 <Text style={styles.saveButtonText}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Category Modal */}
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isCategoryEditModalVisible}
+        onRequestClose={() => setIsCategoryEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Category</Text>
+              <TouchableOpacity 
+                onPress={() => setIsCategoryEditModalVisible(false)}
+                style={styles.modalClose}
+              >
+                <Text style={styles.modalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Category Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter category name"
+                placeholderTextColor="#9CA3AF"
+                value={editingCategoryName}
+                onChangeText={setEditingCategoryName}
+                autoFocus
+              />
+            </View>
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={() => setIsCategoryEditModalVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.saveButton]}
+                onPress={async () => {
+                  if (!editingCategoryName.trim()) {
+                    Alert.alert('Error', 'Please enter category name');
+                    return;
+                  }
+                  try {
+                    if (editingCategoryId) {
+                      const updated = await updateCategoryMut.mutateAsync({
+                        id: editingCategoryId,
+                        data: { name: editingCategoryName.trim() }
+                      });
+                      setCategories(categories.map(c => c._id === editingCategoryId ? updated : c));
+                      showMessage({ message: 'Category updated successfully', type: 'success' });
+                      setIsCategoryEditModalVisible(false);
+                      setEditingCategoryId(null);
+                      setEditingCategoryName('');
+                    }
+                  } catch {
+                    Alert.alert('Error', 'Failed to update category');
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.saveButtonText}>Update</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -979,6 +1107,9 @@ display: "flex",
     padding: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   selectedDropdownItem: {
     backgroundColor: "#EFF6FF",
@@ -997,6 +1128,23 @@ display: "flex",
     color: "#3B82F6",
     fontWeight: "700",
     fontSize: 15,
+  },
+  categoryActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: 8,
+  },
+  categoryActionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  categoryActionIcon: {
+    fontSize: 16,
   },
   barcodeRow: {
     flexDirection: 'row',

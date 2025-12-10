@@ -168,6 +168,28 @@ const deleteProductMutation = () => {
   });
 };
 
+// Category mutations
+const updateCategoryMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name: string } }) => 
+      categoriesApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+};
+
+const deleteCategoryMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => categoriesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    },
+  });
+};
+
 export const useAuth = () => {
   const navigation = useNavigation();
   const { initialize } = useAuthContext();
@@ -427,6 +449,10 @@ export const useAuth = () => {
     useTotalProductsCount,
     useTotalStock,
     useSalesReport,
+
+    // React Query hooks for categories
+    updateCategoryMutation,
+    deleteCategoryMutation,
 
     // React Query hooks for bills
     useBills,

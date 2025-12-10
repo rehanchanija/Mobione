@@ -304,34 +304,8 @@ import { showMessage } from 'react-native-flash-message';
                       </TouchableOpacity>
                     </View>
                   </View>
-                ) : route.params?.fromBilling ? (
-                  // Normal Product View - Show Sold button
-                  <TouchableOpacity 
-                    style={styles.soldButton}
-                    onPress={() => {
-                      setSelected({ [item.id]: { id: item.id, name: item.name, unitPrice: item.unitPrice, quantity: 1 } });
-                      setSelectMode(true);
-                    }}
-                  >
-                    <Text style={styles.soldButtonText}>Sold</Text>
-                  </TouchableOpacity>
-                ) : (
-                  // Default View - Show Edit button
-                  <TouchableOpacity 
-                    style={styles.addProductButton}
-                    onPress={() => {
-                      const selectedItem = {
-                        productId: item.id,
-                        name: item.name,
-                        unitPrice: item.unitPrice,
-                        quantity: 1
-                      };
-                      navigation.navigate('Billing', { items: [selectedItem] });
-                    }}
-                  >
-                    <Text style={styles.addProductButtonText}>Add</Text>
-                  </TouchableOpacity>
-                )}
+                ) 
+                : null}
               </View>
             )}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}

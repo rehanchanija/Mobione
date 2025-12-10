@@ -347,6 +347,14 @@ export const categoriesApi = {
     const res = await api.post<CategoryDto>(`/categories`, data);
     return res.data;
   },
+  update: async (id: string, data: { name: string }): Promise<CategoryDto> => {
+    const res = await api.put<CategoryDto>(`/categories/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string): Promise<{ success: boolean }> => {
+    const res = await api.delete<{ success: boolean }>(`/categories/${id}`);
+    return res.data;
+  },
 };
 
 // ---------------- CUSTOMERS & BILLS ----------------
