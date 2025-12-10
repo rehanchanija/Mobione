@@ -311,7 +311,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['notifications', page, limit, isRead],
       queryFn: () => notificationsApi.list(page, limit, isRead),
-      refetchInterval: 2000, // Refetch every 5 seconds for faster updates
+      refetchInterval: 3000, // Refetch every 5 seconds for faster updates
       staleTime: 3000, // Data is stale after 3 seconds
     });
   };
@@ -320,17 +320,12 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['notifications', 'unread-count'],
       queryFn: () => notificationsApi.getUnreadCount(),
-      refetchInterval: 3000, // Refetch every 3 seconds for real-time feel
+      refetchInterval: 2000, // Refetch every 3 seconds for real-time feel
       staleTime: 2000, // Data is stale after 2 seconds
     });
   };
 
-  // const useNotificationsByType = (type: string, page: number = 1, limit: number = 10) => {
-  //   return useQuery({
-  //     queryKey: ['notifications', 'type', type, page, limit],
-  //     queryFn: () => notificationsApi.getByType(type, page, limit),
-  //   });
-  // };
+ 
 
   const markNotificationAsReadMutation = () => {
     return useMutation({

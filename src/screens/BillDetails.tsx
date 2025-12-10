@@ -10,6 +10,7 @@ import {
   Modal,
   Alert,
 } from "react-native";
+import { showMessage } from 'react-native-flash-message';
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BillingStackParamList } from "../navigation/BillingStack";
 import { useAuth } from "../hooks/useAuth";
@@ -64,7 +65,7 @@ const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
           phone,
           address,
         });
-        customerId = customer.id;
+        customerId = customer._id || customer.id;
       }
 
       // Create bill
@@ -126,10 +127,22 @@ const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
         // Don't fail bill creation if transaction creation fails
       }
 
+      // Show success message
+      showMessage({
+        message: 'Success',
+        description: `Bill created for ${name || 'Customer'} - Amount: ₹${total.toFixed(2)}`,
+        type: 'success',
+      });
+
       navigation.replace('Billing');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating bill:', error);
-      Alert.alert('Error', 'Failed to create bill. Please try again.');
+      const errorMsg = error?.response?.data?.message || 'Failed to create bill. Please try again.';
+      showMessage({
+        message: 'Error',
+        description: errorMsg,
+        type: 'danger',
+      });
     }
   };
 
@@ -284,22 +297,7 @@ const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.payBtn}
-          onPress={async () => {
-            // Create customer if needed then create bill
-            let customerId: string | undefined;
-            if (name.trim()) {
-              const c = await customersApi.create({ name, phone, address });
-              customerId = c._id || c.id;
-            }
-            await billsApi.create({
-              customerId,
-              items: items.map((it: any) => ({ productId: it.productId, quantity: it.quantity })),
-              discount,
-              paymentMethod,
-              amountPaid: parseFloat(amountPaid) || 0
-            });
-            navigation.replace("Billing");
-          }}
+          onPress={handleCreateBill}
         >
           <Text style={styles.payText}>
             {paidAmount >= total ? `Create Bill - Paid ✓` : `Create Bill - ${((paidAmount / total) * 100).toFixed(0)}% Paid`}

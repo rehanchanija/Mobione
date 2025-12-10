@@ -205,7 +205,7 @@ export default function ProductListScreen() {
             try {
               await productsApi.remove(product._id);
               setProducts(products.filter(p => p._id !== product._id));
-              Alert.alert("Success", "Product deleted successfully");
+showMessage({ message: 'Product deleted', type: 'success' });
             } catch {
               Alert.alert('Error', 'Failed to delete product');
             }
@@ -525,9 +525,8 @@ export default function ProductListScreen() {
                                           setSelectedCategoryId('');
                                         }
                                         showMessage({ message: 'Category deleted successfully', type: 'success' });
-                                      } catch (error: any) {
-                                        const errorMessage = error?.response?.data?.message || 'Failed to delete category';
-                                        Alert.alert('Error', errorMessage);
+                                      } catch {
+                                        Alert.alert('Error', 'Failed to delete category');
                                       }
                                     },
                                   },
