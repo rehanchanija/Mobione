@@ -46,38 +46,50 @@ const getHeaderTitle = (route: keyof RootTabParamList) => {
 // Animated Bell Component
 const AnimatedBell = ({ unreadCount }: { unreadCount: number }) => {
   const shakeAnim = useRef(new Animated.Value(0)).current;
-  const prevUnreadRef = useRef(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const runningRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  useEffect(() => {
-    const prev = prevUnreadRef.current;
+  // Function to perform a single shake animation
+  const performShake = () => {
+    const shakeSequence = Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+    ]);
+    runningRef.current = shakeSequence;
+    shakeSequence.start(() => {
+      runningRef.current = null;
+    });
+  };
 
-    // If unread decreases to 0 → stop and reset
+  useEffect(() => {
+    // If unread count is 0, stop the interval and reset animation
     if (unreadCount === 0) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       runningRef.current?.stop?.();
       shakeAnim.setValue(0);
-      prevUnreadRef.current = unreadCount;
       return;
     }
 
-    // Only perform a single shake when unread count changes (e.g., new notification)
-    if (unreadCount > 0 && unreadCount !== prev) {
-      runningRef.current?.stop?.();
-      const shakeOnce = Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
-      ]);
-      runningRef.current = shakeOnce;
-      shakeOnce.start(() => {
-        runningRef.current = null;
-      });
-    }
+    // If unread count > 0, perform shake immediately and then every 2 seconds
+    performShake();
+    
+    intervalRef.current = setInterval(() => {
+      performShake();
+    }, 2000);
 
-    prevUnreadRef.current = unreadCount;
-  }, [unreadCount, shakeAnim]);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [unreadCount]);
 
   const rotation = shakeAnim.interpolate({
     inputRange: [-10, 10],

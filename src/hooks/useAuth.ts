@@ -66,6 +66,9 @@ const createBrandMutation = () => {
     mutationFn: (data: any) => brandsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brands'] });
+      // Refresh notifications to show the brand creation notification immediately
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 };
@@ -77,6 +80,9 @@ const updateBrandMutation = () => {
       brandsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brands'] });
+      // Refresh notifications to show the brand update notification immediately
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 };
@@ -87,6 +93,9 @@ const deleteBrandMutation = () => {
     mutationFn: (id: string) => brandsApi.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brands'] });
+      // Refresh notifications to show the brand deletion notification immediately
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 };
@@ -102,6 +111,9 @@ const createBrandProductMutation = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['brands', variables.brandId, 'products'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      // Refresh notifications to show the product creation notification immediately
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 };
@@ -134,6 +146,9 @@ const updateProductMutation = () => {
       if (variables.data.brandId) {
         queryClient.invalidateQueries({ queryKey: ['brands', variables.data.brandId, 'products'] });
       }
+      // Refresh notifications to show the product update notification immediately
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 };
@@ -146,6 +161,9 @@ const deleteProductMutation = () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       // We don't know which brand this product belonged to, so invalidate all brand products
       queryClient.invalidateQueries({ queryKey: ['brands'] });
+      // Refresh notifications to show the product deletion notification immediately
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 };
@@ -199,7 +217,8 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['notifications', page, limit, isRead],
       queryFn: () => notificationsApi.list(page, limit, isRead),
-      refetchInterval: 10000, // Refetch every 10 seconds
+      refetchInterval: 2000, // Refetch every 5 seconds for faster updates
+      staleTime: 3000, // Data is stale after 3 seconds
     });
   };
 
@@ -207,7 +226,8 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['notifications', 'unread-count'],
       queryFn: () => notificationsApi.getUnreadCount(),
-      refetchInterval: 30000, // Refetch every 30 seconds
+      refetchInterval: 3000, // Refetch every 3 seconds for real-time feel
+      staleTime: 2000, // Data is stale after 2 seconds
     });
   };
 
