@@ -540,6 +540,63 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
     }
   };
 
+  const shareInvoiceAsHTML = async (htmlContent: string): Promise<void> => {
+    try {
+      // 1️⃣ Create file name with .html extension
+      const fileName = `Bill_${bill.billNumber || bill.id}.html`;
+
+      // 2️⃣ Use cache directory for temporary share files
+      const filePath = `${RNFS.CachesDirectoryPath}/${fileName}`;
+
+      // 3️⃣ Write HTML content into file storage
+      await RNFS.writeFile(filePath, htmlContent, 'utf8');
+
+      console.log('📄 HTML File Saved:', filePath);
+
+      // 4️⃣ Verify file exists before sharing
+      const fileExists = await RNFS.exists(filePath);
+      if (!fileExists) {
+        throw new Error('Failed to create HTML file');
+      }
+
+      console.log('✅ File verified, opening share dialog...');
+
+      // 5️⃣ Share using FILE URL
+      const result = await Share.open({
+        url: `file://${filePath}`,
+        type: 'text/html',
+        filename: fileName,
+        failOnCancel: false,
+        title: `Bill ${bill.billNumber || bill.id}`,
+        message: 'Share this invoice',
+      });
+
+      console.log('✅ Share completed:', result);
+
+      // Show success message
+      if (result) {
+        showMessage({
+          message: '📤 Invoice Shared',
+          description: fileName,
+          type: 'success',
+          duration: 3
+        });
+      }
+
+    } catch (error: any) {
+      console.log('❌ HTML Share Error:', error.message || error);
+      
+      if (!error.message?.includes('cancelled')) {
+        showMessage({
+          message: '❌ Share Failed',
+          description: error.message || 'Could not share invoice',
+          type: 'danger',
+          duration: 3
+        });
+      }
+    }
+  };
+
   const shareInvoice = async (): Promise<void> => {
     try {
       console.log('📤 Sharing invoice...');
@@ -804,49 +861,9 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         </html>
       `;
 
-      const fileName = `Bill_${bill.billNumber || bill.id}.pdf`;
+      // Share as HTML using the new shareInvoiceAsHTML function
+      await shareInvoiceAsHTML(html);
       
-      // Generate PDF using react-native-html-to-pdf
-      const pdfResult = await RNHTMLtoPDF.convert({
-        html,
-        fileName: fileName.replace('.pdf', ''),
-        directory: 'Documents',
-        width: 595,
-        height: 842,
-      });
-
-      if (pdfResult.filePath) {
-        // Copy to Downloads folder as well
-        const downloadPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
-        try {
-          await RNFS.copyFile(pdfResult.filePath, downloadPath);
-          console.log('✅ PDF copied to Downloads:', downloadPath);
-        } catch (copyError) {
-          console.warn('Could not copy to Downloads, but file is saved in Documents');
-        }
-
-        // Share the PDF file
-        try {
-          await Share.open({
-            url: `file://${pdfResult.filePath}`,
-            filename: fileName,
-            title: `Bill ${bill.billNumber || bill.id}`,
-            message: `Your invoice has been generated`,
-            failOnCancel: false,
-          });
-        } catch (shareError) {
-          console.log('Share cancelled or failed');
-        }
-        
-        showMessage({ 
-          message: '📤 Invoice Shared', 
-          description: `${fileName}`,
-          type: 'success',
-          duration: 3
-        });
-      } else {
-        throw new Error('Failed to generate PDF');
-      }
     } catch (error: any) {
       console.error('❌ Share Error:', error);
       Alert.alert(
