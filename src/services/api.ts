@@ -1,8 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// const BASE_URL = 'https://mobi-one-backend.vercel.app/api'
-const BASE_URL='http://192.168.29.69:3000/api'
+const BASE_URL = 'https://mobi-one-backend.vercel.app/api'
+// const BASE_URL='http://192.168.29.69:3000/api'
 export type TimeFilterType = 'day' | 'week' | 'month' | 'all';
 
 export interface SalesReportData {
