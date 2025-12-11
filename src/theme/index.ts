@@ -1,4 +1,3 @@
-// Central Theme Export - Import all theme files from here
 export * from "./colors";
 export * from "./typography";
 export * from "./spacing";
@@ -9,7 +8,6 @@ import { TYPOGRAPHY } from "./typography";
 import { SPACING } from "./spacing";
 import { HEADER_STYLES, ICON_SIZES, SHADOWS } from "./styles";
 
-// Combined theme object for easy access
 export const THEME = {
   colors: COLORS,
   typography: TYPOGRAPHY,

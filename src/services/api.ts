@@ -2,7 +2,6 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = 'https://mobi-one-backend.vercel.app/api'
-// const BASE_URL='http://192.168.29.69:3000/api'
 export type TimeFilterType = 'day' | 'week' | 'month' | 'all';
 
 export interface SalesReportData {
@@ -39,10 +38,10 @@ export interface ProductDto {
 
 export interface Bill {
   _id: string;
-  customer: CustomerDto; // Populated customer
+  customer: CustomerDto;
   userId: string;
   items: {
-    product: ProductDto; // Populated product
+    product: ProductDto;
     quantity: number;
     price?: number;
   }[];
@@ -81,7 +80,6 @@ export const api = axios.create({
   timeout: 10000,
 });
 
-// ✅ Attach token automatically
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
   if (token) {
@@ -90,14 +88,12 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Refresh token on 401 responses
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     const status = error?.response?.status;
 
-    // Do not handle if no response, non-401, already retried, or calling refresh itself
     if (!status || status !== 401 || originalRequest?.__isRetryRequest || (originalRequest?.url || '').includes('/auth/refresh')) {
       return Promise.reject(error);
     }
@@ -132,7 +128,6 @@ api.interceptors.response.use(
   }
 );
 
-// ---------------- AUTH ----------------
 export interface LoginData {
   email: string;
   password: string;
@@ -166,10 +161,6 @@ export const authApi = {
       const raw = response.data as any;
       const token = raw?.token || raw?.access_token;
 
-      if (!token) {
-        console.warn('Login succeeded but token is missing in response');
-      }
-
       const refreshToken = raw?.refreshToken || raw?.refresh_token;
       return {
         user: raw?.user,
@@ -177,12 +168,6 @@ export const authApi = {
         refreshToken,
       } as AuthResponse;
     } catch (error: any) {
-      console.error('Login error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        url: error.config?.url,
-      });
       throw error;
     }
   },
@@ -197,7 +182,6 @@ export const authApi = {
   },
 };
 
-// ---------------- PROFILE ----------------
 export interface Profile {
   id: string;
   name: string;
@@ -219,11 +203,9 @@ export const profileApi = {
   getProfile: async (): Promise<Profile> => {
     try {
       const token = await AsyncStorage.getItem('token');
-      console.log('📌 Getting profile, token:', token);
 
       // ✅ Adjust this endpoint if Postman uses `/api/auth/profile`
       const response = await api.get<Profile>('/auth/profile');
-      console.log('✅ Profile response:', response.data);
 
       return response.data;
     } catch (error: any) {
@@ -234,20 +216,10 @@ export const profileApi = {
 
   updateProfile: async (data: UpdateProfileData): Promise<Profile> => {
     try {
-      console.log('📌 Updating profile with:', data);
-
-      // ✅ Adjust endpoint if Postman uses `/api/auth/profile`
       const response = await api.put<Profile>('/auth/profile', data);
-      console.log('✅ Update profile response:', response.data);
 
       return response.data;
     } catch (error: any) {
-      console.error('❌ Update profile error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        url: error.config?.url,
-      });
       throw error;
     }
   },
@@ -301,7 +273,6 @@ export const brandsApi = {
   },
 };
 
-// ---------------- PRODUCTS ----------------
 export const productsApi = {
   list: async (q?: string, page?: number, limit?: number): Promise<any[]> => {
     const res = await api.get<any[]>(`/products`, { params: { q, page, limit } });
@@ -357,7 +328,6 @@ export const categoriesApi = {
   },
 };
 
-// ---------------- CUSTOMERS & BILLS ----------------
 export interface CreateCustomerDto {
   name: string;
   phone?: string;
@@ -400,7 +370,7 @@ export const billsApi = {
   },
   listPaged: async (page: number, limit: number) => {
     const res = await api.get(`/bills`, { params: { page, limit } });
-    return res.data; // { bills, total, page, limit, totalPages }
+    return res.data;
   },
   update: async (id: string, data: Partial<any>) => {
     const res = await api.patch(`/bills/${id}`, data);
@@ -424,7 +394,6 @@ export const getSalesReport = async (timeFilter: TimeFilterType = 'all'): Promis
   return response.data;
 };
 
-// ---------------- NOTIFICATIONS ----------------
 export type NotificationType = 
   | 'LOW_STOCK' 
   | 'PAYMENT_PENDING' 

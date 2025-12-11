@@ -80,21 +80,16 @@ const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
         amountPaid: parseFloat(amountPaid)
       };
 
-      console.log('📝 Creating bill with data:', billData);
       const billResponse = await billsApi.create(billData);
-      console.log('✅ Bill created, response:', billResponse);
       
       const billId = billResponse._id || billResponse.id;
-      console.log('📌 Bill ID:', billId);
 
       if (!billId) {
-        console.error('❌ No bill ID in response');
         throw new Error('Bill created but no ID returned');
       }
 
       // Create transaction for bill creation
       try {
-        console.log('🔄 Creating transaction...');
         const transactionData = {
           billId,
           type: 'BILL_CREATED' as const,
@@ -117,13 +112,8 @@ const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
           },
         };
         
-        console.log('📤 Transaction data:', JSON.stringify(transactionData, null, 2));
         const transactionResponse = await transactionsApi.create(transactionData);
-        console.log('✅ Transaction created successfully:', transactionResponse);
       } catch (err: any) {
-        console.error('❌ Failed to create transaction - Response data:', err?.response?.data);
-        console.error('❌ Failed to create transaction - Message:', err?.message);
-        console.error('❌ Full error:', JSON.stringify(err, null, 2));
         // Don't fail bill creation if transaction creation fails
       }
 
@@ -136,7 +126,6 @@ const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
 
       navigation.replace('Billing');
     } catch (error: any) {
-      console.error('Error creating bill:', error);
       const errorMsg = error?.response?.data?.message || 'Failed to create bill. Please try again.';
       showMessage({
         message: 'Error',

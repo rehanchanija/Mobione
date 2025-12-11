@@ -60,26 +60,20 @@ export default function BillHistoryScreen({ route }: any) {
 
   // Update allBills when billsResponse changes
   useEffect(() => {
-    console.log('📡 useBills hook triggered - page:', currentPage, 'pageSize:', pageSize);
-    
     if (billsResponse?.bills && billsResponse.bills.length > 0) {
-      console.log('📦 Bills response:', billsResponse);
       
       if (currentPage === 1) {
         // Initial load on page 1 - replace all bills
         setAllBills(billsResponse.bills);
-        console.log('✅ Initial load - Set allBills to new data:', billsResponse.bills.length);
       } else {
         // Page > 1 (scroll pagination) - append new bills
         setAllBills(prevBills => {
           const existingIds = new Set(prevBills.map((b: Bill) => b._id));
           const newBills = billsResponse.bills.filter((b: Bill) => !existingIds.has(b._id));
-          console.log('➕ Scroll pagination: Appending new bills:', newBills.length);
           return [...prevBills, ...newBills];
         });
       }
     } else {
-      console.log('⚠️ No bills in response');
       if (currentPage === 1) {
         setAllBills([]);
       }
@@ -119,12 +113,10 @@ export default function BillHistoryScreen({ route }: any) {
   
   // Update bills data when transformed bills change
   React.useEffect(() => {
-    console.log('📊 Updating billsData with transformedBills:', transformedBills.length);
     const oldCount = billsData.length;
     const newCount = transformedBills.length;
     if (newCount > oldCount && currentPage === 1) {
       setNewBillsCount(newCount - oldCount);
-      console.log('✨ New bills detected:', newCount - oldCount);
       // Auto-dismiss the notification after 3 seconds
       setTimeout(() => setNewBillsCount(0), 3000);
     }
@@ -421,10 +413,7 @@ export default function BillHistoryScreen({ route }: any) {
             const scrollPercentage = (contentOffset.y / (contentSize.height - layoutMeasurement.height)) * 100;
             const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 150;
             
-            console.log(`📍 Scroll: ${scrollPercentage.toFixed(0)}% | Close to bottom: ${isCloseToBottom}`);
-            
             if (isCloseToBottom && !isLoadingMore && currentPage < totalPages) {
-              console.log('🚀 Triggering new page fetch from scroll');
               setIsLoadingMore(true);
               setCurrentPage(prev => prev + 1);
             }
@@ -452,14 +441,6 @@ export default function BillHistoryScreen({ route }: any) {
                 discount: bill.discount || 0,
                 subTotal: bill.subtotal
               };
-              
-              // Debug log for each bill when clicked
-              if (bill.customer) {
-                console.log(`📋 Bill ${bill.billNumber} - Customer type:`, typeof bill.customer);
-                console.log(`📋 Bill ${bill.billNumber} - Customer object:`, bill.customer);
-              } else {
-                console.log(`⚠️ Bill ${bill.billNumber} - NO customer data!`);
-              }
               
               return (
                 <TouchableOpacity

@@ -1,6 +1,4 @@
-// Spacing Theme - Consistent spacing scale
 export const SPACING = {
-  // Base spacing unit (4px)
   xs: 4,
   sm: 8,
   md: 12,
@@ -13,7 +11,6 @@ export const SPACING = {
   "6xl": 56,
   "7xl": 64,
 
-  // Padding scales
   padding: {
     none: 0,
     xs: 4,
@@ -25,7 +22,6 @@ export const SPACING = {
     "3xl": 32,
   },
 
-  // Margin scales
   margin: {
     none: 0,
     xs: 4,
@@ -37,7 +33,6 @@ export const SPACING = {
     "3xl": 32,
   },
 
-  // Gap scales (for flex layouts)
   gap: {
     xs: 4,
     sm: 8,
@@ -48,7 +43,6 @@ export const SPACING = {
     "3xl": 32,
   },
 
-  // Border radius
   borderRadius: {
     none: 0,
     sm: 4,

@@ -38,11 +38,6 @@ const ProfileScreen = () => {
       description: 'View all transaction records and details',
       screen: 'TransactionHistory',
     },
-    // {
-    //   title: 'App Settings',
-    //   description: 'Configure app preferences & notifications',
-    //   screen: 'AppSettings',
-    // },
     {
       title: 'Help & Support',
       description: 'Get help, contact support or view FAQs',
@@ -58,8 +53,6 @@ const ProfileScreen = () => {
   const [ownerEmail, setOwnerEmail] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
   const [shopImage, setShopImage] = useState<string | null>(null);
-
-  // Temporary state for preview
   const [tempShopName, setTempShopName] = useState('');
   const [tempShopDetails, setTempShopDetails] = useState('');
   const [tempOwnerName, setTempOwnerName] = useState('');
@@ -547,7 +540,6 @@ const styles = StyleSheet.create({
 
   // Removed old container styles since we're using scrollContainer now
 
-  // Card Styles
   card: {
     backgroundColor: '#fff',
     marginBottom: 20,
@@ -684,7 +676,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 
-  // Footer Styles
   footer: {
     alignItems: 'center',
     marginTop: 30,
@@ -700,7 +691,6 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
 
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',

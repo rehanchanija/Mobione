@@ -29,7 +29,6 @@ const SplashScreen = () => {
   const loadingOpacity = useRef(new Animated.Value(0)).current;
   const progressWidth = useRef(new Animated.Value(0)).current;
 
-  // Floating shapes animations
   const shape1TranslateY = useRef(new Animated.Value(0)).current;
   const shape1Opacity = useRef(new Animated.Value(0.3)).current;
   const shape1Rotation = useRef(new Animated.Value(0)).current;
@@ -70,7 +69,6 @@ const SplashScreen = () => {
           }
         }
       } catch (error) {
-        console.error('Error in auth check:', error);
         navigation.reset({
           index: 0,
           routes: [{ name: 'AuthScreen' as never }],
@@ -82,7 +80,6 @@ const SplashScreen = () => {
   }, [isLoading, isAuthenticated]);
 
   const startAnimations = () => {
-    // Logo animation
     Animated.parallel([
       Animated.timing(logoScale, {
         toValue: 1,
@@ -96,7 +93,6 @@ const SplashScreen = () => {
       }),
     ]).start();
 
-    // Continuous logo rotation
     Animated.loop(
       Animated.timing(logoRotation, {
         toValue: 1,
@@ -146,7 +142,6 @@ const SplashScreen = () => {
       }).start();
     }, 1200);
 
-    // Loading animation
     setTimeout(() => {
       Animated.timing(loadingOpacity, {
         toValue: 1,
@@ -154,7 +149,6 @@ const SplashScreen = () => {
         useNativeDriver: true,
       }).start();
 
-      // Progress bar animation
       Animated.timing(progressWidth, {
         toValue: 1,
         duration: 2000,
@@ -162,7 +156,6 @@ const SplashScreen = () => {
       }).start();
     }, 1500);
 
-    // Floating shapes animations
     startFloatingAnimation(shape1TranslateY, shape1Opacity, shape1Rotation, 2000, 0);
     startFloatingAnimation(shape2TranslateY, shape2Opacity, shape2Rotation, 2500, 500);
     startFloatingAnimation(shape3TranslateY, shape3Opacity, shape3Rotation, 3000, 1000);

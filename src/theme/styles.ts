@@ -1,11 +1,9 @@
-// Header Styles - Consistent header styling across all screens
 import { Platform } from "react-native";
 import { COLORS } from "./colors";
 import { TYPOGRAPHY } from "./typography";
 import { SPACING } from "./spacing";
 
 export const HEADER_STYLES = {
-  // Main Tab Navigator Header
   tabHeader: {
     headerStyle: {
       backgroundColor: COLORS.white,
@@ -30,7 +28,6 @@ export const HEADER_STYLES = {
     headerStatusBarHeight: 0,
   },
 
-  // Stack Navigator Header (with back button)
   stackHeader: {
     headerStyle: {
       backgroundColor: COLORS.white,
@@ -56,7 +53,6 @@ export const HEADER_STYLES = {
     headerStatusBarHeight: 0,
   },
 
-  // Modal Header
   modalHeader: {
     headerStyle: {
       backgroundColor: COLORS.white,
@@ -81,7 +77,6 @@ export const HEADER_STYLES = {
     headerStatusBarHeight: 0,
   },
 
-  // Notification Screen Header
   notificationHeader: {
     headerStyle: {
       backgroundColor: COLORS.white,
@@ -106,7 +101,6 @@ export const HEADER_STYLES = {
     headerStatusBarHeight: 0,
   },
 
-  // Profile Screen Header
   profileHeader: {
     headerStyle: {
       backgroundColor: COLORS.white,
@@ -131,7 +125,6 @@ export const HEADER_STYLES = {
     headerStatusBarHeight: 0,
   },
 
-  // Detail Screen Header
   detailHeader: {
     headerStyle: {
       backgroundColor: COLORS.white,
@@ -158,7 +151,6 @@ export const HEADER_STYLES = {
   },
 };
 
-// Icon sizes
 export const ICON_SIZES = {
   xs: 16,
   sm: 20,
@@ -169,7 +161,6 @@ export const ICON_SIZES = {
   "3xl": 56,
 };
 
-// Shadow styles
 export const SHADOWS = {
   none: {
     shadowColor: "transparent",

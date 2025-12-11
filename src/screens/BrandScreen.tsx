@@ -354,7 +354,6 @@ import { showMessage } from 'react-native-flash-message';
             style={styles.bottomButton}
             onPress={() => {
               const items = Object.values(selected).map(it => ({  productId: it.id, name: it.name, unitPrice: it.unitPrice, quantity: it.quantity}));
-              console.log('Selected items:', items);
               navigation.navigate('Billing', { items });
             }}
           >

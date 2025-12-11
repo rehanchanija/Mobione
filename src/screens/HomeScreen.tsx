@@ -241,19 +241,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F7F9FC",
     paddingHorizontal: 20,
-    paddingTop: 30, // 🔹 More top spacing
+    paddingTop: 30,
   },
   scrollContent: {
-    paddingBottom: 30, // 🔹 Extra bottom space so last item isn’t cramped
+    paddingBottom: 30,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 25, // 🔹 More spacing below header
+    marginBottom: 25,
   },
   headerTitle: {
-    fontSize: 22, // 🔹 Slightly bigger font
+    fontSize: 22,
     fontWeight: "700",
     color: "#111",
   },
@@ -262,16 +262,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sectionTitle: {
-    fontSize: 24, // 🔹 Bigger font
+    fontSize: 24,
     fontWeight: "600",
     color: "#333",
-    marginVertical: 15, // 🔹 Extra vertical spacing
+    marginVertical: 15,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 20, // 🔹 More space below grid
+    marginBottom: 20,
   },
   card: {
     backgroundColor: "#fff",
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   quickActions: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20, // 🔹 More space under quick actions
+    marginBottom: 20,
   },
   quickCard: {
     backgroundColor: "#fff",
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 14,
-    marginBottom: 12, // 🔹 More space between activities
+    marginBottom: 12,
     elevation: 2,
   },
   activityContent: {

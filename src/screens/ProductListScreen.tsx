@@ -85,8 +85,6 @@ export default function ProductListScreen() {
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isScannerVisible, setIsScannerVisible] = useState(false);
-  
-  // Category edit/delete states
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [isCategoryEditModalVisible, setIsCategoryEditModalVisible] = useState(false);

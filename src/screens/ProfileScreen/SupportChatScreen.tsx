@@ -36,7 +36,6 @@ export default function SupportChatScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    // Auto-scroll to bottom when new message arrives
     if (messages.length > 0) {
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });

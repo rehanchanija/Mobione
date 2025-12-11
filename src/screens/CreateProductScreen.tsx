@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/types"; // adjust path to your types
+import { RootStackParamList } from "../navigation/types";
 
 // ✅ Props type for this screen
 type CreateProductProps = NativeStackScreenProps<RootStackParamList, "CreateProduct">;
@@ -20,9 +20,7 @@ export default function CreateProduct({ navigation }: CreateProductProps) {
   const [barcode, setBarcode] = useState("");
 
   const handleSave = () => {
-    // Save logic (API / state / DB)
-    console.log({ name, price, stock, barcode });
-    navigation.goBack(); // 👈 after saving, go back
+    navigation.goBack();
   };
 
   return (

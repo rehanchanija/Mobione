@@ -18,7 +18,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = await AsyncStorage.getItem('token');
       setIsAuthenticated(!!token);
     } catch (error) {
-      console.error('Failed to get token:', error);
     } finally {
       setIsLoading(false);
     }

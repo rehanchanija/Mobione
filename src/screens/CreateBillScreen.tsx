@@ -29,7 +29,6 @@ export default function BillingScreen() {
   
   const { useBills } = useAuth();
   const { data: billsResponse, isLoading } = useBills(1, 5);
-  console.log("Fetched bills response:", billsResponse);
 
   const recentBills = billsResponse?.bills || [];
 

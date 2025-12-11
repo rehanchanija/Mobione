@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
   backgroundColor: '#fff',
   marginHorizontal: 16,
   borderRadius: 16,
-  height: 50,           // FIX HEIGHT
+  height: 50,
   minHeight: 50,
   maxHeight: 50,
 },
@@ -504,8 +504,8 @@ filterChip: {
   borderWidth: 1.2,
   borderColor: '#E5E7EB',
   marginRight: 10,
-  height: 38,        // reduced height
-  maxWidth: 140,     // prevents oversized width
+  height: 38,
+  maxWidth: 140,
 },
 
 

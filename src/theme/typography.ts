@@ -1,8 +1,6 @@
-// Typography Theme - Font sizes, weights, and line heights
 import { Platform } from "react-native";
 
 export const TYPOGRAPHY = {
-  // Font Weights
   fontWeights: {
     thin: "100",
     extralight: "200",
@@ -15,7 +13,6 @@ export const TYPOGRAPHY = {
     black: "900",
   } as const,
 
-  // Font Sizes - Scale: 12, 14, 16, 18, 20, 24, 28, 32, 36, 40
   fontSizes: {
     xs: 12,
     sm: 14,
@@ -29,7 +26,6 @@ export const TYPOGRAPHY = {
     "6xl": 40,
   } as const,
 
-  // Line Heights
   lineHeights: {
     tight: 1.2,
     snug: 1.375,
@@ -38,7 +34,6 @@ export const TYPOGRAPHY = {
     loose: 2,
   } as const,
 
-  // Letter Spacing
   letterSpacing: {
     tighter: -0.5,
     tight: -0.25,
@@ -48,9 +43,7 @@ export const TYPOGRAPHY = {
     widest: 1,
   } as const,
 
-  // Predefined Text Styles
   styles: {
-    // Headers
     h1: {
       fontSize: 40,
       fontWeight: "700" as const,
@@ -88,7 +81,6 @@ export const TYPOGRAPHY = {
       letterSpacing: 0,
     },
 
-    // Display
     displayLarge: {
       fontSize: 32,
       fontWeight: "600" as const,
@@ -105,7 +97,6 @@ export const TYPOGRAPHY = {
       lineHeight: 32,
     },
 
-    // Body
     bodyLarge: {
       fontSize: 18,
       fontWeight: "400" as const,
@@ -122,7 +113,6 @@ export const TYPOGRAPHY = {
       lineHeight: 20,
     },
 
-    // Label
     labelLarge: {
       fontSize: 16,
       fontWeight: "600" as const,
@@ -139,7 +129,6 @@ export const TYPOGRAPHY = {
       lineHeight: 16,
     },
 
-    // Caption
     captionLarge: {
       fontSize: 14,
       fontWeight: "500" as const,
@@ -151,7 +140,6 @@ export const TYPOGRAPHY = {
       lineHeight: 16,
     },
 
-    // Button Text
     buttonLarge: {
       fontSize: 16,
       fontWeight: "600" as const,

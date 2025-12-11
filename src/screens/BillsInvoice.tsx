@@ -179,9 +179,7 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         amountPaid: newAdvanceAmount,
       };
       
-      console.log('🔄 Updating bill as paid...');
       await billsApi.update(bill.id, updateData);
-      console.log('✅ Bill updated');
 
       setShowSettlementInfo(true);
       
@@ -191,7 +189,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         navigation.navigate('BillHistory', { refreshBills: true });
       }, 2000);
     } catch (error) {
-      console.error('Error marking bill as paid:', error);
       setIsUpdatingBill(false);
       Alert.alert('Error', 'Failed to mark bill as paid. Please try again.');
     }
@@ -217,7 +214,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
       
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     } catch (err) {
-      console.warn('Permission error:', err);
       return false;
     }
   };
@@ -225,7 +221,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
   const generateAndDownloadPDF = async (): Promise<void> => {
     try {
       setIsGeneratingPdf(true);
-      console.log('🔄 Starting PDF generation and download...');
 
       const hasPermission = await requestStoragePermission();
       if (!hasPermission) {
@@ -506,15 +501,11 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
       });
 
       if (pdfResult.filePath) {
-        console.log('✅ PDF generated at:', pdfResult.filePath);
-        
         // Copy to Downloads folder as well
         const downloadPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
         try {
           await RNFS.copyFile(pdfResult.filePath, downloadPath);
-          console.log('✅ PDF copied to Downloads:', downloadPath);
         } catch (copyError) {
-          console.warn('Could not copy to Downloads, but file is saved in Documents');
         }
         
         showMessage({ 
@@ -529,7 +520,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
 
       setIsGeneratingPdf(false);
     } catch (error: any) {
-      console.error('❌ PDF Generation Error:', error);
       setIsGeneratingPdf(false);
       
       Alert.alert(
@@ -551,15 +541,11 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
       // 3️⃣ Write HTML content into file storage
       await RNFS.writeFile(filePath, htmlContent, 'utf8');
 
-      console.log('📄 HTML File Saved:', filePath);
-
       // 4️⃣ Verify file exists before sharing
       const fileExists = await RNFS.exists(filePath);
       if (!fileExists) {
         throw new Error('Failed to create HTML file');
       }
-
-      console.log('✅ File verified, opening share dialog...');
 
       // 5️⃣ Share using FILE URL
       const result = await Share.open({
@@ -570,8 +556,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
         title: `Bill ${bill.billNumber || bill.id}`,
         message: 'Share this invoice',
       });
-
-      console.log('✅ Share completed:', result);
 
       // Show success message
       if (result) {
@@ -584,8 +568,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
       }
 
     } catch (error: any) {
-      console.log('❌ HTML Share Error:', error.message || error);
-      
       if (!error.message?.includes('cancelled')) {
         showMessage({
           message: '❌ Share Failed',
@@ -599,8 +581,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
 
   const shareInvoice = async (): Promise<void> => {
     try {
-      console.log('📤 Sharing invoice...');
-
       const itemsHtml = bill.items
         .map((item: any, index: number) => {
           const name = item?.name ?? item?.product?.name ?? 'Unknown Product';
@@ -865,7 +845,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
       await shareInvoiceAsHTML(html);
       
     } catch (error: any) {
-      console.error('❌ Share Error:', error);
       Alert.alert(
         'Share Failed',
         `Error: ${error.message || 'Unknown error'}`,
