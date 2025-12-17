@@ -20,6 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import { showMessage } from 'react-native-flash-message';
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '../context/AuthContext';
+import { AppState } from 'react-native';
 
 const useBrands = () => {
   return useQuery({
@@ -268,39 +269,39 @@ export const useAuth = () => {
 
   const loginMutation = useMutation<AuthResponse, Error, LoginData>({
     mutationFn: async (loginData) => {
-      console.log('Attempting login with:', { email: loginData.email });
       return authApi.login(loginData);
     },
     onSuccess: async (data) => {
-      console.log('Login Success:', data);
+      // Store access token
+      if (data?.token) {
+        await AsyncStorage.setItem('token', String(data.token));
+      }
 
-  if (data?.token) {
-    await AsyncStorage.setItem('token', String(data.token));
-  } else {
-    console.warn('No token found in response');
-  }
+      // Store refresh token
+      if (data?.refreshToken) {
+        await AsyncStorage.setItem('refreshToken', String((data as any).refreshToken));
+      }
 
-  if (data?.refreshToken) {
-    if (data?.refreshToken) {
-    await AsyncStorage.setItem('refreshToken', String((data as any).refreshToken));
-  } else {
-  
-    console.warn('No refresh token found in response');
-  }
+      // Store user info
+      if (data?.user) {
+        await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      }
 
-  if (data?.user) {
-    await AsyncStorage.setItem('user', JSON.stringify(data.user));
-  } else {
-    console.warn('No user found in response');
-  }
-
-  await initialize();
-  navigation.reset({
-    index: 0,
-    routes: [{ name: 'MainTabs' as never }],
+      // Reinitialize auth context and navigate
+      await initialize();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' as never }],
+      });
+    },
+    onError: (error: any) => {
+      showMessage({
+        message: 'Login Failed',
+        description: error?.response?.data?.message || 'An error occurred during login',
+        type: 'danger',
+      });
+    },
   });
-  }
-  }}); 
 
   
 
@@ -364,7 +365,6 @@ export const useAuth = () => {
       },
     });
   };
-
   // Profile query
 
   const [isTokenAvailable, setIsTokenAvailable] = useState(false);
@@ -375,6 +375,10 @@ export const useAuth = () => {
       setIsTokenAvailable(!!token);
     };
     checkToken();
+    
+    // Also check when app comes to foreground (for refresh scenarios)
+    const subscription = AppState.addEventListener('change', checkToken);
+    return () => subscription.remove();
   }, []);
 
   const { data: profile, isLoading: isProfileLoading, error: profileQueryError, refetch: refetchProfile } = useQuery<Profile>({
@@ -385,16 +389,15 @@ export const useAuth = () => {
         return result;
       } catch (error: any) {
         const message = error.response?.data?.message || 'Failed to fetch profile';
-        console.log('Profile query error:', message);
         throw error;
       }
     },
-    // Only enable profile query when token is available
-    // The API interceptor will handle token refresh if needed
+    // Always enable - let interceptor handle 401
     enabled: isTokenAvailable,
-    retry: 1, // Retry once (interceptor will refresh token and retry)
+    retry: 2, // Retry twice to allow interceptor to refresh
     refetchOnMount: 'always',
     refetchOnReconnect: true,
+    refetchOnWindowFocus: true,
   });
 
   // Update profile mutation

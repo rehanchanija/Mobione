@@ -11,11 +11,26 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthContext } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
   const navigation = useNavigation();
+
+  // Prefetch data hooks
+  const { 
+    useBrands, 
+    useBrandTotal,
+    useProducts, 
+    useTotalProductsCount,
+    useTotalStock,
+    useNotifications,
+    useUnreadCount,
+    useDashboardTotals,
+    useBills,
+    useTotalBillsCount
+  } = useAuth();
 
   // Animation values
   const logoScale = useRef(new Animated.Value(0)).current;
@@ -47,12 +62,25 @@ const SplashScreen = () => {
 
   const { isAuthenticated, isLoading, tokenValid } = useAuthContext();
 
+  // Prefetch all essential data during splash screen
+  useBrands();
+  useBrandTotal();
+  useProducts();
+  useTotalProductsCount();
+  useTotalStock();
+  useNotifications(1, 10);
+  useUnreadCount();
+  useDashboardTotals();
+  useBills(1, 10);
+  useTotalBillsCount();
+
   useEffect(() => {
     const checkAuthAndNavigate = async () => {
       try {
         await startAnimations();
 
         // small delay so splash is visible for ~3.5s
+        // During this time, all data is being fetched in the background
         await new Promise(resolve => setTimeout(resolve, 3500));
 
         if (!isLoading) {

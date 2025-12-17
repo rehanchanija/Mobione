@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (newRefreshToken) {
               await AsyncStorage.setItem('refreshToken', String(newRefreshToken));
             }
-          } catch (refreshError) {
+          } catch (refreshError: any) {
             // Refresh failed - user needs to login again
             await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
             setIsAuthenticated(false);
@@ -70,7 +70,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (error) {
-      console.error('Auth initialization error:', error);
       setIsAuthenticated(false);
       setTokenValid(false);
     } finally {

@@ -93,6 +93,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error?.response?.status;
+    const url = originalRequest?.url || '';
 
     // Don't retry if:
     // - Not a 401 error
@@ -102,14 +103,15 @@ api.interceptors.response.use(
       !status || 
       status !== 401 || 
       originalRequest?.__isRetryRequest || 
-      (originalRequest?.url || '').includes('/auth/refresh') ||
-      (originalRequest?.url || '').includes('/auth/login')
+      url.includes('/auth/refresh') ||
+      url.includes('/auth/login')
     ) {
       return Promise.reject(error);
     }
 
     try {
       const refreshToken = await AsyncStorage.getItem('refreshToken');
+      
       if (!refreshToken) {
         // No refresh token available - clear storage and reject
         await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
@@ -141,7 +143,7 @@ api.interceptors.response.use(
 
       // Retry the original request
       return api.request(originalRequest);
-    } catch (refreshErr) {
+    } catch (refreshErr: any) {
       // Refresh failed - clear tokens and reject
       await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
       return Promise.reject(refreshErr);
