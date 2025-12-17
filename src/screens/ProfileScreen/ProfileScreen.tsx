@@ -59,7 +59,7 @@ const ProfileScreen = () => {
   const [tempOwnerEmail, setTempOwnerEmail] = useState('');
   const [tempOwnerPhone, setTempOwnerPhone] = useState('');
   const [tempShopImage, setTempShopImage] = useState<string | null>(null);
-
+  const [hasToken, setHasToken] = useState<boolean>(true);
   const pickImage = () => {
     ImagePicker.launchImageLibrary(
       { mediaType: 'photo', quality: 0.7 },
@@ -80,10 +80,9 @@ const ProfileScreen = () => {
     setPreviewVisible(true);
   };
 
-  const { profile, updateProfile,logout, isProfileLoading, isUpdatingProfile, refetchProfile } =
+  const { profile, updateProfile,logout, isProfileLoading, isUpdatingProfile, refetchProfile, profileError } =
     useAuth();
 
-  const [hasToken, setHasToken] = useState<boolean>(false);
   const [checkingToken, setCheckingToken] = useState<boolean>(true);
 
   // Check token on mount and on focus
@@ -91,12 +90,9 @@ const ProfileScreen = () => {
     try {
       setCheckingToken(true);
       const token = await AsyncStorage.getItem('token');
-      const exists = !!token;
-      setHasToken(exists);
-      if (exists) {
-        // Ensure profile is up to date when token present
-        await refetchProfile();
-      } else {
+      
+      if (!token) {
+        // No token found
         Alert.alert('Please login', 'You must be logged in to view your profile.', [
           {
             text: 'OK',
@@ -107,7 +103,11 @@ const ProfileScreen = () => {
               }),
           },
         ]);
+        return;
       }
+      
+      // Token exists, let the profile query (with interceptor) handle token refresh if needed
+      await refetchProfile();
     } finally {
       setCheckingToken(false);
     }
@@ -123,6 +123,20 @@ const ProfileScreen = () => {
       return () => {};
     }, [checkTokenAndMaybeFetch])
   );
+
+  // Handle profile fetch errors - redirect only if 401 after refresh attempt
+  useEffect(() => {
+    if (profileError && (profileError as any)?.response?.status === 401) {
+      Alert.alert('Session Expired', 'Your session has expired. Please login again.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            logout();
+          },
+        },
+      ]);
+    }
+  }, [profileError, logout]);
 
     
   useEffect(() => {

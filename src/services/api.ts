@@ -94,34 +94,55 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const status = error?.response?.status;
 
-    if (!status || status !== 401 || originalRequest?.__isRetryRequest || (originalRequest?.url || '').includes('/auth/refresh')) {
+    // Don't retry if:
+    // - Not a 401 error
+    // - Already retried this request
+    // - This is a refresh token request itself
+    if (
+      !status || 
+      status !== 401 || 
+      originalRequest?.__isRetryRequest || 
+      (originalRequest?.url || '').includes('/auth/refresh') ||
+      (originalRequest?.url || '').includes('/auth/login')
+    ) {
       return Promise.reject(error);
     }
 
     try {
       const refreshToken = await AsyncStorage.getItem('refreshToken');
       if (!refreshToken) {
+        // No refresh token available - clear storage and reject
+        await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
         return Promise.reject(error);
       }
 
+      // Attempt to refresh the token
       const refreshResponse = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
       const raw = refreshResponse.data || {};
-      const newToken = raw?.access_token;
-      const newRefreshToken = raw?.refresh_token;
+      const newToken = raw?.access_token || raw?.token;
+      const newRefreshToken = raw?.refresh_token || raw?.refreshToken;
 
-      if (newToken) {
-        await AsyncStorage.setItem('token', String(newToken));
+      if (!newToken) {
+        // Invalid refresh response
+        await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
+        return Promise.reject(error);
       }
+
+      // Store new tokens
+      await AsyncStorage.setItem('token', String(newToken));
       if (newRefreshToken) {
         await AsyncStorage.setItem('refreshToken', String(newRefreshToken));
       }
 
+      // Update the original request with new token
       originalRequest.headers = originalRequest.headers || {};
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       (originalRequest as any).__isRetryRequest = true;
 
+      // Retry the original request
       return api.request(originalRequest);
     } catch (refreshErr) {
+      // Refresh failed - clear tokens and reject
       await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
       return Promise.reject(refreshErr);
     }

@@ -366,6 +366,7 @@ export const useAuth = () => {
   };
 
   // Profile query
+
   const [isTokenAvailable, setIsTokenAvailable] = useState(false);
 
   useEffect(() => {
@@ -388,9 +389,10 @@ export const useAuth = () => {
         throw error;
       }
     },
-    // Always enabled; interceptor adds Authorization when token exists
-    enabled: true,
-    retry: false,
+    // Only enable profile query when token is available
+    // The API interceptor will handle token refresh if needed
+    enabled: isTokenAvailable,
+    retry: 1, // Retry once (interceptor will refresh token and retry)
     refetchOnMount: 'always',
     refetchOnReconnect: true,
   });

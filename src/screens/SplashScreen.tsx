@@ -45,7 +45,7 @@ const SplashScreen = () => {
   const shape4Opacity = useRef(new Animated.Value(0.3)).current;
   const shape4Rotation = useRef(new Animated.Value(0)).current;
 
-  const { isAuthenticated, isLoading } = useAuthContext();
+  const { isAuthenticated, isLoading, tokenValid } = useAuthContext();
 
   useEffect(() => {
     const checkAuthAndNavigate = async () => {
@@ -56,6 +56,15 @@ const SplashScreen = () => {
         await new Promise(resolve => setTimeout(resolve, 3500));
 
         if (!isLoading) {
+          // If token is not valid, redirect to login regardless of isAuthenticated
+          if (!tokenValid) {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'AuthScreen' as never }],
+            });
+            return;
+          }
+
           if (isAuthenticated) {
             navigation.reset({
               index: 0,
@@ -77,7 +86,7 @@ const SplashScreen = () => {
     };
 
     checkAuthAndNavigate();
-  }, [isLoading, isAuthenticated]);
+  }, [isLoading, isAuthenticated, tokenValid]);
 
   const startAnimations = () => {
     Animated.parallel([

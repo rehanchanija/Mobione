@@ -105,9 +105,7 @@ const AuthScreen = () => {
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.forgotPassword}>
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                </TouchableOpacity>
+             
 
                 {error && <Text style={styles.errorText}>{error.message}</Text>}
 
@@ -207,17 +205,7 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
   },
   passwordToggleText: { fontSize: 18 },
-  forgotPassword: { 
-    alignSelf: 'center', 
-    padding: 8,
-    marginBottom: 8,
-  },
-  forgotPasswordText: { 
-    color: '#667eea', 
-    fontSize: 14, 
-    fontWeight: '500',
-    textAlign: 'center',
-  },
+ 
   submitButton: { 
     paddingVertical: 16, 
     borderRadius: 12, 
