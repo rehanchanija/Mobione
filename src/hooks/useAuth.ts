@@ -312,8 +312,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['notifications', page, limit, isRead],
       queryFn: () => notificationsApi.list(page, limit, isRead),
-      refetchInterval: 3000, // Refetch every 5 seconds for faster updates
-      staleTime: 3000, // Data is stale after 3 seconds
+      staleTime: 30000, // Data stale after 30 seconds
     });
   };
 
@@ -321,8 +320,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['notifications', 'unread-count'],
       queryFn: () => notificationsApi.getUnreadCount(),
-      refetchInterval: 2000, // Refetch every 3 seconds for real-time feel
-      staleTime: 2000, // Data is stale after 2 seconds
+      staleTime: 30000, // Data stale after 30 seconds
     });
   };
 
@@ -397,7 +395,6 @@ export const useAuth = () => {
     retry: 2, // Retry twice to allow interceptor to refresh
     refetchOnMount: 'always',
     refetchOnReconnect: true,
-    refetchOnWindowFocus: true,
   });
 
   // Update profile mutation
@@ -419,7 +416,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['bills', page, limit],
       queryFn: () => billsApi.listPaged(page, limit),
-      refetchInterval: 5000, // Refetch every 5 seconds
+      staleTime: 45000, // Data stale after 45 seconds
     });
   };
 
@@ -427,7 +424,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['bills', 'dashboard-totals'],
       queryFn: () => billsApi.getDashboardTotals(),
-      refetchInterval: 10000, // Refetch every 20 seconds
+      staleTime: 60000, // Data stale after 60 seconds
     });
   };
 
@@ -435,7 +432,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['bills', 'total-count'],
       queryFn: () => billsApi.getTotalCount(),
-      refetchInterval: 10000,
+      staleTime: 60000,
     });
   };
 
@@ -443,7 +440,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['products', 'total-count'],
       queryFn: () => productsApi.getTotalCount(),
-      refetchInterval: 10000, // Refetch every 20 seconds
+      staleTime: 60000,
     });
   };
 
@@ -451,7 +448,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['products', 'total-stock'],
       queryFn: () => productsApi.getTotalStock(),
-      refetchInterval: 10000, // Refetch every 20 seconds
+      staleTime: 60000,
     });
   };
 
@@ -459,7 +456,7 @@ export const useAuth = () => {
     return useQuery({
       queryKey: ['sales-report', timeFilter],
       queryFn: () => getSalesReport(timeFilter),
-      refetchInterval: 10000,
+      staleTime: 120000, // Data stale after 2 minutes
     });
   };
 

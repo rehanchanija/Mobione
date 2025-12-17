@@ -8,33 +8,16 @@ import {
   StatusBar,
   SafeAreaView,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthContext } from '../context/AuthContext';
-import { useAuth } from '../hooks/useAuth';
 
 const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
   const navigation = useNavigation();
 
-  // Prefetch data hooks
-  const { 
-    useBrands, 
-    useBrandTotal,
-    useProducts, 
-    useTotalProductsCount,
-    useTotalStock,
-    useNotifications,
-    useUnreadCount,
-    useDashboardTotals,
-    useBills,
-    useTotalBillsCount
-  } = useAuth();
-
   // Animation values
   const logoScale = useRef(new Animated.Value(0)).current;
-  const logoRotation = useRef(new Animated.Value(0)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const appNameTranslateY = useRef(new Animated.Value(100)).current;
   const appNameOpacity = useRef(new Animated.Value(0)).current;
@@ -44,35 +27,7 @@ const SplashScreen = () => {
   const loadingOpacity = useRef(new Animated.Value(0)).current;
   const progressWidth = useRef(new Animated.Value(0)).current;
 
-  const shape1TranslateY = useRef(new Animated.Value(0)).current;
-  const shape1Opacity = useRef(new Animated.Value(0.3)).current;
-  const shape1Rotation = useRef(new Animated.Value(0)).current;
-
-  const shape2TranslateY = useRef(new Animated.Value(0)).current;
-  const shape2Opacity = useRef(new Animated.Value(0.3)).current;
-  const shape2Rotation = useRef(new Animated.Value(0)).current;
-
-  const shape3TranslateY = useRef(new Animated.Value(0)).current;
-  const shape3Opacity = useRef(new Animated.Value(0.3)).current;
-  const shape3Rotation = useRef(new Animated.Value(0)).current;
-
-  const shape4TranslateY = useRef(new Animated.Value(0)).current;
-  const shape4Opacity = useRef(new Animated.Value(0.3)).current;
-  const shape4Rotation = useRef(new Animated.Value(0)).current;
-
   const { isAuthenticated, isLoading, tokenValid } = useAuthContext();
-
-  // Prefetch all essential data during splash screen
-  useBrands();
-  useBrandTotal();
-  useProducts();
-  useTotalProductsCount();
-  useTotalStock();
-  useNotifications(1, 10);
-  useUnreadCount();
-  useDashboardTotals();
-  useBills(1, 10);
-  useTotalBillsCount();
 
   useEffect(() => {
     const checkAuthAndNavigate = async () => {
@@ -117,46 +72,31 @@ const SplashScreen = () => {
   }, [isLoading, isAuthenticated, tokenValid]);
 
   const startAnimations = () => {
-    Animated.parallel([
-      Animated.timing(logoScale, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-      }),
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    Animated.loop(
-      Animated.timing(logoRotation, {
-        toValue: 1,
-        duration: 5000,
-        useNativeDriver: true,
-      })
-    ).start();
-
-    // App name animation
-    setTimeout(() => {
+    // Simple sequence: fade in logo, then text
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(logoScale, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
       Animated.parallel([
         Animated.timing(appNameTranslateY, {
           toValue: 0,
-          duration: 1000,
+          duration: 800,
           useNativeDriver: true,
         }),
         Animated.timing(appNameOpacity, {
           toValue: 1,
-          duration: 1000,
+          duration: 800,
           useNativeDriver: true,
         }),
-      ]).start();
-    }, 500);
-
-    // Welcome message animation
-    setTimeout(() => {
-      Animated.parallel([
         Animated.timing(welcomeTranslateY, {
           toValue: 0,
           duration: 800,
@@ -167,106 +107,14 @@ const SplashScreen = () => {
           duration: 800,
           useNativeDriver: true,
         }),
-      ]).start();
-    }, 800);
-
-    // Tagline animation
-    setTimeout(() => {
-      Animated.timing(taglineOpacity, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }).start();
-    }, 1200);
-
-    setTimeout(() => {
-      Animated.timing(loadingOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-
-      Animated.timing(progressWidth, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: false,
-      }).start();
-    }, 1500);
-
-    startFloatingAnimation(shape1TranslateY, shape1Opacity, shape1Rotation, 2000, 0);
-    startFloatingAnimation(shape2TranslateY, shape2Opacity, shape2Rotation, 2500, 500);
-    startFloatingAnimation(shape3TranslateY, shape3Opacity, shape3Rotation, 3000, 1000);
-    startFloatingAnimation(shape4TranslateY, shape4Opacity, shape4Rotation, 2200, 750);
+        Animated.timing(taglineOpacity, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
   };
-
-  const startFloatingAnimation = (
-    translateY: Animated.Value,
-    opacity: Animated.Value,
-    rotation: Animated.Value,
-    duration: number,
-    delay: number
-  ) => {
-    setTimeout(() => {
-      Animated.loop(
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(translateY, {
-              toValue: -50,
-              duration: duration / 2,
-              useNativeDriver: true,
-            }),
-            Animated.timing(translateY, {
-              toValue: 0,
-              duration: duration / 2,
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.sequence([
-            Animated.timing(opacity, {
-              toValue: 0.8,
-              duration: duration / 2,
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacity, {
-              toValue: 0.3,
-              duration: duration / 2,
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.timing(rotation, {
-            toValue: 1,
-            duration: duration,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    }, delay);
-  };
-
-  const logoRotationInterpolate = logoRotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const shape1RotationInterpolate = shape1Rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const shape2RotationInterpolate = shape2Rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const shape3RotationInterpolate = shape3Rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const shape4RotationInterpolate = shape4Rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
 
   const progressWidthInterpolate = progressWidth.interpolate({
     inputRange: [0, 1],
@@ -277,69 +125,7 @@ const SplashScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      <LinearGradient
-        colors={['#667eea', '#667eea']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
-      >
-        {/* Floating Background Shapes */}
-        <Animated.View
-          style={[
-            styles.floatingShape,
-            styles.shape1,
-            {
-              transform: [
-                { translateY: shape1TranslateY },
-                { rotate: shape1RotationInterpolate },
-              ],
-              opacity: shape1Opacity,
-            },
-          ]}
-        />
-
-        <Animated.View
-          style={[
-            styles.floatingShape,
-            styles.shape2,
-            {
-              transform: [
-                { translateY: shape2TranslateY },
-                { rotate: shape2RotationInterpolate },
-              ],
-              opacity: shape2Opacity,
-            },
-          ]}
-        />
-
-        <Animated.View
-          style={[
-            styles.floatingShape,
-            styles.shape3,
-            {
-              transform: [
-                { translateY: shape3TranslateY },
-                { rotate: shape3RotationInterpolate },
-              ],
-              opacity: shape3Opacity,
-            },
-          ]}
-        />
-
-        <Animated.View
-          style={[
-            styles.floatingShape,
-            styles.shape4,
-            {
-              transform: [
-                { translateY: shape4TranslateY },
-                { rotate: shape4RotationInterpolate },
-              ],
-              opacity: shape4Opacity,
-            },
-          ]}
-        />
-
+      <View style={styles.gradient}>
         {/* Main Content */}
         <View style={styles.content}>
           {/* Logo */}
@@ -347,10 +133,7 @@ const SplashScreen = () => {
             style={[
               styles.logoContainer,
               {
-                transform: [
-                  { scale: logoScale },
-                  { rotate: logoRotationInterpolate },
-                ],
+                transform: [{ scale: logoScale }],
                 opacity: logoOpacity,
               },
             ]}
@@ -418,7 +201,7 @@ const SplashScreen = () => {
             </View>
           </Animated.View>
         </View>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 };
@@ -432,6 +215,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#667eea',
   },
   content: {
     alignItems: 'center',
@@ -439,61 +223,51 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   logoContainer: {
-    width: 120,
-    height: 120,
+    width: 100,
+    height: 100,
     backgroundColor: '#ffffff',
-    borderRadius: 28,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 20,
-    },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,
-    shadowRadius: 40,
-    elevation: 20,
+    shadowRadius: 20,
+    elevation: 15,
   },
   logoIcon: {
-    fontSize: 48,
+    fontSize: 40,
   },
   appName: {
-    fontSize: 42,
+    fontSize: 36,
     fontWeight: '800',
     color: '#ffffff',
-    marginBottom: 12,
-    letterSpacing: -1,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 10,
+    marginBottom: 8,
   },
   welcomeMessage: {
-    fontSize: 18,
+    fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 8,
-    fontWeight: '400',
+    marginBottom: 6,
   },
   tagline: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.8)',
-    letterSpacing: 2,
-    marginBottom: 60,
+    letterSpacing: 1.5,
+    marginBottom: 40,
     textAlign: 'center',
-    fontWeight: '300',
   },
   loadingContainer: {
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 13,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 20,
-    fontWeight: '500',
+    marginBottom: 16,
   },
   progressBarContainer: {
-    width: 200,
-    height: 4,
+    width: 180,
+    height: 3,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 2,
     overflow: 'hidden',
@@ -501,35 +275,5 @@ const styles = StyleSheet.create({
   progressBar: {
     height: '100%',
     backgroundColor: '#ffffff',
-    borderRadius: 2,
-  },
-  floatingShape: {
-    position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 50,
-  },
-  shape1: {
-    width: 80,
-    height: 80,
-    top: height * 0.15,
-    left: width * 0.1,
-  },
-  shape2: {
-    width: 120,
-    height: 120,
-    bottom: height * 0.25,
-    right: width * 0.15,
-  },
-  shape3: {
-    width: 60,
-    height: 60,
-    bottom: height * 0.37,
-    left: width * 0.2,
-  },
-  shape4: {
-    width: 100,
-    height: 100,
-    top: height * 0.1,
-    right: width * 0.25,
   },
 });
