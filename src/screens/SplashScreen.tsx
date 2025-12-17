@@ -96,7 +96,7 @@ const SplashScreen = () => {
     Animated.loop(
       Animated.timing(logoRotation, {
         toValue: 1,
-        duration: 15000,
+        duration: 5000,
         useNativeDriver: true,
       })
     ).start();
