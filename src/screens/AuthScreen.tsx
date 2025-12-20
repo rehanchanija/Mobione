@@ -48,6 +48,9 @@ const AuthScreen = () => {
     login(loginData);
   };
 
+ 
+
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -58,9 +61,11 @@ const AuthScreen = () => {
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <ScrollView
-              contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 20 }}
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
               showsVerticalScrollIndicator={false}
             >
+              
+
               {/* Logo Section */}
               <View style={styles.logoSection}>
                 <View style={styles.logoContainer}>
@@ -83,7 +88,6 @@ const AuthScreen = () => {
                     onChangeText={(text) => setLoginData({ ...loginData, email: text })}
                     keyboardType="email-address"
                     style={styles.textInput}
-                    placeholderTextColor="#999"
                   />
                 </View>
 
@@ -96,7 +100,6 @@ const AuthScreen = () => {
                     onChangeText={(text) => setLoginData({ ...loginData, password: text })}
                     secureTextEntry={!showPassword}
                     style={styles.textInput}
-                    placeholderTextColor="#999"
                   />
                   <TouchableOpacity onPress={togglePassword}>
                     <Text style={styles.passwordToggleText}>
@@ -105,7 +108,9 @@ const AuthScreen = () => {
                   </TouchableOpacity>
                 </View>
 
-             
+                <TouchableOpacity style={styles.forgotPassword}>
+                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                </TouchableOpacity>
 
                 {error && <Text style={styles.errorText}>{error.message}</Text>}
 
@@ -145,11 +150,8 @@ const styles = StyleSheet.create({
   },
   container: { flex: 1 },
   gradient: { flex: 1 },
-  logoSection: { 
-    alignItems: 'center', 
-    marginBottom: 40,
-    width: '100%',
-  },
+ 
+  logoSection: { alignItems: 'center', marginTop: 20, marginBottom: 40 },
   logoContainer: {
     width: 80,
     height: 80,
@@ -160,19 +162,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   logoIcon: { fontSize: 32 },
-  appTitle: { 
-    fontSize: 28, 
-    fontWeight: 'bold', 
-    color: '#fff',
-    textAlign: 'center',
-  },
+  appTitle: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
   formContainer: {
     backgroundColor: '#fff',
     marginHorizontal: 24,
     borderRadius: 16,
     padding: 24,
-    width: '85%',
-    alignSelf: 'center',
   },
   formTitle: {
     fontSize: 24,
@@ -198,26 +193,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
   },
   inputIcon: { fontSize: 18, marginRight: 12 },
-  textInput: { 
-    flex: 1, 
-    paddingVertical: 16, 
-    fontSize: 16, 
-    color: '#1a1a1a',
-  },
+  textInput: { flex: 1, paddingVertical: 16, fontSize: 16, color: '#1a1a1a' },
   passwordToggleText: { fontSize: 18 },
- 
-  submitButton: { 
-    paddingVertical: 16, 
-    borderRadius: 12, 
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  submitButtonText: { 
-    color: '#fff', 
-    fontSize: 16, 
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+  forgotPassword: { alignSelf: 'flex-end', padding: 8 },
+  forgotPasswordText: { color: '#667eea', fontSize: 14, fontWeight: '500' },
+  submitButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
+  submitButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
 
 export default AuthScreen;
