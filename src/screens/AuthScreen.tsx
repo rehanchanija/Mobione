@@ -42,7 +42,6 @@ const AuthScreen = () => {
 
   const handleLogin = () => {
     if (!isLoginValid()) {
-      Alert.alert('Error', 'Please fill in all fields correctly.');
       return;
     }
     login(loginData);
@@ -108,13 +107,6 @@ const AuthScreen = () => {
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.forgotPassword}>
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                </TouchableOpacity>
-
-                {error && <Text style={styles.errorText}>{error.message}</Text>}
-
-                {/* Submit Button */}
                 <TouchableOpacity
                   style={[
                     styles.submitButton,
@@ -151,7 +143,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   gradient: { flex: 1 },
  
-  logoSection: { alignItems: 'center', marginTop: 20, marginBottom: 40 },
+  logoSection: { alignItems: 'center', marginTop: 80, marginBottom: 40 },
   logoContainer: {
     width: 80,
     height: 80,

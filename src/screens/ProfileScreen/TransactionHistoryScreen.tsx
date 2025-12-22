@@ -91,7 +91,7 @@ const TransactionHistoryScreen = () => {
       await refetch();
       showSuccess('Transaction deleted', 'Deleted');
     } catch (e) {
-      showError('Failed to delete transaction', 'Error');
+      // Error suppressed
     }
   };
 
@@ -113,7 +113,7 @@ const TransactionHistoryScreen = () => {
               await refetch();
               showSuccess('All transactions cleared', 'Success');
             } catch (e) {
-              showError('Failed to clear transactions', 'Error');
+              // Error suppressed
             }
           },
           style: 'destructive',
@@ -194,7 +194,7 @@ const TransactionHistoryScreen = () => {
   }
 
   if (error) {
-    showError('Failed to load transactions. Please try again.', 'Error');
+    // Error suppressed
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />

@@ -287,11 +287,12 @@ export const useAuth = () => {
         await AsyncStorage.setItem('user', JSON.stringify(data.user));
       }
 
-      // Reinitialize auth context and navigate
+      // Reinitialize auth context and navigate to Splash
+      // Splash screen will prefetch data during animation
       await initialize();
       navigation.reset({
         index: 0,
-        routes: [{ name: 'MainTabs' as never }],
+        routes: [{ name: 'Splash' as never }],
       });
     },
     onError: (error: any) => {
@@ -461,16 +462,31 @@ export const useAuth = () => {
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('refreshToken');
-    await AsyncStorage.removeItem('user');
-    // Clear all queries from cache on logout
-    queryClient.clear();
-    await initialize();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'AuthScreen' as never }],
-    });
+    try {
+      // Clear all cached data first
+      queryClient.clear();
+      
+      // Clear all stored tokens and user data
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('refreshToken');
+      await AsyncStorage.removeItem('user');
+      
+      // Reset auth context to initial state
+      await initialize();
+      
+      // Navigate to Splash screen to show prefetch process again on next login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Splash' as never }],
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force navigation even if error occurs
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Splash' as never }],
+      });
+    }
   };
 
   return {

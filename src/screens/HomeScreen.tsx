@@ -124,7 +124,7 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>📌 Overview</Text>
         <View style={styles.grid}>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Total Sales (All Time)</Text>
+            <Text style={styles.cardLabel}>Total Sales </Text>
             <Text style={styles.cardValue}>
               {isLoading ? (
                 <ActivityIndicator size="small" color="#4A90E2" />
@@ -157,7 +157,7 @@ export default function HomeScreen() {
               })
             }
           >
-            <Text style={styles.cardLabel}>Pending Payments (All Time)</Text>
+            <Text style={styles.cardLabel}>Pending Payments</Text>
             <Text style={styles.cardValue}>
               {isLoading ? (
                 <ActivityIndicator size="small" color="#4A90E2" />

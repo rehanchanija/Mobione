@@ -71,7 +71,7 @@ const NotificationScreen = () => {
         )
       );
     } catch {
-      Alert.alert("Error", "Failed to mark notification as read");
+      // Error suppressed
     }
   };
 
@@ -81,7 +81,7 @@ const NotificationScreen = () => {
       await markAllAsReadMutation_mut.mutateAsync();
       setAllNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch {
-      Alert.alert("Error", "Failed to mark all as read");
+      // Error suppressed
     }
   };
 
@@ -92,7 +92,7 @@ const NotificationScreen = () => {
         prev.filter((n) => n._id !== notificationId)
       );
     } catch {
-      Alert.alert("Error", "Failed to delete notification");
+      // Error suppressed
     }
   };
 
@@ -113,9 +113,8 @@ const NotificationScreen = () => {
             try {
               await deleteAllNotificationsMutation_mut.mutateAsync();
               setAllNotifications([]);
-              Alert.alert("Success", "All notifications cleared");
             } catch {
-              Alert.alert("Error", "Failed to clear notifications");
+              // Error suppressed
             }
           },
         },

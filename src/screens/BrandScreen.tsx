@@ -91,7 +91,7 @@ import { showMessage } from 'react-native-flash-message';
         );
         setBrands(withTotals);
       } catch (e) {
-        showMessage({ message: 'Failed to load brands', type: 'danger' });
+        // Error suppressed
       } finally {
         setLoading(false);
       }
@@ -123,7 +123,7 @@ import { showMessage } from 'react-native-flash-message';
         }));
         setProducts(mapped);
       } catch (e) {
-        showMessage({ message: 'Failed to load products', type: 'danger' });
+        // Error suppressed
       } finally {
         setLoading(false);
       }

@@ -12,6 +12,7 @@ import {
 import { PermissionsAndroid, Platform, Linking } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import { showMessage } from "react-native-flash-message";
 import { Alert } from "react-native";
 
@@ -61,7 +62,7 @@ export default function ProductListScreen() {
   const navigation = useNavigation();
   const route = useRoute<ProductListScreenRouteProp>();
   const { brand, allProducts } = route.params || {} as any;
-  const { brandsApi, productsApi, categoriesApi, updateCategoryMutation, deleteCategoryMutation } = useAuth();
+  const { brandsApi, productsApi, categoriesApi, updateCategoryMutation, deleteCategoryMutation, useBrands, useProducts, useTotalStock } = useAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [brandStockTotal, setBrandStockTotal] = useState<number>(0);
@@ -92,6 +93,16 @@ export default function ProductListScreen() {
   const updateCategoryMut = updateCategoryMutation();
   const deleteCategoryMut = deleteCategoryMutation();
 
+  // Use cached data from splash screen prefetch or fallback to fresh fetch
+  const { data: brandsData } = useBrands();
+  const { data: productsData, isLoading: isProductsLoading } = useProducts({ page: 1, limit: 200 });
+  const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesApi.list(),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+  const { data: stockData } = useTotalStock();
+
   const requestCameraPermission = async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
     try {
@@ -107,14 +118,7 @@ export default function ProductListScreen() {
       );
       if (granted === PermissionsAndroid.RESULTS.GRANTED) return true;
       if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-        Alert.alert(
-          'Permission required',
-          'Camera permission is permanently denied. Open settings to enable it.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => Linking.openSettings() },
-          ],
-        );
+        // Permission denied - silently fail
       }
       return false;
     } catch (err) {
@@ -125,42 +129,36 @@ export default function ProductListScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      if (allProducts) {
-        const [prods, cats] = await Promise.all([
-          productsApi.list(undefined, 1, 200),
-          categoriesApi.list(),
-        ]);
-        setProducts(prods as any);
-        setCategories(cats);
-        setBrandStockTotal(0);
-      } else if (brand && brand.id) {
-        const [prods, cats, stock] = await Promise.all([
-          brandsApi.products(brand.id),
-          categoriesApi.list(),
-          brandsApi.stockTotal(brand.id),
-        ]);
-        setProducts(prods as any);
-        setCategories(cats);
-        setBrandStockTotal(stock.stockTotal ?? 0);
-      } else {
-        const [prods, cats] = await Promise.all([
-          productsApi.list(undefined, 1, 200),
-          categoriesApi.list(),
-        ]);
-        setProducts(prods as any);
-        setCategories(cats);
-        setBrandStockTotal(0);
+      // Use cached data from React Query - data already prefetched on splash screen
+      if (productsData && categoriesData) {
+        if (allProducts) {
+          setProducts(productsData as any);
+          setCategories(categoriesData);
+          setBrandStockTotal(0);
+        } else if (brand && brand.id && brandsData) {
+          const brandProducts = brandsData.find((b: any) => b._id === brand.id)?.products || [];
+          setProducts(brandProducts as any);
+          setCategories(categoriesData);
+          setBrandStockTotal(stockData?.stockTotal ?? 0);
+        } else {
+          setProducts(productsData as any);
+          setCategories(categoriesData);
+          setBrandStockTotal(0);
+        }
       }
     } catch {
-      Alert.alert('Error', 'Failed to load products/categories');
+      // Error suppressed
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
-  }, [brand?.id, allProducts]);
+    // Data is already cached from splash screen, update state immediately
+    if (productsData && categoriesData) {
+      loadData();
+    }
+  }, [productsData, categoriesData, brand?.id, allProducts, brandsData, stockData]);
 
   const handleCreateProduct = () => {
     setIsEditMode(false);
@@ -205,7 +203,7 @@ export default function ProductListScreen() {
               setProducts(products.filter(p => p._id !== product._id));
 showMessage({ message: 'Product deleted', type: 'success' });
             } catch {
-              Alert.alert('Error', 'Failed to delete product');
+              // Error suppressed
             }
           },
         },
@@ -215,7 +213,6 @@ showMessage({ message: 'Product deleted', type: 'success' });
 
   const handleSaveProduct = async () => {
     if (!productName.trim() || !productPrice.trim() || !selectedCategoryId) {
-      Alert.alert("Error", "Please fill in name, price, and category");
       return;
     }
 
@@ -261,7 +258,7 @@ showMessage({ message: 'Product deleted', type: 'success' });
       }
       setIsProductModalVisible(false);
     } catch {
-      showMessage({ message: 'Error', description: isEditMode ? 'Failed to update product' : 'Failed to create product', type: 'danger' });
+      // Error suppressed
     }
   };
 
@@ -524,7 +521,7 @@ showMessage({ message: 'Product deleted', type: 'success' });
                                         }
                                         showMessage({ message: 'Category deleted successfully', type: 'success' });
                                       } catch {
-                                        Alert.alert('Error', 'Failed to delete category');
+                                        // Error suppressed
                                       }
                                     },
                                   },
@@ -579,7 +576,6 @@ showMessage({ message: 'Product deleted', type: 'success' });
                     onPress={async () => {
                       const ok = await requestCameraPermission();
                       if (ok) setIsScannerVisible(true);
-                      else Alert.alert('Permission required', 'Camera permission was denied');
                     }}
                     activeOpacity={0.7}
                   >
@@ -684,7 +680,6 @@ showMessage({ message: 'Product deleted', type: 'success' });
                 style={[styles.button, styles.saveButton]}
                 onPress={async () => {
                   if (!newCategoryName.trim()) {
-                    Alert.alert('Error', 'Please enter category name');
                     return;
                   }
                   try {
@@ -694,7 +689,7 @@ showMessage({ message: 'Product deleted', type: 'success' });
                     setIsCategoryModalVisible(false);
                     setNewCategoryName('');
                   } catch {
-                    Alert.alert('Error', 'Failed to create category');
+                    // Error suppressed
                   }
                 }}
                 activeOpacity={0.8}
@@ -749,7 +744,6 @@ showMessage({ message: 'Product deleted', type: 'success' });
                 style={[styles.button, styles.saveButton]}
                 onPress={async () => {
                   if (!editingCategoryName.trim()) {
-                    Alert.alert('Error', 'Please enter category name');
                     return;
                   }
                   try {
@@ -765,7 +759,7 @@ showMessage({ message: 'Product deleted', type: 'success' });
                       setEditingCategoryName('');
                     }
                   } catch {
-                    Alert.alert('Error', 'Failed to update category');
+                    // Error suppressed
                   }
                 }}
                 activeOpacity={0.8}

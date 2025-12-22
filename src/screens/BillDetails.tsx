@@ -39,15 +39,12 @@ const [paymentMethod, setPaymentMethod] = useState<"Cash" | "Online">("Cash");
 
   const validatePayment = () => {
     if (!amountPaid) {
-      Alert.alert('Error', 'Please enter the amount paid');
       return false;
     }
     if (parseFloat(amountPaid) <= 0) {
-      Alert.alert('Error', 'Amount paid must be greater than 0');
       return false;
     }
     if (parseFloat(amountPaid) > total) {
-      Alert.alert('Error', 'Amount paid cannot be greater than total amount');
       return false;
     }
     return true;

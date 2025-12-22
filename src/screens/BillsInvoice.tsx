@@ -166,7 +166,7 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
       setShowReminderModal(false);
       showMessage({ message: 'Opening WhatsApp', type: 'info' });
     } catch (e) {
-      showMessage({ message: 'Failed to open WhatsApp', type: 'danger' });
+      // Error suppressed
     }
   };
 
@@ -195,7 +195,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
     } catch (error) {
       console.error('Error marking bill as paid:', error);
       setIsUpdatingBill(false);
-      Alert.alert('Error', 'Failed to mark bill as paid. Please try again.');
     }
   };
 
@@ -242,7 +241,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
 
       const hasPermission = await requestStoragePermission();
       if (!hasPermission) {
-        Alert.alert('Permission Denied', 'Storage permission is required to save PDF files');
         setIsGeneratingPdf(false);
         return null;
       }
@@ -548,12 +546,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
     } catch (error: any) {
       console.error('❌ PDF Generation Error:', error);
       setIsGeneratingPdf(false);
-      
-      Alert.alert(
-        'PDF Generation Failed',
-        `Error: ${error.message || 'Unknown error'}\n\nTroubleshooting:\n• Check storage permissions\n• Ensure packages are installed\n• Try restarting the app`,
-        [{ text: 'OK' }]
-      );
       return null;
     }
   };
@@ -570,7 +562,6 @@ ${profile?.phone ? `📞 ${profile.phone}` : ''}`;
       } catch (error: any) {
         if (error.message !== 'User did not share') {
           console.error('Share error:', error);
-          Alert.alert('Share Error', 'Failed to share PDF');
         }
       }
     }

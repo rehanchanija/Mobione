@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,8 @@ const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
   const navigation = useNavigation();
+  const [loadingStatus, setLoadingStatus] = useState('Initializing...');
+  const [progress, setProgress] = useState(0);
 
   // Animation values
   const logoScale = useRef(new Animated.Value(0)).current;
@@ -25,18 +27,39 @@ const SplashScreen = () => {
   const welcomeOpacity = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const loadingOpacity = useRef(new Animated.Value(0)).current;
-  const progressWidth = useRef(new Animated.Value(0)).current;
 
-  const { isAuthenticated, isLoading, tokenValid } = useAuthContext();
+  const { isAuthenticated, isLoading, tokenValid, prefetchCriticalData } = useAuthContext();
 
   useEffect(() => {
     const checkAuthAndNavigate = async () => {
       try {
         await startAnimations();
 
-        // small delay so splash is visible for ~3.5s
-        // During this time, all data is being fetched in the background
+        // Simulate progressive loading while data is being fetched
+        const statuses = [
+          'Initializing...',
+          'Validating credentials...',
+          'Loading profiles...',
+          'Fetching products...',
+          'Syncing data...',
+          'Preparing app...',
+        ];
+
+        let statusIndex = 0;
+        const statusInterval = setInterval(() => {
+          if (statusIndex < statuses.length) {
+            setLoadingStatus(statuses[statusIndex]);
+            setProgress((statusIndex / (statuses.length - 1)) * 100);
+            statusIndex++;
+          } else {
+            clearInterval(statusInterval);
+          }
+        }, 500);
+
+        // Wait for authentication to complete (3.5s total for splash visibility)
+        // Data prefetch happens in background during this time
         await new Promise(resolve => setTimeout(resolve, 3500));
+        clearInterval(statusInterval);
 
         if (!isLoading) {
           // If token is not valid, redirect to login regardless of isAuthenticated
@@ -49,6 +72,13 @@ const SplashScreen = () => {
           }
 
           if (isAuthenticated) {
+            // Give a final update showing completion
+            setLoadingStatus('Ready!');
+            setProgress(100);
+            
+            // Small delay to show completion
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
             navigation.reset({
               index: 0,
               routes: [{ name: 'MainTabs' as never }],
@@ -61,6 +91,7 @@ const SplashScreen = () => {
           }
         }
       } catch (error) {
+        console.error('Splash screen error:', error);
         navigation.reset({
           index: 0,
           routes: [{ name: 'AuthScreen' as never }],
@@ -113,14 +144,88 @@ const SplashScreen = () => {
           useNativeDriver: true,
         }),
       ]),
+      Animated.timing(loadingOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
     ]).start();
   };
-
-  const progressWidthInterpolate = progressWidth.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    gradient: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#667eea',
+    },
+    content: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: 1,
+    },
+    logoContainer: {
+      width: 100,
+      height: 100,
+      backgroundColor: '#ffffff',
+      borderRadius: 24,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.15,
+      shadowRadius: 20,
+      elevation: 15,
+    },
+    logoIcon: {
+      fontSize: 40,
+    },
+    appName: {
+      fontSize: 36,
+      fontWeight: '800',
+      color: '#ffffff',
+      marginBottom: 8,
+    },
+    welcomeMessage: {
+      fontSize: 16,
+      color: 'rgba(255, 255, 255, 0.9)',
+      marginBottom: 6,
+    },
+    tagline: {
+      fontSize: 12,
+      color: 'rgba(255, 255, 255, 0.8)',
+      letterSpacing: 1.5,
+      marginBottom: 40,
+      textAlign: 'center',
+    },
+    loadingContainer: {
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontSize: 13,
+      color: 'rgba(255, 255, 255, 0.9)',
+      marginBottom: 16,
+    },
+    progressBarContainer: {
+      width: 180,
+      height: 3,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: 2,
+      marginBottom: 12,
+    },
+    progressBar: {
+      height: '100%',
+      backgroundColor: '#ffffff',
+    },
+    progressText: {
+      fontSize: 12,
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginTop: 8,
+    },
   });
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -188,92 +293,23 @@ const SplashScreen = () => {
               },
             ]}
           >
-            <Text style={styles.loadingText}>Loading your experience...</Text>
+            <Text style={styles.loadingText}>{loadingStatus}</Text>
             <View style={styles.progressBarContainer}>
-              <Animated.View
+              <View
                 style={[
                   styles.progressBar,
                   {
-                    width: progressWidthInterpolate,
+                    width: `${Math.min(progress, 100)}%`,
                   },
                 ]}
               />
             </View>
+            <Text style={styles.progressText}>{Math.round(progress)}%</Text>
           </Animated.View>
         </View>
       </View>
     </SafeAreaView>
   );
 };
-export default SplashScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  gradient: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#667eea',
-  },
-  content: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  logoContainer: {
-    width: 100,
-    height: 100,
-    backgroundColor: '#ffffff',
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 15,
-  },
-  logoIcon: {
-    fontSize: 40,
-  },
-  appName: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 8,
-  },
-  welcomeMessage: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 6,
-  },
-  tagline: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-    letterSpacing: 1.5,
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 16,
-  },
-  progressBarContainer: {
-    width: 180,
-    height: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#ffffff',
-  },
-});
+export default SplashScreen;

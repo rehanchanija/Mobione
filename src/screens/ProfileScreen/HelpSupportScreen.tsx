@@ -146,9 +146,11 @@ const HelpSupportScreen = () => {
   };
 
   const handleContactSupport = () => {
-    Linking.openURL('mailto:rehanchanija@gmail.com');
+    Linking.openURL('mailto:buildswithrehan@gmail.com');
   };
-
+  const handleTeamSupport = () => {
+  Linking.openURL('mailto:rehanchanija@gmail.com');
+  };
   const handleCall = () => {
     Linking.openURL('tel:7803997187');
   };
@@ -175,7 +177,6 @@ const HelpSupportScreen = () => {
           <Text style={styles.headerTitle}>Help & Support</Text>
           <Text style={styles.headerSubtitle}>We're here to help</Text>
         </View>
-        <View style={styles.backButton} />
       </View>
 
       <ScrollView 
@@ -293,7 +294,7 @@ const HelpSupportScreen = () => {
           </Text>
           <TouchableOpacity 
             style={styles.primaryButton}
-            onPress={handleContactSupport}
+            onPress={handleTeamSupport}
           >
             <Text style={styles.primaryButtonText}>Contact Support Team</Text>
           </TouchableOpacity>

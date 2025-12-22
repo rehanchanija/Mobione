@@ -7,6 +7,7 @@ interface AuthState {
   isLoading: boolean;
   initialize: () => Promise<void>;
   tokenValid: boolean;
+  prefetchCriticalData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -18,14 +19,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [tokenValid, setTokenValid] = useState(true);
 
+  const prefetchCriticalData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      
+      if (!token) return; // No token, can't prefetch
+      
+      const headers = { Authorization: `Bearer ${token}` };
+      const axiosConfig = { headers, timeout: 5000 };
+
+      // Prefetch critical data in parallel
+      // These are the most important data for the home screen and dashboard
+      await Promise.allSettled([
+        axios.get(`${BASE_URL}/auth/profile`, axiosConfig),
+        axios.get(`${BASE_URL}/brands`, axiosConfig),
+        axios.get(`${BASE_URL}/products?page=1&limit=50`, axiosConfig),
+        axios.get(`${BASE_URL}/categories`, axiosConfig),
+        axios.get(`${BASE_URL}/bills?page=1&limit=20`, axiosConfig),
+        axios.get(`${BASE_URL}/transactions?page=1&limit=20`, axiosConfig),
+        axios.get(`${BASE_URL}/notifications?page=1&limit=10`, axiosConfig),
+        axios.get(`${BASE_URL}/notifications/unread-count`, axiosConfig),
+      ]);
+
+      console.log('✅ Critical data prefetched successfully');
+    } catch (error) {
+      console.log('⚠️ Prefetch failed - will fetch on demand', error);
+      // Fail silently - data will be fetched on demand
+    }
+  };
+
   const initialize = async () => {
     try {
+      // Reset states at start of initialization
+      setIsLoading(true);
+      setTokenValid(true);
+      
       const token = await AsyncStorage.getItem('token');
       const refreshToken = await AsyncStorage.getItem('refreshToken');
       
       if (!token) {
         setIsAuthenticated(false);
         setTokenValid(false);
+        setIsLoading(false);
         return;
       }
 
@@ -37,6 +72,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         setIsAuthenticated(true);
         setTokenValid(true);
+        
+        // Start prefetching critical data in the background
+        prefetchCriticalData();
       } catch (error: any) {
         // Token expired or invalid - try refresh
         if (error?.response?.status === 401 && refreshToken) {
@@ -49,6 +87,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               await AsyncStorage.setItem('token', String(newToken));
               setIsAuthenticated(true);
               setTokenValid(true);
+              
+              // Start prefetching with new token
+              prefetchCriticalData();
             } else {
               throw new Error('No token in refresh response');
             }
@@ -70,6 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (error) {
+      console.error('Initialize error:', error);
       setIsAuthenticated(false);
       setTokenValid(false);
     } finally {
@@ -82,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, initialize, tokenValid }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, initialize, tokenValid, prefetchCriticalData }}>
       {children}
     </AuthContext.Provider>
   );

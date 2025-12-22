@@ -93,16 +93,10 @@ const ProfileScreen = () => {
       
       if (!token) {
         // No token found
-        Alert.alert('Please login', 'You must be logged in to view your profile.', [
-          {
-            text: 'OK',
-            onPress: () =>
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'AuthScreen' as never }],
-              }),
-          },
-        ]);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'AuthScreen' as never }],
+        });
         return;
       }
       
@@ -127,14 +121,7 @@ const ProfileScreen = () => {
   // Handle profile fetch errors - redirect only if 401 after refresh attempt
   useEffect(() => {
     if (profileError && (profileError as any)?.response?.status === 401) {
-      Alert.alert('Session Expired', 'Your session has expired. Please login again.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            logout();
-          },
-        },
-      ]);
+      logout();
     }
   }, [profileError, logout]);
 
@@ -160,7 +147,6 @@ const ProfileScreen = () => {
 
   const handleSave = () => {
     if (!hasToken) {
-      Alert.alert('Please login', 'You must be logged in to update your profile.');
       return;
     }
     updateProfile({
