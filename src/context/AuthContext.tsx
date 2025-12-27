@@ -111,9 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (error) {
-      console.error('Initialize error:', error);
-      setIsAuthenticated(false);
-      setTokenValid(false);
     } finally {
       setIsLoading(false);
     }
